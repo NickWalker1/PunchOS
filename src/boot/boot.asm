@@ -156,38 +156,17 @@ clear_identity_map:
 global _start:function (_start.end - _start)
 _start:
 
-	mov esp, stack_top - KERNEL_VIRT_BASE
+	mov esp, stack_top 
 	
 	lgdt [gdt_descriptor]
 
-    call clear_tables
-
-    call create_page_directory
-    
-    call create_identity_page_table
-
-    call create_kernel_page_table
-
-    call enable_paging
-
-    mov eax, esp
-    add eax, KERNEL_VIRT_BASE
-    mov esp, eax
-
-    
-    
-	call higher
+    jmp higher
 .end:
 
 
 section .text
 higher:
 
-    ;call clear_identity_map
-    
-
-    ;call enable_paging
-    
     extern kernel_main
     call kernel_main
 

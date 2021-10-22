@@ -36,11 +36,10 @@ SECTIONS
 
     
 	
-    . += KERNEL_VIRT_BASE;
 
 	
     TEXT_SECTION_START = .;  
-	.text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRT_BASE)
+	.text ALIGN(4K) : AT(ADDR(.text) )
     {
         *(.text)
     }
@@ -48,7 +47,7 @@ SECTIONS
 
 
     RODATA_SECTION_START = .;
-	.rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRT_BASE)
+	.rodata ALIGN(4K) : AT(ADDR(.rodata) )
     {
         *(.rodata)
     }
@@ -56,14 +55,14 @@ SECTIONS
 
 
     DATA_SECTION_START = .;
-	.data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRT_BASE)
+	.data ALIGN(4K) : AT(ADDR(.data) )
     {
         *(.data)
     }
     DATA_SECTION_END = .;
 
     BSS_SECTION_START = .;
-	.bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VIRT_BASE)
+	.bss ALIGN(4K) : AT(ADDR(.bss) )
     {
         *(.bss)
     }
