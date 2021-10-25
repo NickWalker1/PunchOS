@@ -1,6 +1,9 @@
-C_SOURCES = $(wildcard src/kernel/*.c)
-HEADERS   = $(wildcard src/kernel/*.h)
+C_SOURCES = $(wildcard src/kernel/*.c src/drivers/*.c src/lib/*.c)
+HEADERS   = $(wildcard src/kernel/*.h src/drivers/*.h src/lib/*.h)
 
+ASM_SOURCES = $(wildcard src/boot/*.asm)
+
+ASM_OBJ =${ASM_SOURCES:.asm=.o}
 OBJ=${C_SOURCES:.c=.o}
 
 all: os.iso
@@ -17,15 +20,14 @@ os.iso: os.bin
 	cp $< isodir/boot/os.bin
 	grub-mkrescue -o $@ isodir
 
-os.bin: bin/boot.o $(OBJ) 
+os.bin: $(OBJ) $(ASM_OBJ)
 	$(LD) -T link.ld $(LD_FLAGS)
 
-bin/boot.o: src/boot/boot.asm
+%.o: %.asm
 	nasm -felf32 $< -o $@
 
 %.o : %.c ${HEADERS} 
 	$(GCC) -c $< -o $@ $(GCC_FLAGS)
-
 
 clean:
 	rm -f *.iso *.bin 
