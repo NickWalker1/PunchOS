@@ -72,4 +72,6 @@ SECTIONS
         *(.bss)
     }
     BSS_SECTION_END = .;
+
+    _KERNEL_END_ = .;
 }

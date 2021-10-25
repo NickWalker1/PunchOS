@@ -1,7 +1,7 @@
 #include "kernel.h"
 
 /* Main entry point into the OS */
-void kernel_main(uint32_t magic, uint32_t addr){
+int kernel_main(uint32_t magic, uint32_t addr){
 	print("Entering Kernel Code.");
 
 	print_attempt("Boot process");
@@ -16,7 +16,17 @@ void kernel_main(uint32_t magic, uint32_t addr){
 	}
 	print_ok();
 
+	
+	/* Lab 1 Code... */
 
+	//_KERNEL_END_ is a variable provided by the linker marking the end of all loaded data,
+	// hence all data since is free for us to allocate as we wish.
+
+	//Rounding up the end of the kernel loaded code to the nearest 4KiB boundary.
+	uint32_t *KHEAP_ADDR = _KERNEL_END_-_KERNEL_END_%0x1000 + 0x1000;
+	uint32_t *KHEAP_ADDR_MAX = (uint32_t*)((uint32_t)KHEAP_ADDR+0x1000);
+
+	return 0;
 }
 
 /* Ensures the memory map provided by multiboot meets the assumptions
