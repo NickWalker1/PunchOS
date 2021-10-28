@@ -158,6 +158,18 @@ _start:
 
 	mov esp, stack_top - KERNEL_VIRT_BASE
 	
+    ; clear EFLAGS
+    push 0
+    popf
+
+    ; Pushing items to the stack is the way a function is provided arguments
+    ; As defined in Multiboot2 specification can push these values to the stack from eax,ebx.
+    ; Push multiboot2 header pointer
+    push ebx
+
+    ; Push multiboot2 magic value
+    push eax
+
 	lgdt [gdt_descriptor]
 
     call clear_tables
@@ -170,27 +182,25 @@ _start:
 
     call enable_paging
 
+    ; Update the stack pointer to be in Kernel Virtual address range
     mov eax, esp
     add eax, KERNEL_VIRT_BASE
     mov esp, eax
 
-    
-    
-	call higher
+
+    ; Jump to addresses based in kernel range (0xC0000000+)
+	jmp higher
 .end:
 
 
 section .text
 higher:
 
-    ;call clear_identity_map
-    
-
-    ;call enable_paging
-    
+    ; Jump to kernel main function in C.     
     extern kernel_main
     call kernel_main
 
+    ; Incase kernel main ever returns, just loop.
 	cli
 .hang:	hlt
 	jmp .hang

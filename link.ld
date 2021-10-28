@@ -8,6 +8,11 @@ INPUT
 (
     src/boot/boot.o 
     src/kernel/kernel.o
+    src/drivers/low_level.o
+    src/lib/int.o
+    src/lib/panic.o
+    src/lib/screen.o 
+    src/lib/string.o
 )
 OUTPUT
 (
