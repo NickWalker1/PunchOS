@@ -6,7 +6,7 @@ KERNEL_VIRT_BASE = 0xC0000000;
 
 INPUT
 (
-    bin/boot.o 
+    src/boot/boot.o 
     src/kernel/kernel.o
 )
 OUTPUT
