@@ -7,6 +7,8 @@ void intialiseHeap(void* base, void* limit){
 
 void *malloc(uint32_t size){
     //To be implemented.
+    
+    return NULL;
 }
 
 void free(void* addr){

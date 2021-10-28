@@ -10,3 +10,5 @@ typedef unsigned long size_t;
 #define BASE_BIN 2
 #define BASE_DEC 10
 #define BASE_HEX 16
+
+#define NULL (void*)0
