@@ -36,6 +36,13 @@ bool setup(uint32_t magic, uint32_t addr){
 		println("Memory unable to meet assumptions.");
 		return false;
 	}
+
+	gdt_init();
+
+	idt_init();
+	
+
+	asm __volatile__("int $3");
 	return true;
 }
 

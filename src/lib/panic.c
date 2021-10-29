@@ -10,6 +10,14 @@ void PANIC(char* msg){
     halt();
 }
 
+void PANIC_EXC(char* msg, exception_state* state){
+    draw_panic_screen();
+
+    println("PANIC");
+    println("Unhandled Exception");
+
+    exception_state_dump(state);
+}
 
 void draw_panic_screen(){
     int row,column;

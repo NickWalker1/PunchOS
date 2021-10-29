@@ -39,6 +39,7 @@ KERNEL_VIRT_BASE equ 0xC0000000 ; 3GiB address
 ; as 1024 entries each pointing to a different 4k page.
 
 clear_tables:
+    pusha
     mov eax,0
 
     .clear_loop:
@@ -47,7 +48,8 @@ clear_tables:
 
     cmp eax, PG_SIZE * 3
     jl .clear_loop
-
+    
+    popa
     ret
 
 create_page_directory:

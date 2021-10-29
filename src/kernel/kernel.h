@@ -5,6 +5,7 @@
 #include "../lib/typedefs.h"
 #include "../lib/screen.h"
 #include "../lib/panic.h"
+#include "../interrupt/idt.h"
 
 
 extern uint32_t _KERNEL_END_;
