@@ -109,3 +109,5 @@ int int_enable();
 int int_disable();
 void int_set(int level);
 void irq_remap();
+
+uint32_t timer_tick(interrupt_state* state);

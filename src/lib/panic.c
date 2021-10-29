@@ -1,5 +1,6 @@
 #include "panic.h"
 
+/* Displays PANIC screen and writes message */
 void PANIC(char* msg){
     draw_panic_screen();
 
@@ -10,15 +11,20 @@ void PANIC(char* msg){
     halt();
 }
 
+/* Sets screen to blue
+ * Displays error msg
+ * Dumps exception state
+ */
 void PANIC_EXC(char* msg, exception_state* state){
     draw_panic_screen();
 
     println("PANIC");
-    println("Unhandled Exception");
-
+    println("Unhandled Exception: ");
+    print(msg);
     exception_state_dump(state);
 }
 
+/* Sets entirety of the screen to blue */
 void draw_panic_screen(){
     int row,column;
     for(column=0;column<80;column++){
@@ -30,6 +36,7 @@ void draw_panic_screen(){
     
 }
 
+/* Used to disable interrupts and halt the system */
 void halt(){
     __asm__ volatile("cli;hlt");
 }

@@ -12,15 +12,7 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	}
 	print_ok();
 
-	
-	/* ------------- Lab 1 Code ------------- */
-
-	//_KERNEL_END_ is a variable provided by the linker marking the end of all loaded data,
-	// hence all data since is free for us to allocate as we wish.
-
-	//Rounding up the end of the kernel loaded code to the nearest 4KiB boundary.
-	uint32_t *KHEAP_ADDR = _KERNEL_END_-_KERNEL_END_%0x1000 + 0x1000;
-	uint32_t *KHEAP_ADDR_MAX = (uint32_t*)((uint32_t)KHEAP_ADDR+0x1000);
+	while(1);
 
 	return 0;
 }
@@ -41,8 +33,6 @@ bool setup(uint32_t magic, uint32_t addr){
 
 	idt_init();
 	
-
-	asm __volatile__("int $3");
 	return true;
 }
 

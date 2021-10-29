@@ -163,6 +163,10 @@ _start:
     ; clear EFLAGS
     push 0
     popf
+     
+    finit
+
+    cli
 
     ; Pushing items to the stack is the way a function is provided arguments
     ; As defined in Multiboot2 specification can push these values to the stack from eax,ebx.

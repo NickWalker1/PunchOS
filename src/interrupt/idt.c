@@ -132,8 +132,7 @@ int int_disable(){
 }
 
 void idt_global_int_wrapper(interrupt_state *state){
-    //currently does absolutely nothing on an interrupt, other than make sure it doesn't repeat.
-
+    if(state->interrupt_number==32) println("here");
     /* If the IDT entry that was invoked was greater than 40
     *  (meaning IRQ8 - 15), then we need to send an EOI to
     *  the slave controller */
@@ -151,4 +150,8 @@ void idt_global_exc_wrapper(exception_state *state){
     default_exception_handler(state);
 }
 
-    
+uint32_t ticks=0; 
+uint32_t timer_tick(interrupt_state* state){
+    ticks++;
+    if(ticks%18==0) println("1 second");
+}
