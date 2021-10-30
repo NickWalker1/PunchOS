@@ -132,7 +132,7 @@ int int_disable(){
 }
 
 void idt_global_int_wrapper(interrupt_state *state){
-    if(state->interrupt_number==32) println("here");
+    if(state->interrupt_number==32) timer_tick(state);
     /* If the IDT entry that was invoked was greater than 40
     *  (meaning IRQ8 - 15), then we need to send an EOI to
     *  the slave controller */

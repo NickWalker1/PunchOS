@@ -1,7 +1,7 @@
 C_SOURCES = $(wildcard src/kernel/*.c src/drivers/*.c src/lib/*.c src/gdt/*.c src/interrupt/*.c)
 HEADERS   = $(wildcard src/kernel/*.h src/drivers/*.h src/lib/*.h src/gdt/*.h src/interrupt/*.h)
 
-ASM_SOURCES = $(wildcard src/boot/*.asm src/interrupt/*.asm)
+ASM_SOURCES = $(wildcard src/boot/*.asm src/interrupt/*.asm src/gdt/*.asm)
 
 ASM_OBJ =${ASM_SOURCES:.asm=.o}
 OBJ=${C_SOURCES:.c=.o}

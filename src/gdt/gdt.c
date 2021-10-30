@@ -1,40 +1,40 @@
 #include "gdt.h"
 
-gdt_entry gdt[GDT_SIZE];
-gdt_info info;
+gdt_entry_t gdt_entries[5];
+gdt_ptr_t   gdt_ptr;
 
-void gdt_init()
+// Initialisation routine - zeroes all the interrupt service routines,
+// initialises the GDT and IDT.
+void init_descriptor_tables()
 {
-    gdt_fill_entry(1, true, 0);
-    gdt_fill_entry(2, false, 0);
-    gdt_fill_entry(3, true, 3);
-    gdt_fill_entry(4, false, 3);
-
-
-    info.size = sizeof(gdt_entry) * GDT_SIZE - 1;
-    info.offset = (uint32_t)&gdt;
-
-    __asm__("lgdt %0" ::"m"(info));
+   // Initialise the global descriptor table.
+   init_gdt();
 }
 
-void gdt_fill_entry(int index, bool executable, uint8_t privilege_level)
+static void init_gdt()
 {
-    gdt[index].limit_0_15 = 0xFFFF;
-    gdt[index].base_0_15 = 0x0000;
-    gdt[index].base_16_23 = 0x00;
+   gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
+   gdt_ptr.base  = (uint32_t)&gdt_entries;
 
-    gdt[index].accessed = 0;
-    gdt[index].read_write = 1;
-    gdt[index].direction = 0;
-    gdt[index].executable = executable;
-    gdt[index].reserved_1 = 1;
-    gdt[index].privilege_level = privilege_level;
-    gdt[index].present = 1;
+   gdt_set_gate(0, 0, 0, 0, 0);                // Null segment
+   gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Code segment
+   gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Data segment
+   gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
+   gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
 
-    gdt[index].limit_16_19 = 0xf;
-    gdt[index].reserved_2 = 0;
-    gdt[index].size = 1;
-    gdt[index].granularity = 1;
-
-    gdt[index].base_24_31 = 0x00;
+   gdt_flush((uint32_t)&gdt_ptr);
 }
+
+// Set the value of one GDT entry.
+static void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
+{
+   gdt_entries[num].base_low    = (base & 0xFFFF);
+   gdt_entries[num].base_middle = (base >> 16) & 0xFF;
+   gdt_entries[num].base_high   = (base >> 24) & 0xFF;
+
+   gdt_entries[num].limit_low   = (limit & 0xFFFF);
+   gdt_entries[num].granularity = (limit >> 16) & 0x0F;
+
+   gdt_entries[num].granularity |= gran & 0xF0;
+   gdt_entries[num].access      = access;
+} 

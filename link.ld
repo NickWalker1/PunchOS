@@ -9,6 +9,7 @@ INPUT
     src/boot/boot.o 
     src/kernel/kernel.o
     src/gdt/gdt.o
+    src/gdt/gdt_flush.o
     src/drivers/low_level.o
     src/lib/int.o
     src/lib/panic.o

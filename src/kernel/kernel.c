@@ -12,6 +12,8 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	}
 	print_ok();
 
+	//asm("int $3");
+
 	while(1);
 
 	return 0;
@@ -23,13 +25,14 @@ bool setup(uint32_t magic, uint32_t addr){
 		println("Invalid multiboot header.");
 		return false;
 	}
+	
+	init_descriptor_tables();
 
 	if(!validMemory(addr)){
 		println("Memory unable to meet assumptions.");
 		return false;
 	}
 
-	gdt_init();
 
 	idt_init();
 	
