@@ -39,44 +39,51 @@ SECTIONS
 	{
 		*(.multiboot.data)
 	}
-	
+    
 	.multiboot.text :
 	{
 		*(.multiboot.text)
 	}
 
     
-	
+	/* Now align with higher half addresses */
     . += KERNEL_VIRT_BASE;
 
+
+    /* Note when using labels, ensure to use with & as it's a label not a variable
+     *otherwise will return garbage data. */
 	
-    TEXT_SECTION_START = .;  
+    _TEXT_SECTION_START = .;  
 	.text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRT_BASE)
     {
         *(.text)
     }
-    TEXT_SECTION_END = .;
+    _TEXT_SECTION_END = .;
 
 
-    RODATA_SECTION_START = .;
+    _RODATA_SECTION_START = .;
 	.rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRT_BASE)
     {
         *(.rodata)
     }
-    RODATA_SECTION_END = .;
+    _RODATA_SECTION_END = .;
 
 
-    DATA_SECTION_START = .;
+    _DATA_SECTION_START = .;
 	.data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRT_BASE)
     {
         *(.data)
     }
-    DATA_SECTION_END = .;
+    _DATA_SECTION_END = .;
 
-    BSS_SECTION_START = .;
+
 	.bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VIRT_BASE)
     {
+        _BSS_SECTION_START = .;
         *(.bss)
+        _BSS_SECTION_END = .;
     }
-    BSS_SECTION_END = .;
+
+
+    _KERNEL_END = .;
 }

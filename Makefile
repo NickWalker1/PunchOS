@@ -20,8 +20,10 @@ os.iso: os.bin
 	cp $< isodir/boot/os.bin
 	grub-mkrescue -o $@ isodir
 
-os.bin: $(OBJ) $(ASM_OBJ)
+os.bin: $(OBJ) $(ASM_OBJ) link.ld
 	$(LD) -T link.ld $(LD_FLAGS)
+
+
 
 %.o: %.asm
 	nasm -felf32 $< -o $@

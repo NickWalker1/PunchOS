@@ -23,6 +23,6 @@ struct gdt_entry_struct
 } __attribute__((packed));
 typedef struct gdt_entry_struct gdt_entry_t; 
 
-void init_descriptor_tables();
-static void init_gdt();
+void gdt_init();
+void gdt_setup();
 static void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);

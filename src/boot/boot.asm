@@ -79,7 +79,7 @@ create_identity_page_table:
     ; phys address start
     mov ebx, 0
 
-    .indentity_loop
+    .indentity_loop:
     mov ecx, ebx
     or dword ecx, 3
 
@@ -103,7 +103,7 @@ create_kernel_page_table:
     ; phys address
     mov ebx, 0
 
-    .kernel_loop
+    .kernel_loop:
     mov ecx, ebx
     or dword ecx, 3
 
@@ -178,10 +178,12 @@ _start:
 
 	lgdt [gdt_descriptor]
 
+    ; Series of calls to setup temporary paging
     call clear_tables
 
     call create_page_directory
     
+    ; To ensure we don't pull out the rug from beneath us when enabling paging
     call create_identity_page_table
 
     call create_kernel_page_table

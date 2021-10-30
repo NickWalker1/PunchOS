@@ -26,7 +26,7 @@ bool setup(uint32_t magic, uint32_t addr){
 		return false;
 	}
 	
-	init_descriptor_tables();
+	gdt_init();
 
 	if(!validMemory(addr)){
 		println("Memory unable to meet assumptions.");

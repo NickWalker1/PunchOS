@@ -1,17 +1,22 @@
 #include "gdt.h"
 
+
+/* GDT CODE CREDIT TO: http://jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html */
+
+extern void gdt_flush(uint32_t);
+
 gdt_entry_t gdt_entries[5];
 gdt_ptr_t   gdt_ptr;
 
 // Initialisation routine - zeroes all the interrupt service routines,
 // initialises the GDT and IDT.
-void init_descriptor_tables()
+void gdt_init()
 {
    // Initialise the global descriptor table.
-   init_gdt();
+   gdt_setup();
 }
 
-static void init_gdt()
+void gdt_setup()
 {
    gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
    gdt_ptr.base  = (uint32_t)&gdt_entries;

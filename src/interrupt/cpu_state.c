@@ -39,7 +39,6 @@ void exception_state_dump(exception_state *state){
     println("SS:");
     print(itoa(state->ss,str,BASE_HEX));
 
-    halt();
 }
 
 void interrupt_state_dump(interrupt_state* state){

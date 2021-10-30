@@ -22,6 +22,8 @@ void PANIC_EXC(char* msg, exception_state* state){
     println("Unhandled Exception: ");
     print(msg);
     exception_state_dump(state);
+
+    halt();
 }
 
 /* Sets entirety of the screen to blue */

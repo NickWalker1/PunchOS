@@ -3,7 +3,8 @@
 /* sets n bytes at str to c */
 void* memset(void* str, int c, size_t n){
     uint32_t* ptr = (uint32_t*)str;
-    for(size_t i=0;i<n;i++){
+    size_t i;
+    for(i=0;i<n;i++){
         *ptr=c;
         ptr++;
     }

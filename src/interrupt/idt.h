@@ -28,8 +28,6 @@ typedef struct idt_entry
     uint16_t isr_high; 				// The higher 16 bits of the ISR's address
 } __attribute__((packed)) idt_entry;
 
-__attribute__((aligned(0x10)))
-static idt_entry idt[256];
 
 typedef struct {
     uint16_t limit;
@@ -42,7 +40,6 @@ typedef struct exception_definition
     uint8_t interrupt_number;
 } exception_definition;
 
-static idtr_t idtr;
 
 void idt_set_descriptor(uint8_t vector, uint32_t (*handler)(interrupt_state *state), bool user_interrupt);
 void idt_init(void);
@@ -110,4 +107,4 @@ int int_disable();
 void int_set(int level);
 void irq_remap();
 
-uint32_t timer_tick(interrupt_state* state);
+void timer_tick();

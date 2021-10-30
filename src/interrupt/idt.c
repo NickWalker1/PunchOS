@@ -1,6 +1,10 @@
 #include "idt.h"
 
 
+__attribute__((aligned(0x10)))
+static idt_entry idt[256];
+
+static idtr_t idtr;
 
 void idt_set_descriptor(uint8_t vector, uint32_t (*handler)(interrupt_state *state), bool user_interrupt){
     idt_entry* descriptor = &idt[vector];
@@ -132,7 +136,7 @@ int int_disable(){
 }
 
 void idt_global_int_wrapper(interrupt_state *state){
-    if(state->interrupt_number==32) timer_tick(state);
+    if(state->interrupt_number==32) timer_tick();
     /* If the IDT entry that was invoked was greater than 40
     *  (meaning IRQ8 - 15), then we need to send an EOI to
     *  the slave controller */
@@ -151,7 +155,7 @@ void idt_global_exc_wrapper(exception_state *state){
 }
 
 uint32_t ticks=0; 
-uint32_t timer_tick(interrupt_state* state){
+void timer_tick(){
     ticks++;
     if(ticks%18==0) println("1 second");
 }
