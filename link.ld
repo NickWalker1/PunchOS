@@ -19,6 +19,9 @@ INPUT
     src/interrupt/handlers.o
     src/interrupt/idt.o
     src/interrupt/interrupt.o
+    src/paging/paging.o
+    src/paging/heap.o
+    src/paging/pd_swp.o
 )
 OUTPUT
 (

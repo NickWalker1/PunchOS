@@ -4,7 +4,10 @@
 
 extern uint32_t _KERNEL_END;
 
-/* pointer to Kernel page directory. */
+/* pointer to Kernel page directory.
+ * NOTE IN VIRTUAL ADDRESS SPACE
+ * MUST BE CONVERTED TO PHYS ADDR WHEN UPDATING CR3
+ */
 page_directory_entry_t* kernel_pd;
 
 /* To page pool with only 128 available pages.
@@ -37,29 +40,40 @@ void paging_init(){
     //First step to work out where the free pages start from.
     //Must ensure is after kernel end.
 
+    
+    /* Physical memory location where kernel finished loading */
+    uint32_t kernel_end = &_KERNEL_END;
     //Align to next 4k boundary (4096 = 0x1000)
-    uint32_t kernel_end = _KERNEL_END-_KERNEL_END%0x1000 + 0x1000;
+    kernel_end= Kvtop(kernel_end-kernel_end%0x1000 + 0x1000);
 
     //Initialise physical page pool.
     int i;
     for(i=0;i<MAX_PHYS_PAGE;i++){
-        phys_page_pool[i].base_addr=(void*)(kernel_end+i*PGSIZE);
+        phys_page_pool[i].base_addr=(void*)(kernel_end+(i*PGSIZE));
         phys_page_pool[i].type=M_FREE;
     }
 
     //Create new kernel page directory.
-    kernel_pd=Kptov(get_next_free_phys_page());
+    kernel_pd=Kptov(get_next_free_phys_page(F_ZERO));
+
     map_page(Kvtop(kernel_pd),kernel_pd,F_KERN | F_ASSERT);
 
+
     //map kernel code pages.
-    int kernel_pages_count = (kernel_end-KERN_BASE)/PGSIZE;
+    println(itoa(kernel_end,str,BASE_HEX));
+    int kernel_pages_count = kernel_end/PGSIZE;
+    println(itoa(kernel_pages_count,str,BASE_DEC));
     for(i=0;i<kernel_pages_count;i++){
-        map_page(i*PGSIZE,(i*PGSIZE)+KERN_BASE,F_ASSERT | F_KERN | F_VERBOSE);
+        map_page(i*PGSIZE,(i*PGSIZE)+KERN_BASE,F_ASSERT | F_KERN);
     }
 
     //switch to using kernel_pd rather than temporary setup one.
-    
+    update_pd(Kvtop(kernel_pd));
+    asm("int $3");
+    halt();
+
 }
+
 
 /* Adds pd, pt mappings for a new page given a virtual and physical address
  * Currently only maps in the kernel page directory*/
@@ -67,23 +81,26 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
     if((uint32_t)vaddr%PGSIZE || (uint32_t)paddr%4096) PANIC("VADDR NOT 4k ALIGNED"); 
         
 
+    println(itoa(paddr,str,BASE_HEX));
+    println(itoa(vaddr,str,BASE_HEX));
+
     size_t pd_idx, pt_idx;
     page_table_entry_t* pt;
 
     pd_idx=pd_no(vaddr);
     pt_idx=pt_no(vaddr);
 
-    //TODO load pd form thread_control_block instead of just using kernel.
+    //TODO load pd form PCB instead of just using kernel.
 
     //if the page table page does not exist, create one and fill out the entry
     //in the PD.
     if(kernel_pd[pd_idx].present==0){
-        void* pt_addr = get_next_free_physical_page();
-        map_page(pt_addr,Kptov(pt_addr),F_KERN); /* so that you can write to this address in kernel address space */
+        void* pt_addr = get_next_free_phys_page(0);
 
         kernel_pd[pd_idx].page_table_base_addr=((uint32_t)pt_addr >> PGBITS); //Only most significant 20bits
         kernel_pd[pd_idx].present=1;
         kernel_pd[pd_idx].read_write=1;
+        map_page(pt_addr,Kptov(pt_addr),F_KERN | F_VERBOSE); /* so that you can write to this address in kernel address space */
     }
     pt=(page_table_entry_t*) Kptov(kernel_pd[pd_idx].page_table_base_addr<<PGBITS); //Push back to correct address
     pt[pt_idx].page_base_addr=(uint32_t) paddr>>PGBITS; //Only 20 most significant bits
@@ -104,7 +121,7 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
 
 /* Returns the base address of the next free physical page.
  * Will PANIC if no more pages are available */
-void *get_next_free_phys_page(){
+void *get_next_free_phys_page(uint8_t flags){
     if(first_free_phys_idx==-1) PANIC("NO AVAILABLE PAGES REMAINING");
     
     void* addr= phys_page_pool[first_free_phys_idx].base_addr;
@@ -119,5 +136,6 @@ void *get_next_free_phys_page(){
         }
     }
     first_free_phys_idx=idx;
+    if(flags&F_ZERO) memset(addr,0,PGSIZE);
     return addr;
 }

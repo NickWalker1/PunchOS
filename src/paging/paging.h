@@ -22,4 +22,6 @@ void paging_init();
 void map_page(void* paddr, void* vaddr, uint8_t flags);
 void setup_page_pool();
 void setup_kernel_heap();
-void* get_next_free_phys_page();
+void* get_next_free_phys_page(uint8_t flags);
+
+extern void update_pd(uint32_t* pd); /* Note cr3 register takes physical address of pd */

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../lib/typedefs.h"
+
 #define MAX_PHYS_PAGE       128
 #define PGBITS              12
 #define PDBITS              10

@@ -35,6 +35,8 @@ bool setup(uint32_t magic, uint32_t addr){
 
 
 	idt_init();
+
+	paging_init();
 	
 	return true;
 }

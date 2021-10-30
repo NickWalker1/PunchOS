@@ -7,6 +7,7 @@
 #include "../lib/screen.h"
 #include "../lib/panic.h"
 #include "../interrupt/idt.h"
+#include "../paging/paging.h"
 
 
 int kernel_main(uint32_t, uint32_t addr);
