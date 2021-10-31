@@ -6,14 +6,15 @@ int kernel_main(uint32_t magic, uint32_t addr){
 
 	print_attempt("Boot process");
 	if(!setup(magic, addr)){
-		println(itoa(magic,str,BASE_HEX));
+		println("Magic recieved: ");
+		print(itoa(magic,str,BASE_HEX));
 		print_fail();
 		halt();
 	}
 	print_ok();
 
-	//asm("int $3");
-
+	println("Freedom.");
+	/* Active loop to keep interrupts going. */
 	while(1);
 
 	return 0;
@@ -32,7 +33,6 @@ bool setup(uint32_t magic, uint32_t addr){
 		println("Memory unable to meet assumptions.");
 		return false;
 	}
-
 
 	idt_init();
 

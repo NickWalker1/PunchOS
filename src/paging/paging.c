@@ -60,18 +60,14 @@ void paging_init(){
 
 
     //map kernel code pages.
-    println(itoa(kernel_end,str,BASE_HEX));
     int kernel_pages_count = kernel_end/PGSIZE;
-    println(itoa(kernel_pages_count,str,BASE_DEC));
     for(i=0;i<kernel_pages_count;i++){
         map_page(i*PGSIZE,(i*PGSIZE)+KERN_BASE,F_ASSERT | F_KERN);
     }
 
     //switch to using kernel_pd rather than temporary setup one.
     update_pd(Kvtop(kernel_pd));
-    asm("int $3");
-    halt();
-
+    
 }
 
 
@@ -80,10 +76,6 @@ void paging_init(){
 void map_page(void* paddr, void* vaddr, uint8_t flags){
     if((uint32_t)vaddr%PGSIZE || (uint32_t)paddr%4096) PANIC("VADDR NOT 4k ALIGNED"); 
         
-
-    println(itoa(paddr,str,BASE_HEX));
-    println(itoa(vaddr,str,BASE_HEX));
-
     size_t pd_idx, pt_idx;
     page_table_entry_t* pt;
 
@@ -100,7 +92,7 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
         kernel_pd[pd_idx].page_table_base_addr=((uint32_t)pt_addr >> PGBITS); //Only most significant 20bits
         kernel_pd[pd_idx].present=1;
         kernel_pd[pd_idx].read_write=1;
-        map_page(pt_addr,Kptov(pt_addr),F_KERN | F_VERBOSE); /* so that you can write to this address in kernel address space */
+        map_page(pt_addr,Kptov(pt_addr),F_KERN ); /* so that you can write to this address in kernel address space */
     }
     pt=(page_table_entry_t*) Kptov(kernel_pd[pd_idx].page_table_base_addr<<PGBITS); //Push back to correct address
     pt[pt_idx].page_base_addr=(uint32_t) paddr>>PGBITS; //Only 20 most significant bits
