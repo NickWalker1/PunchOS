@@ -13,9 +13,12 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	}
 	print_ok();
 
-	println("Freedom.");
+
+
 	/* Active loop to keep interrupts going. */
+	println("Main loop.");
 	while(1);
+
 
 	return 0;
 }
