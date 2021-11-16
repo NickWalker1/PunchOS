@@ -1,5 +1,7 @@
 #include "panic.h"
 
+uint8_t helper_variable=0;
+
 /* Displays PANIC screen and writes message */
 void PANIC(char* msg){
     draw_panic_screen();
@@ -21,6 +23,8 @@ void PANIC_EXC(char* msg, exception_state* state){
     println("PANIC");
     println("Unhandled Exception: ");
     print(msg);
+    println("Helper: ");
+    print(itoa(helper_variable,str,BASE_BIN));
     exception_state_dump(state);
 
     halt();
