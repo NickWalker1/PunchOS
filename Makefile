@@ -10,15 +10,30 @@ all: os.iso
 
 GCC=gcc
 LD =ld
+
+#Local
+QEMU=qemu-system-i386
+GRUB=grub-mkrescue
+
+
+#DCS
+#QEMU= ???
+#QEMU=/usr/libexec/qemu-kvm
+
+
+
+
 GCC_FLAGS= -m32 -std=gnu99 -ffreestanding -O2 -nostdlib -Wall -Wextra 
 LD_FLAGS = -melf_i386
 
+
+
 run: all
-	qemu-system-i386 -cdrom os.iso
+	$(QEMU) -cdrom os.iso
 
 os.iso: os.bin
 	cp $< isodir/boot/os.bin
-	grub-mkrescue -o $@ isodir
+	$(GRUB) -o $@ isodir
 
 os.bin: $(OBJ) $(ASM_OBJ)
 	$(LD) -T link.ld $(LD_FLAGS)
