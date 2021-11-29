@@ -15,7 +15,7 @@ void reverse(char* str, int length){
 }
 
 /* Writes the ascii representation of num with base to str buffer*/
-char* itoa(uint32_t num, char* str, int base){
+char* itoa(int32_t num, char* str, int base){
     int i=0;
     bool isNegative=false;
 

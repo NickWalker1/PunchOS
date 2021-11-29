@@ -22,15 +22,42 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	// hence all data since is free for us to allocate as we wish.
 
 	//Rounding up the end of the kernel loaded code to the nearest 4KiB boundary.
-	uint32_t *KHEAP_ADDR = _KERNEL_END_-_KERNEL_END_%0x1000 + 0x1000;
-	uint32_t *KHEAP_ADDR_MAX = (uint32_t*)((uint32_t)KHEAP_ADDR+0x1000);
+	uint32_t* KHEAP_ADDR=&_KERNEL_END_;
+	KHEAP_ADDR=(uint32_t*)((uint32_t)KHEAP_ADDR-((uint32_t)KHEAP_ADDR%0x1000)+0x1000);
+	uint32_t* KHEAP_ADDR_MAX = (uint32_t*)((uint32_t)KHEAP_ADDR+0x1000);
+
+	println("HEAP START: ");
+	print(itoa((uint32_t)KHEAP_ADDR,str,BASE_HEX));
+
+	println("HEAP END:   ");
+	print(itoa((uint32_t)KHEAP_ADDR_MAX,str,BASE_HEX));
+
+
+	//call heap Init function
+
+	//intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+
+
 
 
 	//test script to ensure malloc is performing correctly.
 	print_attempt("Testing Heap.");
 
 	//warning there is no check for a timeout, hence poor code may run indefinitely.
-	int mark=heap_test(); 
+	testReport();
+
+
+
+	println("Kernel End Reached. Halting."); 
+
+	//will return to boot.asm where it will disable interrupts and halt.
+	return 0;
+}
+
+
+/* Calls performTest() and displays results */
+void testReport(){
+	int mark=performTest(); 
 	
 	if(mark==0b1111){
 		print_ok();
@@ -46,17 +73,19 @@ int kernel_main(uint32_t magic, uint32_t addr){
 			}
 		}
 	}
-	
-
-	return 0;
 }
 
-/* Returns a bit map of heap tests passed. 1 for pass, 0 for fail.*/
-int heap_test(){
+/* Returns a bit map of heap tests passed. 1 for pass, 0 for fail.
+ * WARNING:
+ *    - Even if a test passes, it does not guarantee correct code
+ *    - only that it is likely correct/functioning
+ */
+int performTest(){
 	int mark=0b1111;
 	//Test 1 test basic malloc.
 	uint32_t *test1=(uint32_t*)malloc(50);
-	if(!test1) mark=mark&0b1110;
+	if(!test1) return 0;
+	// if(!test1) mark=mark&0b1110;
 
 	//Test consecutive malloc
 	uint32_t *test2=(uint32_t*)malloc(256);
@@ -64,7 +93,7 @@ int heap_test(){
 
 	//Test expecting failure
 	uint32_t *test3=(uint32_t*)malloc(5000);
-	if(0) mark=mark&0b1011;
+	if(test3) mark=mark&0b1011;
 
 	//Test free
 	free(test2);

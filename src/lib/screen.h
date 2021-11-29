@@ -42,3 +42,5 @@ void print_ok();
 void print_fail();
 void clear_screen();
 void test_colours();
+void push_row();
+int pop_row();
