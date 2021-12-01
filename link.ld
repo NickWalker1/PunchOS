@@ -14,6 +14,7 @@ INPUT
     src/lib/screen.o
     src/lib/string.o
     src/lib/panic.o
+    src/lib/math.o
 )
 OUTPUT
 (

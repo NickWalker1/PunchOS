@@ -1,8 +1,13 @@
 #include "kernel.h"
 
+#include "../lib/math.h"
 
 #include "heap.h"
 
+int NUMTESTS=5;
+
+uint32_t* KHEAP_ADDR;
+uint32_t* KHEAP_ADDR_MAX;
 
 /* Main entry point into the OS */
 int kernel_main(uint32_t magic, uint32_t addr){
@@ -22,9 +27,9 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	// hence all data since is free for us to allocate as we wish.
 
 	//Rounding up the end of the kernel loaded code to the nearest 4KiB boundary.
-	uint32_t* KHEAP_ADDR=&_KERNEL_END_;
+	KHEAP_ADDR=&_KERNEL_END_;
 	KHEAP_ADDR=(uint32_t*)((uint32_t)KHEAP_ADDR-((uint32_t)KHEAP_ADDR%0x1000)+0x1000);
-	uint32_t* KHEAP_ADDR_MAX = (uint32_t*)((uint32_t)KHEAP_ADDR+0x1000);
+	KHEAP_ADDR_MAX = (uint32_t*)((uint32_t)KHEAP_ADDR+0x1000);
 
 	println("HEAP START: ");
 	print(itoa((uint32_t)KHEAP_ADDR,str,BASE_HEX));
@@ -33,16 +38,17 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	print(itoa((uint32_t)KHEAP_ADDR_MAX,str,BASE_HEX));
 
 
-	//call heap Init function
 
-	//intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+	//call heap Init function
+	intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+
+
+	//Feel free to test your implementations here
 
 
 
 
 	//test script to ensure malloc is performing correctly.
-	print_attempt("Testing Heap.");
-
 	//warning there is no check for a timeout, hence poor code may run indefinitely.
 	testReport();
 
@@ -57,17 +63,18 @@ int kernel_main(uint32_t magic, uint32_t addr){
 
 /* Calls performTest() and displays results */
 void testReport(){
-	int mark=performTest(); 
+	print_attempt("Testing Heap.");
 	
-	if(mark==0b1111){
+	int mark=performTest(KHEAP_ADDR,KHEAP_ADDR_MAX); 
+
+	if(mark==pow(2,NUMTESTS)-1){
 		print_ok();
 	}
 	else{
 		print_fail();
 		int i;
-		int x=1;
-		for(i=0;i<4;i++){
-			if(!(mark&(x<<i))){
+		for(i=0;i<NUMTESTS;i++){
+			if(!(mark&(1<<i))){
 				println("Failed test: ");
 				print(itoa(i+1,str,BASE_DEC));	
 			}
@@ -76,32 +83,80 @@ void testReport(){
 }
 
 /* Returns a bit map of heap tests passed. 1 for pass, 0 for fail.
- * WARNING:
- *    - Even if a test passes, it does not guarantee correct code
- *    - only that it is likely correct/functioning
+ * WARNING: Tests not entirely exhaustive.
  */
 int performTest(){
-	int mark=0b1111;
-	//Test 1 test basic malloc.
-	uint32_t *test1=(uint32_t*)malloc(50);
-	if(!test1) return 0;
-	// if(!test1) mark=mark&0b1110;
+	int mark=0b11111;
+	uint32_t test1,test2,test3,test4;
+	uint32_t MSH = sizeof(MemorySegmentHeader_t);
 
-	//Test consecutive malloc
-	uint32_t *test2=(uint32_t*)malloc(256);
-	if(!test2) mark=mark&0b1101;
 
-	//Test expecting failure
-	uint32_t *test3=(uint32_t*)malloc(5000);
-	if(test3) mark=mark&0b1011;
 
-	//Test free
-	free(test2);
-	uint32_t *test4=(uint32_t*)malloc(256);
-	if(!test4 || (test4!=test2)) mark=mark&0b0111;
+	//TEST 1: basic malloc
+
+	clear_heap(KHEAP_ADDR);
+	intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+
+	test1 = (uint32_t) malloc(0x50);
+	if(test1!=(uint32_t)KHEAP_ADDR+MSH) return 0; //fail all tests by default
+
+
+
+	//TEST 2: Consecutive malloc
+
+	clear_heap(KHEAP_ADDR);
+	intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+
+	test1 = (uint32_t) malloc(0x50);
+	test2 = (uint32_t) malloc(0x70);
+	if(test2!=(test1+0x50+MSH)) mark=mark ^ 1<<1;
+
+
+
+	//TEST 3: Failure on size
+
+	clear_heap(KHEAP_ADDR);
+	intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+
+	test3 = (uint32_t) malloc(0x1001);
+	if(test3) mark=mark ^ 1<<2;
+
+
+
+	//TEST 4: Free inside two segments
+
+	clear_heap(KHEAP_ADDR);
+	intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+
+	test1= (uint32_t) malloc(0x50);
+	test2= (uint32_t) malloc(0x70);
+	malloc(0x50);
+	free((void*)test2);
+	test3 = (uint32_t) malloc(0x40);
+	if(test3!=(test1+0x50+MSH)) mark=mark ^1<<3;
+
+
+
+	//TEST 5: Free combines consecutive segments
+
+	clear_heap(KHEAP_ADDR);
+	intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+
+	test1=(uint32_t)malloc(0x50);
+	test2=(uint32_t)malloc(0x50);
+	test3=(uint32_t)malloc(0x50);
+	malloc(0x50);
+	free((void*)test2);
+	free((void*)test3);
+	test4= (uint32_t) malloc(0x60);
+	if(test4!=(test1+0x50+MSH)) mark=mark ^1<<4;
+	
+
 
 	return mark;
 }
+
+
 
 /* Function to ensure multiboot header and memory loaded properly */
 bool setup(uint32_t magic, uint32_t addr){

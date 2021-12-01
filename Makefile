@@ -17,8 +17,8 @@ GRUB=grub-mkrescue
 
 
 #DCS
-#QEMU= ???
 #QEMU=/usr/libexec/qemu-kvm
+#GRUB=/usr/bin/grub2-mkrescue
 
 
 
@@ -27,7 +27,7 @@ GCC_FLAGS= -m32 -std=gnu99 -ffreestanding -O2 -nostdlib -Wall -Wextra
 LD_FLAGS = -melf_i386
 
 
-
+#Uncomment run when running not at DCS
 run: all
 	$(QEMU) -cdrom os.iso
 
