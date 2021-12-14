@@ -1,6 +1,5 @@
 #include "panic.h"
 
-uint8_t helper_variable=0;
 
 /* Displays PANIC screen and writes message */
 void PANIC(char* msg){

@@ -41,4 +41,6 @@ void print_attempt(char* message);
 void print_ok();
 void print_fail();
 void clear_screen();
+void push_row();
+int pop_row();
 void test_colours();

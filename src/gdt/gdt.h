@@ -25,4 +25,4 @@ typedef struct gdt_entry_struct gdt_entry_t;
 
 void gdt_init();
 void gdt_setup();
-static void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
+void gdt_set_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);

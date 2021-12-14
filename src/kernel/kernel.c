@@ -13,24 +13,6 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	}
 	print_ok();
 
-	tlb_flush();
-	//get_next_free_phys_page(2,0);
-
-	//println(itoa(get_next_free_phys_page(1, F_ASSERT),str,BASE_HEX));
-	//halt();
-	int *x = 0x00006000;
-	//println(itoa(pd_no(x),str,BASE_DEC));
-	//halt();
-	map_page((void*)x,(void*)x,F_VERBOSE);
-	*x=50;
-	println(itoa(*x,str,BASE_DEC));
-	// halt();
-	// // unmap_page(x);
-	// // tlb_flush();
-	// *x=69;
-	// println(itoa(*x,str,BASE_DEC));
-	halt();
-
 	/* Active loop to keep interrupts going. */
 	println("Main loop.");
 	while(1);
@@ -56,6 +38,8 @@ bool setup(uint32_t magic, uint32_t addr){
 	idt_init();
 
 	paging_init();
+
+
 
 	return true;
 }
