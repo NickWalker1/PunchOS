@@ -4,7 +4,6 @@
 MemorySegmentHeader_t *firstSegment;
 
 void intialiseHeap(void* base, void* limit){
-    //To be implemented.
     firstSegment=(MemorySegmentHeader_t*) base;
     firstSegment->free=true;
     firstSegment->size=limit - base - sizeof(MemorySegmentHeader_t);
@@ -12,8 +11,9 @@ void intialiseHeap(void* base, void* limit){
     firstSegment->previous=0;
 }
 
+/* Returns pointer to the start of size many bytes in dynamic memory, returns NULL on failure */
 void *malloc(uint32_t size){
-    //To be implemented.
+    //TODO update lookup from PCB
     MemorySegmentHeader_t *currSeg = firstSegment;
 
     //traverse linked list to find one that meets conditions

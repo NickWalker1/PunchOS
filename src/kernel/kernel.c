@@ -37,8 +37,13 @@ bool setup(uint32_t magic, uint32_t addr){
 
 	idt_init();
 
+	
+    asm("int $3");
+
 	paging_init();
 
+
+	processes_init();
 
 
 	return true;

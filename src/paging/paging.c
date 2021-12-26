@@ -1,6 +1,7 @@
 #include "paging.h"
 
 
+extern uint8_t helper_variable;
 
 extern uint32_t _KERNEL_END;
 
@@ -20,6 +21,8 @@ pool_t phys_page_pool;
  * As each process needs to know which virtual addresses
  * it has already assgigned so to not override them. */
 pool_t K_virt_pool;
+
+
 
 /* Converts physical address to kernel virtual address */
 void *Kptov(void* phys){
@@ -69,13 +72,13 @@ void paging_init(){
     //Create new kernel page directory.
     kernel_pd=Kptov(get_next_free_phys_page(1,F_ZERO));
 
-    map_page(Kvtop(kernel_pd),(void*)kernel_pd,F_KERN | F_ASSERT);
+    map_page(Kvtop(kernel_pd),(void*)kernel_pd,F_ASSERT);
 
     //Map kernel code pages.
     int kernel_pages_count = kernel_end/PGSIZE; //Includes all pages beneath kernel also
 
     for(i=0;i<kernel_pages_count;i++){
-        map_page((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),F_ASSERT | F_KERN);
+        map_page((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),F_ASSERT);
     }
 
     //allocate a page by default for kernel heap.
@@ -86,7 +89,6 @@ void paging_init(){
     
 }
 
-extern uint8_t helper_variable;
 /* Adds pd, pt mappings for a new page given a virtual and physical address
  * Currently only maps in the kernel page directory*/
 void map_page(void* paddr, void* vaddr, uint8_t flags){
@@ -109,14 +111,13 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
         pd[pd_idx].page_table_base_addr=((uint32_t)pt_addr >> PGBITS); //Only most significant 20bits
         pd[pd_idx].present=1;
         pd[pd_idx].read_write=1;
-        map_page(pt_addr,Kptov(pt_addr),F_KERN ); /* so that you can write to this address in kernel address space */
+        map_page(pt_addr,Kptov(pt_addr),0 ); /* so that you can write to this address in kernel address space */
     }
     pt=(page_table_entry_t*) Kptov((void*)(kernel_pd[pd_idx].page_table_base_addr<<PGBITS)); //Push back to correct address
     pt[pt_idx].page_base_addr=(uint32_t) paddr>>PGBITS; //Only 20 most significant bits
     pt[pt_idx].present=1;
     pt[pt_idx].read_write=1;
-
-    if(flags & F_KERN) pt[pt_idx].user_supervisor=1;
+    pt[pt_idx].user_supervisor=1; //As always in ring 0
         
         
     if(flags & F_VERBOSE){
@@ -370,4 +371,16 @@ bool free_virt_phys_page(void* vaddr){
     if(!free_phys_page(paddr,1)) return false;
 
     return true;
+}
+
+
+void *palloc_kern(size_t n, uint8_t flags){
+    void *paddr= get_next_free_phys_page(n,flags);
+    if(!paddr) return NULL;
+
+    for(size_t i=0;i<n;i++){
+        map_page(paddr,Kptov(paddr),0);
+    }
+
+    return Kptov(paddr);
 }

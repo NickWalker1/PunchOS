@@ -15,6 +15,7 @@ INPUT
     src/lib/panic.o
     src/lib/screen.o 
     src/lib/string.o
+    src/lib/list.o
     src/interrupt/cpu_state.o
     src/interrupt/handlers.o
     src/interrupt/idt.o
@@ -22,6 +23,9 @@ INPUT
     src/paging/paging.o
     src/paging/heap.o
     src/paging/pd_swp.o
+    src/synch/synch.o
+    src/processes/process.o
+    src/processes/pswap.o
 )
 OUTPUT
 (
