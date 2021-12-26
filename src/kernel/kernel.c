@@ -15,8 +15,10 @@ int kernel_main(uint32_t magic, uint32_t addr){
 
 	/* Active loop to keep interrupts going. */
 	println("Main loop.");
+	println(itoa(-5,str,BASE_DEC));
+	asm("int $3");
+	halt();
 	while(1);
-
 
 	return 0;
 }
@@ -37,13 +39,9 @@ bool setup(uint32_t magic, uint32_t addr){
 
 	idt_init();
 
-	
-    asm("int $3");
-
 	paging_init();
 
-
-	processes_init();
+	// processes_init();
 
 
 	return true;

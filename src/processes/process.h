@@ -31,7 +31,7 @@ typedef enum proc_status
 #include "../lib/list.h"
 #include "../lib/string.h"
 
-#include "../synch/synch.h"
+#include "../sync/synch.h"
 
 #include "../paging/heap.h"
 #include "../paging/paging.h"

@@ -24,6 +24,7 @@ stack_top:
 section .multiboot.text
 %include "src/boot/gdt.asm"
 
+
 ; 3 Pages beneath 1MiB mark where kernel is loaded
 
 PD_BASE equ 0x00FFD000

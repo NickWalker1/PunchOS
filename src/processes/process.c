@@ -22,7 +22,9 @@ void processes_init(){
     int_disable(); //should already be disabled but yeah
     //TODO change pit interrupt handler to PCB_t tick handler from default
     // but currently just tick handler.
-    init_proc = (PCB_t*) palloc_kern(1,F_ASSERT);
+    int esp  = get_esp();
+    esp=esp-esp%PGSIZE;
+    init_proc = (PCB_t*)esp;
 
     // if(init_proc!=current_proc()) PANIC("stack in wrong place");
 

@@ -33,11 +33,11 @@ void exception_state_dump(exception_state *state){
     print(itoa(state->cs,str,BASE_HEX));
     println("EFLAGS:");
     print(itoa(state->eflags,str,BASE_HEX));
-    println("IGNORE ESP/SS if in kernel mode");
-    println("ESP:");
-    print(itoa(state->esp,str,BASE_HEX));
-    println("SS:");
-    print(itoa(state->ss,str,BASE_HEX));
+    // println("IGNORE ESP/SS if in kernel mode");
+    // println("ESP:");
+    // print(itoa(state->esp,str,BASE_HEX));
+    // println("SS:");
+    // print(itoa(state->ss,str,BASE_HEX));
 
 }
 

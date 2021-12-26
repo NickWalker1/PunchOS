@@ -15,7 +15,7 @@ void reverse(char* str, int length){
 }
 
 /* Writes the ascii representation of num with base to str buffer*/
-char* itoa(int32_t num, char* str, int base){
+char* itoa(int num, char* str, int base){
     int i=0;
     bool isNegative=false;
 
@@ -25,17 +25,27 @@ char* itoa(int32_t num, char* str, int base){
         return str;
     }
 
+    //if negative and base 10, assume signed
     if(num<0 && base==10)
     {
         isNegative= true;
         num=-num;
+        while(num!=0){
+            int rem=num%base;
+            str[i++]= (rem>9)? (rem-10)+'a' : rem+ '0';
+            num=num/base;
+        }
+    }
+    //otherwise use unsigned.
+    else{
+        uint32_t unum=num;
+        while(unum!=0){
+            int rem=unum%base;
+            str[i++]= (rem>9)? (rem-10)+'a' : rem+ '0';
+            unum=unum/base;
+        }
     }
 
-    while(num!=0){
-        int rem=num%base;
-        str[i++]= (rem>9)? (rem-10)+'a' : rem+ '0';
-        num=num/base;
-    }
     if(isNegative){
         str[i++]='-';
     }
@@ -55,3 +65,4 @@ char* itoa(int32_t num, char* str, int base){
 
     return str;
 }
+    

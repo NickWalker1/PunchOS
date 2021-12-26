@@ -23,7 +23,7 @@ INPUT
     src/paging/paging.o
     src/paging/heap.o
     src/paging/pd_swp.o
-    src/synch/synch.o
+    src/sync/synch.o
     src/processes/process.o
     src/processes/pswap.o
 )

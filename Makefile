@@ -1,10 +1,14 @@
-C_SOURCES = $(wildcard src/kernel/*.c src/drivers/*.c src/lib/*.c src/gdt/*.c src/interrupt/*.c src/paging/*.c src/synch/*.c src/processes/*.c)
-HEADERS   = $(wildcard src/kernel/*.h src/drivers/*.h src/lib/*.h src/gdt/*.h src/interrupt/*.h src/paging/*.h src/synch/*.h src/processes/*.h)
+C_SOURCES = $(wildcard src/kernel/*.c src/drivers/*.c src/lib/*.c src/gdt/*.c src/interrupt/*.c src/paging/*.c src/sync/*.c src/processes/*.c)
+HEADERS   = $(wildcard src/kernel/*.h src/drivers/*.h src/lib/*.h src/gdt/*.h src/interrupt/*.h src/paging/*.h src/sync/*.h src/processes/*.h)
 
 ASM_SOURCES = $(wildcard src/boot/*.asm src/gdt/*.asm src/interrupt/*.asm src/paging/*.asm src/processes/*asm)
 
 ASM_OBJ =${ASM_SOURCES:.asm=.o}
 OBJ=${C_SOURCES:.c=.o}
+
+
+GCC_FLAGS= -m32 -std=gnu99 -ffreestanding -O2 -nostdlib -Wall -Wextra 
+LD_FLAGS = -melf_i386
 
 all: os.iso
 
@@ -23,8 +27,6 @@ GRUB=grub-mkrescue
 
 
 
-GCC_FLAGS= -m32 -std=gnu99 -ffreestanding -O2 -nostdlib -Wall -Wextra 
-LD_FLAGS = -melf_i386
 
 
 #Uncomment run when running not at DCS
