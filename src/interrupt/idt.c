@@ -136,7 +136,6 @@ int int_disable(){
 }
 
 void idt_global_int_wrapper(interrupt_state *state){
-    if(state->interrupt_number==32) timer_tick();
     /* If the IDT entry that was invoked was greater than 40
     *  (meaning IRQ8 - 15), then we need to send an EOI to
     *  the slave controller */
@@ -148,6 +147,9 @@ void idt_global_int_wrapper(interrupt_state *state){
     /* In either case, we need to send an EOI to the master
     *  interrupt controller too */
     outportb(PIC1_COMMAND, PIC_EOI);
+    
+    
+    if(state->interrupt_number==32) proc_tick();
 }
 
 void idt_global_exc_wrapper(exception_state *state){

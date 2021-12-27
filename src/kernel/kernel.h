@@ -8,8 +8,10 @@
 #include "../lib/panic.h"
 #include "../interrupt/idt.h"
 #include "../paging/paging.h"
+#include "../processes/process.h"
 
 
 int kernel_main(uint32_t, uint32_t addr);
 bool setup(uint32_t magic, uint32_t addr);
 bool validMemory(uint32_t addr);
+void test_func();

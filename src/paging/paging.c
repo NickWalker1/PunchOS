@@ -1,7 +1,7 @@
 #include "paging.h"
 
 
-extern uint8_t helper_variable;
+extern uint32_t helper_variable;
 
 extern uint32_t _KERNEL_END;
 
@@ -374,6 +374,8 @@ bool free_virt_phys_page(void* vaddr){
 }
 
 
+/* Returns virtual address pointer to the start of an n-page free
+ * address in kernel space */
 void *palloc_kern(size_t n, uint8_t flags){
     void *paddr= get_next_free_phys_page(n,flags);
     if(!paddr) return NULL;

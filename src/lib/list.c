@@ -24,10 +24,13 @@ void* pop(list* l){
     if(is_empty(l)) return NULL;
     list_elem* elem = l->head;
     l->head=elem->next;
-    l->head->prev=0;
+    if(l->head)
+        l->head->prev=0;
     void* data=elem->data;
     l->size--;
-    // TODO fix : free(elem);
+    
+    free(elem);
+
     return data;
 }
 
@@ -43,6 +46,7 @@ void push(list* l, void* data){
 void append(list* l, void* data){
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
     elem->data=data;
+    elem->next=NULL;
     if(is_empty(l)) {
         l->head=elem;
         l->tail=elem;
@@ -90,10 +94,15 @@ bool remove(list* l, void* data){
 void list_dump(list* l){
     list_elem* elem=l->head;
     println("[");
+
+    if(elem!=NULL){
+        print(itoa(elem->data,str,BASE_HEX));
+        elem=elem->next;
+    }
+
     while(elem!=NULL){
-        print(itoa((uint32_t)elem->data,str,BASE_HEX));
-        if(elem->next==NULL)break;
         print(",");
+        print(itoa(elem->data,str,BASE_HEX));
         elem=elem->next;
     }
     print("]");

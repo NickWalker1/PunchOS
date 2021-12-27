@@ -11,8 +11,6 @@ typedef struct PCB PCB_t;
 typedef void proc_func(void* aux);
 
 
-
-
 void first_switch();
 
 typedef uint32_t p_id;
@@ -37,6 +35,7 @@ typedef enum proc_status
 #include "../paging/paging.h"
 
 extern pool_t K_virt_pool;
+
 
 /* Process Control Block 
         4 kB +---------------------------------+
@@ -65,7 +64,7 @@ extern pool_t K_virt_pool;
 */
 
 
-
+/* Process Control Block Struct */
 struct  PCB{
     void *stack; /* DO NOT MOVE */
 

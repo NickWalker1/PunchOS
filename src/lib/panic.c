@@ -23,7 +23,7 @@ void PANIC_EXC(char* msg, exception_state* state){
     println("Unhandled Exception: ");
     print(msg);
     println("Helper: ");
-    print(itoa(helper_variable,str,BASE_BIN));
+    print(itoa(helper_variable,str,BASE_HEX));
     exception_state_dump(state);
 
     halt();

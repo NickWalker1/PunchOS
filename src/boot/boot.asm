@@ -15,8 +15,11 @@ align 4
 
 section .bss
 align 16
+resb 4096 ; 1 Page
+
+
 stack_bottom:
-resb 4096 ; 16 KiB
+resb 4096 ; 1 Page
 stack_top:
 
 

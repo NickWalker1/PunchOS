@@ -13,11 +13,11 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	}
 	print_ok();
 
+	create_proc("A",proc_echo,NULL);
+	create_proc("B",proc_echo,NULL);
+
 	/* Active loop to keep interrupts going. */
 	println("Main loop.");
-	println(itoa(-5,str,BASE_DEC));
-	asm("int $3");
-	halt();
 	while(1);
 
 	return 0;
@@ -37,15 +37,22 @@ bool setup(uint32_t magic, uint32_t addr){
 		return false;
 	}
 
+
 	idt_init();
 
 	paging_init();
 
-	// processes_init();
+
+	void *heap_addr=palloc_kern(4,F_ASSERT);
+	intialiseHeap(heap_addr,heap_addr+(HEAP_SIZE*PGSIZE));
+
+
+	processes_init();
 
 
 	return true;
 }
+
 
 /* Ensures the memory map provided by multiboot meets the assumptions
  * made further on in the code.

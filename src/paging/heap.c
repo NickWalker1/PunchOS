@@ -3,7 +3,8 @@
 /* pointer to the first head of the linked-list */
 MemorySegmentHeader_t *firstSegment;
 
-void intialiseHeap(void* base, void* limit){
+
+void intialiseHeap(void *base, void *limit){
     firstSegment=(MemorySegmentHeader_t*) base;
     firstSegment->free=true;
     firstSegment->size=limit - base - sizeof(MemorySegmentHeader_t);
@@ -13,7 +14,6 @@ void intialiseHeap(void* base, void* limit){
 
 /* Returns pointer to the start of size many bytes in dynamic memory, returns NULL on failure */
 void *malloc(uint32_t size){
-    //TODO update lookup from PCB
     MemorySegmentHeader_t *currSeg = firstSegment;
 
     //traverse linked list to find one that meets conditions
@@ -22,7 +22,6 @@ void *malloc(uint32_t size){
         currSeg=currSeg->next;
         if(!currSeg) return NULL;
     }
-
     //update the segment info
     uint32_t init_size =currSeg->size;
     currSeg->size=size;
@@ -41,7 +40,7 @@ void *malloc(uint32_t size){
             newSegment->next=currSeg->next;
             newSegment->size=init_size-sizeof(MemorySegmentHeader_t);
 
-            currSeg->next->previous=newSegment;
+            if(currSeg->next) currSeg->next->previous=newSegment;
             currSeg->next=newSegment;
 
             //Make sure to return the start of the free memory space, not the space containing
@@ -61,7 +60,7 @@ void *malloc(uint32_t size){
     }
 
 
-    //next segment must therefore be free!
+    //next segment must therefore be free
     
     MemorySegmentHeader_t *nextSeg=currSeg->next;
 
@@ -69,6 +68,7 @@ void *malloc(uint32_t size){
     MemorySegmentHeader_t *newNextSeg = (MemorySegmentHeader_t*) (uint32_t)currSeg+ size+sizeof(MemorySegmentHeader_t);
     newNextSeg->size=nextSeg->size + init_size; //Do not need to adjust for sizeof(MSH) as is only moved
     newNextSeg->free=true;
+
     //copy pointers over as these are still valid.
     newNextSeg->next=nextSeg->next;
     newNextSeg->previous=newNextSeg->previous;

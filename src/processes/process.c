@@ -23,7 +23,7 @@ void processes_init(){
     //TODO change pit interrupt handler to PCB_t tick handler from default
     // but currently just tick handler.
     int esp  = get_esp();
-    esp=esp-esp%PGSIZE;
+    esp=esp-(esp%PGSIZE)-PGSIZE;
     init_proc = (PCB_t*)esp;
 
     // if(init_proc!=current_proc()) PANIC("stack in wrong place");
@@ -44,17 +44,19 @@ void processes_init(){
     sleeper_list=list_init();
 
 
-    println(itoa(get_esp(),str,BASE_HEX));
     semaphore init_started;
     sema_init(&init_started,0);
-    PCB_t* tmp=create_proc("idle process",idle,&init_started);
-
+    PCB_t* tmp=create_proc("Idle",idle,&init_started);
 
     int_enable();
+    println(itoa(&init_started,str,BASE_HEX));
+    println(itoa(init_started.waiters,str,BASE_HEX));
     sema_down(&init_started); //when sema_down is called the PCB_t will
     //block and schedule the next PCB_t. This next PCB_t will be
     // the idle PCB_t as the last thing PCB_t_create does is unblocks
     // the PCB_t by changing the state and adding it to the ready queue
+
+
 }
 
 /* allocates a page in kernel space for this PCB_t and sets
@@ -73,13 +75,14 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux){
 
     int int_level = int_disable();
 
-    //context for these next few stack pushes:
-    //on each function call a few things are pushed to the stack
-    //firstly: the address of the line to return to when the ret instruction
-    //is called, this is how nested calls work
-    //secondly: each of the function arguments
-    //thus each stack struct starts with the eip value of the function of which
+    //Context for these next few stack pushes:
+    //On each function call a few things are pushed to the stack.
+    //Firstly: the address of the line to return to when the ret instruction
+    //is called, this is how nested calls work.
+    //Thus each stack struct starts with the eip value of the function of which
     //to 'return' to, but infact it has never been there before. Ha sneaky.
+    //Secondly: each of the function arguments
+    //Finally: Some default values to pretend it has just come from an interrupt
 
     //run stack frame
     runframe* run_stack=(runframe*) push_stack(new,sizeof(runframe));/*sizeof(runframe)=24*/
@@ -114,7 +117,8 @@ void proc_tick(){
     //TODO get PCB_t to do some analytics n shit
     timer_tick();
     // sleep_tick();
-    /* preemption */
+
+    //Preemption
     if(++tick_count >= TIME_SLICE){
         proc_yield();
     }
@@ -123,16 +127,15 @@ void proc_tick(){
 void proc_yield(){
     PCB_t* p = current_proc();
 
-
-    //TODO disable interrupts
     int int_level=int_disable();
     p->status=P_READY;
 
-    //appending to ready PCB_ts if not idle PCB_t
+    //appending to ready processes if not idle process
     if(p!=idle_proc)
         append(ready_procs,p);
 
     schedule();
+
     //renable intterupts to previous level
     int_set(int_level);
 }
@@ -140,12 +143,9 @@ void proc_yield(){
 
 void switch_complete(PCB_t* prev){
     PCB_t* curr = current_proc();
-
     curr->status=P_RUNNING;
     tick_count=0;
-
     //TODO update cr3 if required.
-
     //TODO if PCB_t is dying kill it 
     if(prev->status==P_DYING) proc_kill(prev);
 
@@ -155,7 +155,8 @@ void switch_complete(PCB_t* prev){
 void schedule(){
     PCB_t* curr = current_proc();
     PCB_t* next = get_next_process();
-    PCB_t* prev = 0;
+    PCB_t* prev = curr; //in case of no switch
+
 
     if(int_get_level()) PANIC("SCHEDULING WITH INTERUPTS ENABLED");
     if(curr->status==P_RUNNING) PANIC("Current process is still running...");
@@ -167,10 +168,10 @@ void schedule(){
 
 
     if(curr!=next){
-        println("switching from: ");
-        print(itoa((uint32_t)curr->stack,str,BASE_HEX));
-        print(" to ");
-        print(itoa((uint32_t)next->stack,str,BASE_HEX));
+        // println("switching from: ");
+        // print(itoa((uint32_t)curr,str,BASE_HEX));
+        // print(" to ");
+        // print(itoa((uint32_t)next,str,BASE_HEX));
 
         prev=context_switch(curr,next);
         
@@ -179,7 +180,6 @@ void schedule(){
     //schedule the old proc backinto ready queue
     //and update the new proc details 
     switch_complete(prev);
-
 }
 
 PCB_t* get_next_process(){
@@ -192,7 +192,7 @@ PCB_t* get_next_process(){
     return p;
 }
 
-/* function run by idle PCB_t */
+/* function run by idle process*/
 void idle(semaphore* idle_started){
     idle_proc=current_proc();
     sema_up(idle_started);
@@ -312,10 +312,10 @@ void PCB_t_sleep(PCB_t* t, uint32_t ticks, uint8_t flags){
 void proc_echo(){
     while(1){
         int a=0;
-        for(int i=0;i<100000000;i++) a = a+2;
-        list_dump(ready_procs);
-        println(itoa(current_proc(),str,BASE_HEX));
-        println(itoa(a,str,BASE_DEC));
+        for(int i=0;i<3000000000;i++) a = a+1;
+        // list_dump(ready_procs);
+        println("Curproc:");print(itoa(current_proc(),str,BASE_HEX));
+        println("Completed itteration.");
     }
 }
 
@@ -351,6 +351,7 @@ void* get_esp(){
 /* Returns pointer to current PCB_t */
 PCB_t* current_proc(){
     PCB_t* p= (PCB_t*) get_base_page((uint32_t*)get_esp());
+
     if(p->magic != PROC_MAGIC) PANIC("TRIED TO RETRIEVE NON-THREAD PAGE");
     return p;
 }

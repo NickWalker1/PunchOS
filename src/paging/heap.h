@@ -5,6 +5,9 @@
 #include "../lib/typedefs.h"
 #include "../lib/screen.h"
 
+
+#define HEAP_SIZE 2 /* Number of pages to allocated to each heap */
+
 typedef struct MemorySegmentHeader MemorySegmentHeader_t;
 
 struct MemorySegmentHeader{

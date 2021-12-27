@@ -56,6 +56,8 @@ typedef struct exception_state
     uint32_t eip;
     uint32_t cs;
     uint32_t eflags;
+
+    //These are only present when pushed from usermode (not currently setup)
     uint32_t esp;
     uint32_t ss;
 } exception_state;
