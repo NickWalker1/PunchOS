@@ -1,5 +1,9 @@
-#include "panic.h"
+#include "debug.h"
 
+
+void ASSERT(bool cond, char *msg){
+    if(!cond) PANIC(msg);
+}
 
 /* Displays PANIC screen and writes message */
 void PANIC(char* msg){
@@ -17,6 +21,9 @@ void PANIC(char* msg){
  * Dumps exception state
  */
 void PANIC_EXC(char* msg, exception_state* state){
+    /* Disable interrupts first so cannot be interrupted for robustness */
+    int_disable();
+
     draw_panic_screen();
 
     println("PANIC");
@@ -28,6 +35,7 @@ void PANIC_EXC(char* msg, exception_state* state){
 
     halt();
 }
+
 
 /* Sets entirety of the screen to blue */
 void draw_panic_screen(){

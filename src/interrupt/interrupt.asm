@@ -92,7 +92,9 @@ idt_exc_wrapper:
   call idt_global_exc_wrapper
 
   pop esp
-  add esp, 48
+
+  add esp, 48 ; Skip all values used for CPU state dump
+  
   popa
   
   ; Restore FPU state
@@ -105,6 +107,9 @@ idt_exc_wrapper:
   ; Skip interrupt number and error code
   add esp, 8
   iret
+
+
+
 
 ; Input: interrupt number on stack
 idt_int_wrapper:

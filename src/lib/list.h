@@ -2,7 +2,7 @@
 
 #include "typedefs.h"
 #include "../paging/heap.h"
-#include "../lib/panic.h"
+#include "../lib/debug.h"
 
 typedef struct list list;
 typedef struct list_elem list_elem;

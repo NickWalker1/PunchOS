@@ -3,7 +3,7 @@
 #include "cpu_state.h"
 #include "idt.h"
 
-#include "../lib/panic.h"
+#include "../lib/debug.h"
 
 
 

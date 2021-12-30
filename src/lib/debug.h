@@ -7,6 +7,8 @@
 
 uint32_t helper_variable;
 
+
+void ASSERT(bool cond, char *msg);
 void PANIC(char* msg);
 void PANIC_EXC(char* msg, exception_state* state);
 

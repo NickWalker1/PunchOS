@@ -6,7 +6,7 @@
 
 #include "../lib/typedefs.h"
 #include "../lib/screen.h"
-#include "../lib/panic.h"
+#include "../lib/debug.h"
 
 #define KERN_BASE           0xC0000000
 

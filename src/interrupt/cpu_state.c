@@ -3,10 +3,11 @@
 void exception_state_dump(exception_state *state){
     char str[128];
     println("---CORE DUMP---");
-    println("IDTR:");
-    print(itoa(state->idtr,str,BASE_HEX));
-    println("GDTR:");
-    print(itoa(state->gdtr,str,BASE_HEX));
+    // Itoa not capable of printing 64bit values, and would be unreadable anyway.
+    // println("IDTR:");
+    // print(itoa(state->idtr,str,BASE_HEX));
+    // println("GDTR:");
+    // print(itoa(state->gdtr,str,BASE_HEX));
     println("GS:");
     print(itoa(state->gs,str,BASE_HEX));
     println("FS:");
@@ -51,8 +52,8 @@ void interrupt_state_dump(interrupt_state* state){
     print(itoa(state->cs,str,BASE_HEX));
     println("EFLAGS:");
     print(itoa(state->eflags,str,BASE_BIN));
-    println("ESP:");
-    print(itoa(state->esp,str,BASE_HEX));
-    println("SS:");
-    print(itoa(state->ss,str,BASE_HEX));
+    // println("ESP:");
+    // print(itoa(state->esp,str,BASE_HEX));
+    // println("SS:");
+    // print(itoa(state->ss,str,BASE_HEX));
 }

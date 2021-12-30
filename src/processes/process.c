@@ -14,15 +14,15 @@ static list* sleeper_list;
 
 static int tick_count;
 
-static int num_PCB_ts=0;
+static int num_procs=0;
 
-/* Changes the current running code into the main kernel PCB_t.
-    and creates idle PCB_t.*/
+/* Changes the current running code into the main kernel process.
+    and creates idle process.*/
 void processes_init(){
     int_disable(); //should already be disabled but yeah
     //TODO change pit interrupt handler to PCB_t tick handler from default
     // but currently just tick handler.
-    int esp  = get_esp();
+    int esp  = (int) get_esp();
     esp=esp-(esp%PGSIZE)-PGSIZE;
     init_proc = (PCB_t*)esp;
 
@@ -46,31 +46,31 @@ void processes_init(){
 
     semaphore init_started;
     sema_init(&init_started,0);
-    PCB_t* tmp=create_proc("Idle",idle,&init_started);
+    
+    create_proc("Idle",(proc_func*) idle,&init_started);
 
     int_enable();
-    println(itoa(&init_started,str,BASE_HEX));
-    println(itoa(init_started.waiters,str,BASE_HEX));
-    sema_down(&init_started); //when sema_down is called the PCB_t will
-    //block and schedule the next PCB_t. This next PCB_t will be
-    // the idle PCB_t as the last thing PCB_t_create does is unblocks
-    // the PCB_t by changing the state and adding it to the ready queue
+    sema_down(&init_started); //when sema_down is called the process will
+    //block and schedule the next process. This next process will be
+    // the idle process as the last thing create_proc does is unblock
+    // the process by changing the state and adding it to the ready queue
 
 
 }
 
-/* allocates a page in kernel space for this PCB_t and sets
- * some basic info in PCB_t struct and returns 
+
+/* Allocates a page in kernel space for the PCB and sets
+ * some basic info in PCB_t struct and returns pointer to it.
  */
 PCB_t* create_proc(char* name, proc_func* func, void* aux){
     PCB_t* new= (PCB_t*) palloc_kern(1,F_ASSERT | F_ZERO |F_VERBOSE);
     new->id=create_id();
     new->magic=PROC_MAGIC;
-    // strcpy(new->name,name);  //TODO implement
+    strcpy(new->name,name); 
     new->page_directory=get_pd();
     new->pool=(void*) &K_virt_pool; //TODO UPDATE
     new->priority=1;
-    new->stack=((uint32_t)new)+PGSIZE; /* initialise to top of page */
+    new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
 
     int int_level = int_disable();
@@ -114,7 +114,12 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux){
 
 /* called by PIT interrupt handler */
 void proc_tick(){
-    //TODO get PCB_t to do some analytics n shit
+    //report OK to PIT so it can send the next one.
+    outportb(PIC1_COMMAND, PIC_EOI);
+
+    //TODO get proc to do some analytics n shit
+
+
     timer_tick();
     // sleep_tick();
 
@@ -124,6 +129,8 @@ void proc_tick(){
     }
 }
 
+/* Yeilds current proces by updating status, adding to ready processes
+ * and scheduling a new one */
 void proc_yield(){
     PCB_t* p = current_proc();
 
@@ -140,7 +147,10 @@ void proc_yield(){
     int_set(int_level);
 }
 
-
+/* Final stage of context switch.
+ * Updates current processes status.
+ * Kills previous process if it's dying.
+ */
 void switch_complete(PCB_t* prev){
     PCB_t* curr = current_proc();
     curr->status=P_RUNNING;
@@ -153,10 +163,10 @@ void switch_complete(PCB_t* prev){
 
 /* must be called with interrupts off */
 void schedule(){
+    helper_variable=0;
     PCB_t* curr = current_proc();
     PCB_t* next = get_next_process();
     PCB_t* prev = curr; //in case of no switch
-
 
     if(int_get_level()) PANIC("SCHEDULING WITH INTERUPTS ENABLED");
     if(curr->status==P_RUNNING) PANIC("Current process is still running...");
@@ -168,10 +178,10 @@ void schedule(){
 
 
     if(curr!=next){
-        // println("switching from: ");
-        // print(itoa((uint32_t)curr,str,BASE_HEX));
-        // print(" to ");
-        // print(itoa((uint32_t)next,str,BASE_HEX));
+        println("switching from: ");
+        print(itoa((uint32_t)curr,str,BASE_HEX));
+        print(" to ");
+        print(itoa((uint32_t)next,str,BASE_HEX));
 
         prev=context_switch(curr,next);
         
@@ -180,6 +190,7 @@ void schedule(){
     //schedule the old proc backinto ready queue
     //and update the new proc details 
     switch_complete(prev);
+    helper_variable=1;
 }
 
 PCB_t* get_next_process(){
@@ -201,19 +212,8 @@ void idle(semaphore* idle_started){
         int_disable ();
         proc_block ();
 
-        /* Re-enable interrupts and wait for the next one.
-
-            The `sti' instruction disables interrupts until the
-            completion of the next instruction, so these two
-            instructions are executed atomically.  This atomicity is
-            important; otherwise, an interrupt could be handled
-            between re-enabling interrupts and waiting for the next
-            one to occur, wasting as much as one clock tick worth of
-            time.
-
-            See [IA32-v2a] "HLT", [IA32-v2b] "STI", and [IA32-v3a]
-            7.11.1 "HLT Instruction". */
-        asm volatile ("sti; hlt" : : : "memory");
+        //Re-enable interrupts and wait for the next one 
+        asm volatile ("sti; hlt");
     }
 }
 
@@ -246,13 +246,15 @@ void proc_unblock(PCB_t* p){
 void proc_kill(PCB_t* p){
     println("KILLING PROCESS: ");
     print(itoa(p->id,str,BASE_DEC));
+
     remove(all_procs,p);
     remove(ready_procs,p);
-    //TODO FREE PAGE
+    
 
+    free_virt_page(p,1);
 }
 
-static void run(proc_func* function, void* aux){
+void run(proc_func* function, void* aux){
     if(function==NULL) PANIC("NULL FUNCTION");
     int_enable();
 
@@ -283,7 +285,7 @@ void sleep_tick(){
 }
 */
 /*
-void PCB_t_sleep(PCB_t* t, uint32_t ticks, uint8_t flags){
+void proc_sleep(PCB_t* t, uint32_t ticks, uint8_t flags){
     if(ticks==0) return;
     if(!is_proc(t)) PANIC("ATTEMPTED TO SLEEP NON-THREAD");
 
@@ -310,19 +312,18 @@ void PCB_t_sleep(PCB_t* t, uint32_t ticks, uint8_t flags){
 }
 */
 void proc_echo(){
-    while(1){
+    
         int a=0;
-        for(int i=0;i<3000000000;i++) a = a+1;
+        for(int i=0;i<1000000000;i++) a = a+1;
         // list_dump(ready_procs);
         println("Curproc:");print(itoa(current_proc(),str,BASE_HEX));
         println("Completed itteration.");
-    }
 }
 
 //-----------------------HELPERS--------------------------------
 
 
-static void* push_stack(PCB_t* p, uint32_t size){
+void* push_stack(PCB_t* p, uint32_t size){
     if(!is_proc(p)) PANIC("pushing stack to non-PCB_t");
     p->stack-=size;
     return p->stack;
@@ -358,7 +359,7 @@ PCB_t* current_proc(){
 
 
 p_id create_id(){
-    return ++num_PCB_ts;
+    return ++num_procs;
 }
 
 /* Rounds down address to nearest 4k alligned number */
@@ -370,9 +371,9 @@ uint32_t* get_base_page(uint32_t* addr){
     return (uint32_t*)(base-remainder);
 }
 
-/* Gets the contents of the current PCB_t and prints it */
+/* Gets the contents of the current process and prints it */
 void process_dump(PCB_t* p){
-    if(p==0) PANIC("NO CURRENT THREAD");
+    if(!is_proc(p)) PANIC("Cannot p-dump non-process");
     
 
     println("ID: ");

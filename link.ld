@@ -12,7 +12,7 @@ INPUT
     src/gdt/gdt_flush.o
     src/drivers/low_level.o
     src/lib/int.o
-    src/lib/panic.o
+    src/lib/debug.o
     src/lib/screen.o 
     src/lib/string.o
     src/lib/list.o
@@ -23,7 +23,7 @@ INPUT
     src/paging/paging.o
     src/paging/heap.o
     src/paging/pd_swp.o
-    src/sync/synch.o
+    src/sync/sync.o
     src/processes/process.o
     src/processes/pswap.o
 )

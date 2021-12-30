@@ -148,7 +148,7 @@ void idt_global_int_wrapper(interrupt_state *state){
     *  interrupt controller too */
     outportb(PIC1_COMMAND, PIC_EOI);
     
-    
+
     if(state->interrupt_number==32) proc_tick();
 }
 

@@ -32,7 +32,7 @@ typedef struct registers_state
 /* worth noting that both exception_state and interrupt_state 
  * both include ss and esp at the end and these values
  * will only be filled if the interrupt occurs when in 
- * userspace. Which is determined by where in gdt or something?
+ * userspace. 
  */
 typedef struct exception_state
 {
@@ -72,6 +72,8 @@ typedef struct interrupt_state
     uint32_t eip;
     uint32_t cs;
     uint32_t eflags;
+    
+    //These are only present when pushed from usermode (not currently setup)
     uint32_t esp;
     uint32_t ss;
 } interrupt_state;

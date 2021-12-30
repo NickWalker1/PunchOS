@@ -6,6 +6,7 @@
 #include "../lib/screen.h"
 #include "../lib/int.h"
 #include "../lib/typedefs.h"
+// #include "../processes/process.h"
 
 
 #define IDT_MAX_DESCRIPTORS 256
@@ -15,6 +16,10 @@
 #define PIC2_COMMAND 0xA0
 #define PIC2_DATA 0xA1
 #define PIC_EOI 0x20
+
+
+extern void proc_tick();
+
 
 typedef struct idt_entry
 {
@@ -45,6 +50,8 @@ void idt_set_descriptor(uint8_t vector, uint32_t (*handler)(interrupt_state *sta
 void idt_init(void);
 void idt_global_int_wrapper(interrupt_state *state);
 void idt_global_exc_wrapper(exception_state *state);
+
+//List of stubs genertated in interrupt.asm
 
 //Exceptions
 extern uint32_t idt_exc0();

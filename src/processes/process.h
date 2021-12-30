@@ -11,7 +11,10 @@ typedef struct PCB PCB_t;
 typedef void proc_func(void* aux);
 
 
+//assembly functions
+PCB_t *context_switch(PCB_t *cur, PCB_t *next);
 void first_switch();
+
 
 typedef uint32_t p_id;
 
@@ -29,7 +32,7 @@ typedef enum proc_status
 #include "../lib/list.h"
 #include "../lib/string.h"
 
-#include "../sync/synch.h"
+#include "../sync/sync.h"
 
 #include "../paging/heap.h"
 #include "../paging/paging.h"
@@ -124,10 +127,10 @@ void idle(semaphore* idle_started);
 void proc_block();
 void proc_unblock(PCB_t* p);
 void proc_kill(PCB_t* p);
-static void run(proc_func *function, void *aux);
+void run(proc_func *function, void *aux);
 void proc_echo();
 
-static void *push_stack(PCB_t* p, uint32_t size);
+void *push_stack(PCB_t* p, uint32_t size);
 bool is_proc(PCB_t *p);
 void *get_pd();
 void *get_esp();

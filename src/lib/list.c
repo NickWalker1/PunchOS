@@ -96,13 +96,13 @@ void list_dump(list* l){
     println("[");
 
     if(elem!=NULL){
-        print(itoa(elem->data,str,BASE_HEX));
+        print(itoa((int)elem->data,str,BASE_HEX));
         elem=elem->next;
     }
 
     while(elem!=NULL){
         print(",");
-        print(itoa(elem->data,str,BASE_HEX));
+        print(itoa((int)elem->data,str,BASE_HEX));
         elem=elem->next;
     }
     print("]");

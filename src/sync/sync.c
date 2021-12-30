@@ -1,4 +1,4 @@
-#include "synch.h"
+#include "sync.h"
 
 void sema_init(semaphore* s, uint32_t value){
     if(s==0) PANIC("Semaphore NULL");

@@ -3,14 +3,14 @@ curr_offset equ 20
 next_offset equ 24
 
 global context_switch
-; process *context_switch(process *cur, process *next);
+; PCB_t *context_switch(PCB_t *cur, PCB_t *next);
 ; pushes registers 
 ;
 
 context_switch:
     ; Save old callee-preserved registers
     ; No need to store eax-edx as they are handled 
-    ; by the interrupt trap gate
+    ; by the interrupt  handler
     push  ebp
     push  ebx
     push  esi
