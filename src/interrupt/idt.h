@@ -114,4 +114,6 @@ int int_disable();
 void int_set(int level);
 void irq_remap();
 
+bool in_external_int(); //TODO fix with first switch stuff
+
 void timer_tick();

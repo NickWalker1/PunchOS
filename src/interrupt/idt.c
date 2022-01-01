@@ -1,5 +1,6 @@
 #include "idt.h"
 
+static bool in_ext_int;
 
 __attribute__((aligned(0x10)))
 static idt_entry idt[256];
@@ -81,6 +82,8 @@ void idt_init(){
     //Otherwise pic interrupt will be erronously recorded as a doublefault.
     irq_remap();
 
+    in_ext_int=false;
+
     __asm__ volatile("lidt %0" : : "memory"(idtr)); //load the new IDT
     __asm__ volatile("sti"); //Set interrupt flag
 
@@ -136,6 +139,9 @@ int int_disable(){
 }
 
 void idt_global_int_wrapper(interrupt_state *state){
+
+    in_ext_int=true;
+
     /* If the IDT entry that was invoked was greater than 40
     *  (meaning IRQ8 - 15), then we need to send an EOI to
     *  the slave controller */
@@ -150,6 +156,8 @@ void idt_global_int_wrapper(interrupt_state *state){
     
 
     if(state->interrupt_number==32) proc_tick();
+
+    in_ext_int=false;
 }
 
 void idt_global_exc_wrapper(exception_state *state){
@@ -160,4 +168,9 @@ uint32_t ticks=0;
 void timer_tick(){
     ticks++;
     if(ticks%18==0) println("1 second");
+}
+
+/* Returns true if currently in an external interrupt handler */
+bool in_external_int(){
+    return in_ext_int;
 }

@@ -1,6 +1,7 @@
 #include "debug.h"
 
 
+/* If cond fails, will PANIC with msg */
 void ASSERT(bool cond, char *msg){
     if(!cond) PANIC(msg);
 }
@@ -52,4 +53,9 @@ void draw_panic_screen(){
 /* Used to disable interrupts and halt the system */
 void halt(){
     __asm__ volatile("cli;hlt");
+}
+
+/* Used to create a breakpoint exception */
+void breakpoint(){
+    __asm__ volatile("int $3");
 }

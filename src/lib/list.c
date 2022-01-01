@@ -66,10 +66,12 @@ bool is_empty(list* l){
 }
 
 bool remove(list* l, void* data){
+    helper_variable=1;
     list_elem* elem=l->head;
     while(elem->data!=data && elem->next!=NULL){
         elem=elem->next;
     }
+    helper_variable=2;
     if(elem->data==data){
         if(elem==l->head) {
             l->head=elem->next;
@@ -114,4 +116,8 @@ void* list_get(list* l, uint32_t idx){
     for(uint32_t i=0;i<idx;i++) elem=elem->next;
     
     return elem->data;
+}
+
+int get_size(list *l){
+    return l->size;
 }

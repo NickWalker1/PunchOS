@@ -1,7 +1,7 @@
 #include "sync.h"
 
 void sema_init(semaphore* s, uint32_t value){
-    if(s==0) PANIC("Semaphore NULL");
+    if(s==0) PANIC("Null semaphore in sema_init");
 
     s->value=value;
     s->waiters=list_init();
@@ -15,12 +15,13 @@ void sema_init(semaphore* s, uint32_t value){
 void sema_down(semaphore* s){
     int itr_level;
 
-    if(s==NULL) PANIC("NULL semahore");
+    if(s==NULL) PANIC("NULL semaphore in sema_down");
 
     //to ensure no raceconditions as cannot context switch
     itr_level=int_disable();
     while(s->value==0){
         append(s->waiters,current_proc());
+        println("Proc ");
         proc_block();
     }
     s->value--;
@@ -35,7 +36,7 @@ void sema_down(semaphore* s){
 void sema_up(semaphore* s){
     int itr_level;
 
-    if(s==NULL) PANIC("NULL semaphore");
+    if(s==NULL) PANIC("NULL semaphore in sema_up");
 
     //to ensure no raceconditions as cannot context switch
     itr_level=int_disable();
@@ -63,8 +64,8 @@ void lock_init(lock* l){
  * this function may sleep so cannot 
  * be called within interrupt handler
  */
-void lock_accquire(lock* l){
-    if(l==NULL) PANIC("NULL lock");
+void lock_acquire(lock* l){
+    if(l==NULL) PANIC("NULL lock in acquire");
 
     if(l->holder==current_proc()) PANIC("Lock already held by this thread");
 
@@ -76,7 +77,7 @@ void lock_accquire(lock* l){
  * and sets holder to NULL
  */
 void lock_release(lock* l){
-    if(l==NULL) PANIC("NULL lock");
+    if(l==NULL) PANIC("NULL lock in release");
     if(l->holder!=current_proc()) PANIC("Attempted release of lock not held by current thread");
 
     l->holder=NULL;
@@ -89,16 +90,61 @@ void lock_release(lock* l){
  * condition is met
  */
 void cond_init(condition* cond){
-    if(cond==NULL) PANIC("NULL condition");
+    if(cond==NULL) PANIC("NULL cond in init");
 
     list_init(&cond->waiters);
 }
 
-//TODO Implement cond wait
-/*
-void cond_wait(condition* c, lock* l){}
+/* Releases lock then waits until has been signaled by another process to wake up.
+ * will reaquire lock on wakeup so may block
+ */
+void cond_wait(condition* c, lock* l){
+    if(c==NULL) PANIC("NULL cond in wait");
+    if(l==NULL) PANIC("NULL lock in wait");
+    // ASSERT(!in_external_int(),"In external interrupt");
 
-void cond_signal(condition* c, lock* l){}
+    PCB_t *p = current_proc();
+    ASSERT(l->holder ==p,"Lock not held by current thread in cond wait.");
 
-void cond_broadcast(condition* c, lock* l){}
-*/
+    //Reason using a semaphore here instead of just a pointer to the PCB
+    // because incase the cond is waiting on multiple conditions, we do not
+    // want it to wake up to the wrong one.
+    semaphore s; 
+
+    sema_init(&s,0);
+
+    //Add to list of waiters on the condition
+    append(&(c->waiters),&s);
+
+    //Release lock
+    lock_release(l);
+
+    //Wait for s to become positive when signalled
+    sema_down(&s);
+
+    //require lock and return
+    lock_acquire(l);
+}
+
+/* Signals to wakeup a thread waiting on c
+ * Process must have ownership of lock l */
+void cond_signal(condition* c, lock* l){
+    ASSERT(c!=NULL, "Null cond in signal.");
+    ASSERT(l!=NULL, "Null lock in signal.");
+    // ASSERT(!in_external_int(),"In external interrupt");
+    ASSERT(l->holder==current_proc(),"Lock not held by current thread in signal.");
+
+    //wakeup the first waiter on cond c
+    if(get_size(&c->waiters))
+        sema_up((semaphore*) pop(&c->waiters));
+}
+
+/* Signals all processes waiting on cond c to wakeup */
+void cond_broadcast(condition* c, lock* l){
+    ASSERT(c!=NULL, "Null cond in broadcast");
+    ASSERT(l!=NULL, "Null lock in broadcast");
+
+    while(get_size(&c->waiters)){
+        cond_signal(c,l);
+    }
+}

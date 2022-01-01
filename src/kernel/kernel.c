@@ -12,13 +12,38 @@ int kernel_main(uint32_t magic, uint32_t addr){
 		halt();
 	}
 	print_ok();
+	
+	condition c;
+	cond_init(&c);
 
-	create_proc("A",proc_echo,NULL);
-	create_proc("B",proc_echo,NULL);
+
+	lock l;
+	lock_init(&l);
+
+	cl cl;
+	cl.c=&c;
+	cl.l=&l;
+
+	create_proc("A",proc_test_A,(void*) &cl);
+	
+
+	
+
+	println("Welcome to...");
+	println("");
+	println(" |  __ \\                | |    / __ \\ / ____|");
+	println(" | |__) |   _ _ __   ___| |__ | |  | | (___  ");
+	println(" |  ___/ | | | '_ \\ / __| '_ \\| |  | |\\___ \\ ");
+	println(" | |   | |_| | | | | (__| | | | |__| |____) |");
+	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/|_____/ ");
+	println("");
+                      
+	proc_sleep(5,UNIT_SEC);
 
 	/* Active loop to keep interrupts going. */
-	println("Main loop.");
 	while(1);
+
+
 
 	return 0;
 }

@@ -12,5 +12,7 @@ void ASSERT(bool cond, char *msg);
 void PANIC(char* msg);
 void PANIC_EXC(char* msg, exception_state* state);
 
+void breakpoint();
+
 void draw_panic_screen();
 void halt();

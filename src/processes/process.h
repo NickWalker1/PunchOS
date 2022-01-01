@@ -1,9 +1,10 @@
 #pragma once
 
 
+#include "pcb.h"
+
 #include "../lib/typedefs.h"
 
-typedef struct PCB PCB_t;
 #define PROC_MAGIC 0x12345678
 #define MAX_THREADS 64
 #define TIME_SLICE 4
@@ -16,17 +17,7 @@ PCB_t *context_switch(PCB_t *cur, PCB_t *next);
 void first_switch();
 
 
-typedef uint32_t p_id;
 
-
-typedef enum proc_status
-{
-    P_READY,
-    P_RUNNING,
-    P_BLOCKED,
-    P_ZOMBIE,
-    P_DYING
-} proc_status;
 
 
 #include "../lib/list.h"
@@ -40,57 +31,12 @@ typedef enum proc_status
 extern pool_t K_virt_pool;
 
 
-/* Process Control Block 
-        4 kB +---------------------------------+
-             |          kernel stack           |
-             |                |                |
-             |                |                |
-             |                V                |
-             |         grows downward          |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             +---------------------------------+
-             |              magic              |
-             |                :                |
-             |                :                |
-             |               name              |
-             |              status             |
-             |              stack*             |
-        0 kB +---------------------------------+
 
-*/
-
-
-/* Process Control Block Struct */
-struct  PCB{
-    void *stack; /* DO NOT MOVE */
-
-
-    p_id id;
-    char name[16];
-
-    proc_status status;
-
-    page_directory_entry_t* page_directory;
-    void *pool; //was heap before
-
-    int priority; /* 1 is highest priority, 5 is lowest NOT CURRENTLY USED WITH ROUND ROBIN AND SUBJECT TO CHANGE */
-
-    uint32_t cpu_usage;
-
-    //uint32_t sleep_deadline;
-
-    //Each process has it's own heap, this points to the start of it.
-    MemorySegmentHeader_t *firstSegment;    
-
-    uint32_t magic;
-}__attribute__((packed));
+//TODO remove
+typedef struct cl{
+    condition *c;
+    lock *l;
+} cl;
 
 
 typedef struct runframe
@@ -129,6 +75,8 @@ void proc_unblock(PCB_t* p);
 void proc_kill(PCB_t* p);
 void run(proc_func *function, void *aux);
 void proc_echo();
+void proc_test_A(void *cl);
+void proc_test_B(void *cl);
 
 void *push_stack(PCB_t* p, uint32_t size);
 bool is_proc(PCB_t *p);
@@ -139,3 +87,16 @@ PCB_t* current_proc();
 p_id create_id();
 uint32_t* get_base_page(uint32_t *addr);
 void process_dump(PCB_t *p);
+void ready_dump();
+
+
+#define UNIT_TICK 1<<1
+#define UNIT_SEC 1<<2
+
+typedef struct sleeper{
+    uint32_t tick_remaining;
+    PCB_t *waiting;
+} sleeper;
+
+void sleep_tick();
+void proc_sleep(uint32_t time, uint8_t format);
