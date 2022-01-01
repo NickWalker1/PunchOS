@@ -63,27 +63,27 @@ typedef struct switch_entry_stack{
 }__attribute__((packed, aligned(4))) switch_entry_stack;
 
 void processes_init();
-PCB_t* create_proc(char* name, proc_func* func, void* aux);
+PCB_t *create_proc(char* name, proc_func* func, void* aux);
 void proc_tick();
 void proc_yield();
-void switch_complete(PCB_t* prev);
+void proc_reschedule(PCB_t *p);
+void switch_complete(PCB_t *prev);
 void schedule();
-PCB_t* get_next_process();
-void idle(semaphore* idle_started);
+PCB_t *get_next_process();
+void idle(semaphore *idle_started);
 void proc_block();
-void proc_unblock(PCB_t* p);
+void proc_unblock(PCB_t *p);
 void proc_kill(PCB_t* p);
 void run(proc_func *function, void *aux);
 void proc_echo();
-void proc_test_A(void *cl);
-void proc_test_B(void *cl);
+void proc_test_A();
 
-void *push_stack(PCB_t* p, uint32_t size);
+void *push_stack(PCB_t *p, uint32_t size);
 bool is_proc(PCB_t *p);
 void *get_pd();
 void *get_esp();
 
-PCB_t* current_proc();
+PCB_t *current_proc();
 p_id create_id();
 uint32_t* get_base_page(uint32_t *addr);
 void process_dump(PCB_t *p);

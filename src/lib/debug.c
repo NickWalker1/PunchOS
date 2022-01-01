@@ -50,7 +50,7 @@ void draw_panic_screen(){
     
 }
 
-/* Used to disable interrupts and halt the system */
+/* Used to completely halt the system by disabling interrupts and halting execution */
 void halt(){
     __asm__ volatile("cli;hlt");
 }

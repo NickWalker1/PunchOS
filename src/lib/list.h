@@ -7,6 +7,8 @@
 typedef struct list list;
 typedef struct list_elem list_elem;
 
+extern uint32_t helper_variable;
+
 struct list{
     uint32_t size;
     list_elem* head;

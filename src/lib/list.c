@@ -66,31 +66,29 @@ bool is_empty(list* l){
 }
 
 bool remove(list* l, void* data){
-    helper_variable=1;
     list_elem* elem=l->head;
+    helper_variable=1;
     while(elem->data!=data && elem->next!=NULL){
         elem=elem->next;
     }
-    helper_variable=2;
-    if(elem->data==data){
-        if(elem==l->head) {
-            l->head=elem->next;
+    if(elem->data!=data) return false;
+ 
+    if(elem==l->head) {
+        l->head=elem->next;
+        if(l->head)
             l->head->prev=NULL;
-        }else{
-            elem->prev->next=elem->next;
-        }
-
-        if(elem==l->tail) {
-            l->tail=elem->prev;
-        }else{
-            elem->next->prev=elem->prev;
-        }
-        // free(elem);
-        l->size--;
-        return true;
+ 
+    }else{
+        elem->prev->next=elem->next;
     }
-    return false;
-
+    if(elem==l->tail) {
+        l->tail=elem->prev;
+    }else{
+        elem->next->prev=elem->prev;
+    }
+    // free(elem);
+    l->size--;
+    return true;
 }
 
 void list_dump(list* l){

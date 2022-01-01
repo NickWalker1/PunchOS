@@ -14,8 +14,7 @@ static list* ready_procs;
 static list* sleeper_list;
 
 
-//global var for mutex test TODO remove
-static int global=0;
+
 
 static int total_tick;
 
@@ -139,23 +138,35 @@ void proc_tick(){
     }
 }
 
+/* Reschedules a process by adding it
+ *  to the appropriate queue.
+ * Must be called with interrupts disabled.*/
+void proc_reschedule(PCB_t *p){
+
+    //appending to ready processes if not idle process
+    if(p!=idle_proc)
+        append(ready_procs,p);
+    
+    p->status=P_READY;
+}
+
+
 /* Yeilds current proces by updating status, adding to ready processes
  * and scheduling a new one */
 void proc_yield(){
     PCB_t* p = current_proc();
 
     int int_level=int_disable();
-    p->status=P_READY;
+    
 
-    //appending to ready processes if not idle process
-    if(p!=idle_proc)
-        append(ready_procs,p);
+    proc_reschedule(p);
 
     schedule();
 
     //renable intterupts to previous level
     int_set(int_level);
 }
+
 
 /* Final stage of context switch.
  * Updates current processes status.
@@ -170,6 +181,7 @@ void switch_complete(PCB_t* prev){
     if(prev->status==P_DYING) proc_kill(prev);
 
 }
+
 
 /* must be called with interrupts off */
 void schedule(){
@@ -255,8 +267,7 @@ void proc_unblock(PCB_t* p){
 
     int level=int_disable();
     
-    append(ready_procs,p);
-    p->status=P_READY;
+    proc_reschedule(p);
 
     int_set(level);
 
@@ -301,15 +312,17 @@ void run(proc_func* function, void* aux){
 /* On each tick, decrements process wait counters.
  * If counter now 0, wakeup that process */
 void sleep_tick(){
-    int i;
+    uint32_t i;
     for(i=0;i<sleeper_list->size;i++){
         sleeper* s=list_get(sleeper_list,i);
         s->tick_remaining--;
         if(s->tick_remaining==0){
             int level= int_disable();
+            println("Waking: ");print(s->waiting->name);
+
             remove(sleeper_list,s);
             proc_unblock(s->waiting);
-            println("Waking: ");print(s->waiting->name);
+
             int_set(level);
         }
     }
@@ -337,9 +350,14 @@ void proc_sleep(uint32_t time, uint8_t format){
 
     int level=int_disable();
     append(sleeper_list,s);
+
     proc_block();
+
+    //process now awake
+    //resets interrupt state to before it slept.
     int_set(level);
 }
+
 
 /* Test Function */
 void proc_echo(){
@@ -349,9 +367,10 @@ void proc_echo(){
     }
 }
 
+
 /* Test Function */
-void proc_test_A(void *arg){
-    proc_sleep(5,UNIT_SEC);
+void proc_test_A(){
+    proc_sleep(3,UNIT_SEC);
     while(1){
         println("proc A");
         proc_sleep(1,UNIT_SEC);
@@ -368,10 +387,11 @@ void* push_stack(PCB_t* p, uint32_t size){
     return p->stack;
 }
 
-
-bool is_proc(PCB_t* t){
-    return t->magic==PROC_MAGIC;
+/* Checks if the process is not corrupted by checking magic value */
+bool is_proc(PCB_t* p){
+    return p->magic==PROC_MAGIC;
 }
+
 
 /* Returns address stored in cr3 register */
 void* get_pd(){
@@ -380,6 +400,7 @@ void* get_pd(){
     return (void*) pd;
 }
 
+
 /* Returns current esp value */
 void* get_esp(){
     void* esp;
@@ -387,6 +408,7 @@ void* get_esp(){
     asm("mov %%esp, %0" : "=g" (esp));
     return esp;
 }
+
 
 /* Returns pointer to current PCB_t */
 PCB_t* current_proc(){
@@ -398,6 +420,7 @@ PCB_t* current_proc(){
 
 
 p_id create_id(){
+    //TODO improve
     return ++num_procs;
 }
 
