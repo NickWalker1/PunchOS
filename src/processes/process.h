@@ -17,12 +17,7 @@ PCB_t *context_switch(PCB_t *cur, PCB_t *next);
 void first_switch();
 
 
-#include "../lib/list.h"
-#include "../lib/string.h"
 
-#include "../sync/sync.h"
-
-#include "../paging/heap.h"
 #include "../paging/paging.h"
 
 extern pool_t K_virt_pool;

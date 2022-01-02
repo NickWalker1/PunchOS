@@ -1,9 +1,14 @@
 #include "heap.h"
 
+#include "../lib/screen.h"
+#include "../processes/pcb.h"
+
 /* pointer to the first head of the linked-list */
 MemorySegmentHeader_t *first_segment;
 
 MemorySegmentHeader_t *kernel_first_seg;
+
+lock kernel_heap_lock;
 
 
 /* Initialise shared kernel heap space */
@@ -19,19 +24,25 @@ MemorySegmentHeader_t *intialise_heap(void *base, void *limit){
 
 
 /* Returns pointer to the start of size many bytes in process' dynamic memory space, returns NULL on failure */
-void *malloc(uint32_t size){    
+void *malloc(uint32_t size){
     return alloc(size);
 }
 
 
-/* Returns pointer to the start of size many bytes in shared kernel dynamic memory space, returns NULL on failure */
+/* Returns pointer to the start of size many bytes in shared kernel dynamic memory space, returns NULL on failure.
+ * May block so must not be called inside interrupt handler. */
 void *kalloc(uint32_t size){
     //Wrapper to update segment pointer to shared kernel memory
     first_segment=kernel_first_seg;
+    
+    //Must acquire lock to work with shared memory.
+    lock_acquire(&kernel_heap_lock);
 
     void* addr=alloc(size);
 
     first_segment=current_proc()->first_segment;
+
+    lock_release(&kernel_heap_lock);
 
     return addr;
 }
@@ -70,7 +81,7 @@ void *alloc(uint32_t size){
 
             //Make sure to return the start of the free memory space, not the space containing
             //the header information.
-            return (uint32_t*) ((uint32_t)currSeg+sizeof(MemorySegmentHeader_t));
+            return ++currSeg;
         }
   
 
@@ -81,7 +92,7 @@ void *alloc(uint32_t size){
         
         //Make sure to return the start of the free memory space, not the space containing
         //the header information.
-        return (uint32_t*) ((uint32_t)currSeg+sizeof(MemorySegmentHeader_t));
+        return ++currSeg;
     }
 
 
@@ -106,8 +117,9 @@ void *alloc(uint32_t size){
 
     //Make sure to return the start of the free memory space, not the space containing
     //the header information.
-    return (uint32_t*) ((uint32_t)currSeg+sizeof(MemorySegmentHeader_t));
+    return ++currSeg;
 }
+
 
 /* Free the associated memory segment with addr */
 void free(void* addr){
@@ -162,8 +174,16 @@ void free(void* addr){
 }
 
 
-//used to wipe heap space clean for testing
-//only call once heap initialised.
-void clear_heap(void* base_heap){
-    memset(base_heap,0,0x1000);
+/* Frees memory from shared kernel space.
+ * May block so must not be called inside interrupt handler */ 
+void kfree(void *addr){
+    lock_acquire(&kernel_heap_lock);
+    free(addr);
+    lock_release(&kernel_heap_lock);
+}
+
+
+/* Self explanatory */
+void clear_heap(void* base_heap, int pg_count){
+    memset(base_heap,0,PGSIZE*pg_count);
 }

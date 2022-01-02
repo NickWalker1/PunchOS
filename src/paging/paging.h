@@ -1,13 +1,9 @@
 #pragma once
 
 #include "page.h"
-#include "heap.h"
 
 
 #include "../lib/typedefs.h"
-#include "../lib/screen.h"
-#include "../lib/debug.h"
-#include "../processes/pcb.h"
 
 #define KERN_BASE           0xC0000000
 

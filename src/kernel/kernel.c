@@ -32,8 +32,6 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
 	println("");
                       
-	print_from("My Name is nick",BOTTOM_LEFT);
-	print_to("Still nick",BOTTOM_RIGHT);
 
 	spin(TOP_RIGHT);
 
@@ -80,7 +78,6 @@ bool setup(uint32_t magic, uint32_t addr){
 	print_attempt("Processes init.");
 	processes_init();
 	print_ok();
-
 
 	return true;
 }

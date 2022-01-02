@@ -1,5 +1,13 @@
 #include "process.h"
 
+#include "../lib/list.h"
+#include "../lib/string.h"
+
+#include "../sync/sync.h"
+
+#include "../paging/heap.h"
+#include "../paging/paging.h"
+
 //TODO  proper address space shit between processes
 
 
@@ -30,7 +38,7 @@ MemorySegmentHeader_t *proc_heap_init(){
 /* Changes the current running code into the main kernel process.
     and creates idle process.*/
 void processes_init(){
-    int_disable(); //should already be disabled but yeah
+    int_disable(); //Sanity check
     
     //counts total number of ticks for performance reports
     total_tick=0;
@@ -59,7 +67,9 @@ void processes_init(){
 
     semaphore init_started;
     sema_init(&init_started,0);
-    
+
+    lock_init(&kernel_heap_lock);
+
     create_proc("Idle",(proc_func*) idle,&init_started);
 
     int_enable();
@@ -152,7 +162,7 @@ void proc_reschedule(PCB_t *p){
 
     //appending to ready processes if not idle process
     if(p!=idle_proc)
-        append(ready_procs,p);
+        if(!append(ready_procs,p))PANIC("NICK 1");
     
     p->status=P_READY;
 }
@@ -337,7 +347,6 @@ void sleep_tick(){
 
             remove(sleeper_list,s);
             proc_unblock(s->waiting);
-
             int_set(level);
         }
     }
@@ -367,6 +376,7 @@ void proc_sleep(uint32_t time, uint8_t format){
     }
 
     int level=int_disable();
+
     append(sleeper_list,s);
 
     proc_block();

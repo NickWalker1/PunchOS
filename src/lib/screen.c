@@ -223,8 +223,6 @@ int pop_row(){
     return attempt_stack[stack_idx];
 }
 
-
-
 void test_colours(){
     int colour =0;
     for(int i=0;i<0xf;i++){

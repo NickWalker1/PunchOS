@@ -1,6 +1,11 @@
 #include "list.h"
 
 
+#include "../paging/heap.h"
+#include "../lib/debug.h"
+
+
+
 /* creates a new empty list */
 list* list_init(){
     list* new_list =(list*) malloc(sizeof(list));
@@ -34,17 +39,23 @@ void* pop(list* l){
     return data;
 }
 
-void push(list* l, void* data){
+bool push(list* l, void* data){
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
+    if(!elem) return false;
     elem->data=data;
     elem->next=l->head;
     l->head->prev=elem;
     l->head=elem;
     l->size++;
+
+    return true;
 }
 
-void append(list* l, void* data){
+
+/* Appends data to list. */
+bool append(list* l, void* data){
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
+    if(!elem) return false;
     elem->data=data;
     elem->next=NULL;
     if(is_empty(l)) {
@@ -53,18 +64,22 @@ void append(list* l, void* data){
         elem->prev=NULL;
         elem->next=NULL;
         l->size++;
-        return;
+        return true;
     }
     elem->prev=l->tail;
     l->tail=elem;
     elem->prev->next=elem;
     l->size++;
+    return true;
 }
 
+/* Returns true if the list l is empty */
 bool is_empty(list* l){
     return l->size==0;
 }
 
+/* Removes the element with the given data from the list.
+ * Returns true on if the data was present and removed.*/
 bool remove(list* l, void* data){
     list_elem* elem=l->head;
     helper_variable=1;

@@ -1,17 +1,16 @@
 #pragma once
 
 #include "../lib/typedefs.h"
+
+typedef uint32_t p_id;
+typedef struct PCB PCB_t;
+
 #include "../lib/debug.h"
 #include "../paging/page.h"
 #include "../paging/heap.h"
 
 
-
 #define PROC_MAGIC 0x12345678
-
-
-typedef uint32_t p_id;
-
 
 
 typedef enum proc_status
@@ -51,7 +50,7 @@ typedef enum proc_status
 
 
 /* Process Control Block Struct */
-typedef struct  PCB{
+struct  PCB{
     void *stack; /* DO NOT MOVE */
 
 
@@ -73,7 +72,7 @@ typedef struct  PCB{
     MemorySegmentHeader_t *first_segment;    
 
     uint32_t magic;
-}__attribute__((packed)) PCB_t; 
+}__attribute__((packed)); 
 
 uint32_t* get_base_page(uint32_t *addr);
 void *get_esp();

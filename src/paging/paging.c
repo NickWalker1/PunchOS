@@ -1,5 +1,10 @@
 #include "paging.h"
 
+#include "heap.h"
+
+#include "../lib/screen.h"
+#include "../lib/debug.h"
+#include "../processes/pcb.h"
 
 extern uint32_t helper_variable;
 

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "typedefs.h"
-#include "../paging/heap.h"
-#include "../lib/debug.h"
 
 typedef struct list list;
 typedef struct list_elem list_elem;
@@ -24,9 +22,9 @@ struct list_elem{
 list* list_init();
 list* list_init_with(void* data);
 
-void append(list* l, void* data);
+bool append(list* l, void* data);
 bool remove(list* l, void* data);
-void push(list* l, void* data);
+bool push(list* l, void* data);
 void* pop(list* l);
 int get_size(list* l);
 bool is_empty(list* l);

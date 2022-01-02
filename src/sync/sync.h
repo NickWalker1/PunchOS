@@ -23,7 +23,6 @@ void lock_init(lock* l);
 void lock_acquire(lock* l);
 bool lock_try_acquire(lock* l);
 void lock_release(lock* l);
-bool lock_held_by_current_PCB_t(const lock* l);
 
 typedef struct condition condition;
 
@@ -39,10 +38,10 @@ void cond_broadcast(condition* c, lock* l);
 bool int_context();
 
 
-#include "../processes/process.h"
+#include "../processes/pcb.h"
 
 /* Lock. */
 struct lock {
-    PCB_t *holder;      /* Thread holding lock(for debugging). */
+    PCB_t *holder;      /* Process holding lock(for debugging). */
     semaphore semaphore; /* Binary semaphore controlling access. */
 };

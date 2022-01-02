@@ -1,5 +1,7 @@
 #include "sync.h"
 
+#include "../processes/process.h"
+
 void sema_init(semaphore* s, uint32_t value){
     if(s==0) PANIC("Null semaphore in sema_init");
 
@@ -54,7 +56,7 @@ void sema_up(semaphore* s){
  * and it has a value of 1.
  */
 void lock_init(lock* l){
-    if(l==NULL) PANIC("NULL lock");
+    ASSERT(l!=NULL,"Must allocate lock before init");
 
     l->holder=NULL;
     sema_init(&l->semaphore,1);
