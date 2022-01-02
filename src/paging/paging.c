@@ -5,6 +5,9 @@ extern uint32_t helper_variable;
 
 extern uint32_t _KERNEL_END;
 
+extern MemorySegmentHeader_t *kernel_first_seg;
+extern MemorySegmentHeader_t *first_segment;
+
 /* pointer to Kernel page directory.
  * NOTE IN VIRTUAL ADDRESS SPACE
  * MUST BE CONVERTED TO PHYS ADDR WHEN UPDATING CR3
@@ -15,8 +18,7 @@ page_directory_entry_t *kernel_pd;
 page_directory_entry_t *base_pd;
 
 /* To page pool with only 128 available pages.
- * The actual available memory space is far larger than this.
- * However  */    
+ * The actual available memory space is far larger than this. */
 
 pool_t phys_page_pool;
 
@@ -24,7 +26,6 @@ pool_t phys_page_pool;
  * As each process needs to know which virtual addresses
  * it has already assgigned so to not override them. */
 pool_t K_virt_pool;
-
 
 
 /* Converts physical address to kernel virtual address */
@@ -55,7 +56,7 @@ void paging_init(){
 
     //Initialise physical page pool.
     int i;
-    for(i=0;i<MAX_PHYS_PAGE;i++){
+    for(i=0;i<PG_COUNT;i++){
         phys_page_pool.pages[i].base_addr=(void*)(kernel_end+(i*PGSIZE));
         phys_page_pool.pages[i].type=M_FREE;
     }
@@ -65,7 +66,7 @@ void paging_init(){
     uint32_t addr = 0xb0000000;
     K_virt_pool.first_free_idx=0;
 
-    for(i=0;i<MAX_PHYS_PAGE;i++){
+    for(i=0;i<PG_COUNT;i++){
         K_virt_pool.pages[i].base_addr=(void*)addr;
         K_virt_pool.pages[i].type=M_FREE;
         addr+=0x1000;
@@ -94,13 +95,17 @@ void paging_init(){
     map_page(Kvtop(base_pd),base_pd,F_ASSERT);
 
     //allocate a page by default for kernel heap.
-    // map_page(get_next_free_phys_page(1,F),get_next_free_virt_page(),F_ASSERT,F_KERN);
+
+	void *heap_addr=palloc_kern(8,F_ASSERT);
+	kernel_first_seg = intialise_heap(heap_addr,heap_addr+(HEAP_SIZE*PGSIZE));
+
+    //by default before processes
+    first_segment=kernel_first_seg;
 
     //switch to using kernel_pd rather than temporary setup one.
     update_pd(Kvtop(kernel_pd));
-
-
 }
+
 
 /* Adds pd, pt mappings for a new page given a virtual and physical address
  * Currently only maps in the kernel page directory*/
@@ -141,6 +146,7 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
     }
 }
 
+
 /* Returns the base address of the next n contiguous free physical pages
  * Will PANIC if no more pages are available and F_ASSERT flag present,
  * returns NULL otherwise. */
@@ -165,7 +171,7 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
             //jump to next free page.
             while(pool->pages[idx].type!=M_FREE){
                 idx++;
-                if(idx==MAX_PHYS_PAGE){
+                if(idx==PG_COUNT){
                     if(flags & F_ASSERT)
                         PANIC("INSUFFICIENT PHYSICAL PAGES AVAILABLE");
                     return NULL;
@@ -183,7 +189,7 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
     //update next free pointer.
     idx++;
     while(pool->pages[idx].type!=M_FREE){
-        if(idx==MAX_PHYS_PAGE){
+        if(idx==PG_COUNT){
             pool->first_free_idx=-1;
             return base_addr;
         }
@@ -210,6 +216,7 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
     return base_addr;
 }
 
+
 /* Returns the base address of the next n free contiguous virtual pages 
  * Flag options:
  *  - F_ASSERT will PANIC if not possible
@@ -235,7 +242,7 @@ void *get_next_free_virt_page(size_t n,uint8_t flags){
             i=1;
             while(pool->pages[idx].type!=M_FREE){
                 idx++;
-                if(idx==MAX_PHYS_PAGE){
+                if(idx==PG_COUNT){
                     pool->first_free_idx=-1;
                     if(flags & F_ASSERT)
                         PANIC("INSUFFICIENT VIRTUAL PAGES AVAILABLE");
@@ -251,7 +258,7 @@ void *get_next_free_virt_page(size_t n,uint8_t flags){
     //update next free pointer->
     while(pool->pages[idx].type!=M_FREE){
         idx++;
-        if(idx==MAX_PHYS_PAGE){
+        if(idx==PG_COUNT){
             pool->first_free_idx=-1;
             return base_addr;
         }
@@ -296,7 +303,6 @@ void* unmap_page(void* vaddr,uint8_t flags){
 }
 
 
-
 /* Returns mapped base physical address of vaddr
  * Vaddr must be PGSIZE alligned*/ 
 void *lookup_phys(void* vaddr){
@@ -315,7 +321,6 @@ void *lookup_phys(void* vaddr){
 }
 
 
-
 /* Frees the physical page from the general page pool */
 bool free_phys_page(void* paddr, size_t n){
     if(n<=0) return false;
@@ -326,7 +331,7 @@ bool free_phys_page(void* paddr, size_t n){
 
     //Highly inefficient approach
     int i,j;
-    for(i=0;i<MAX_PHYS_PAGE;i++){
+    for(i=0;i<PG_COUNT;i++){
         if(pool->pages[i].base_addr==paddr){
             //found the page
             pool->pages[i].type=M_FREE;
@@ -344,7 +349,6 @@ bool free_phys_page(void* paddr, size_t n){
 }
 
 
-
 /* Frees the n virtual pages in the process' virtual pool */
 bool free_virt_page(void* vaddr, size_t n){
     if(n==0) return false;
@@ -354,7 +358,7 @@ bool free_virt_page(void* vaddr, size_t n){
     pool_t *pool=&K_virt_pool;
     //Highly inefficient approach
     int i;
-    for(i=0;i<MAX_PHYS_PAGE;i++){
+    for(i=0;i<PG_COUNT;i++){
         if(pool->pages[i].base_addr==vaddr){
             //found the page
             pool->pages[i].type=M_FREE;
@@ -370,6 +374,7 @@ bool free_virt_page(void* vaddr, size_t n){
     }
     return false;
 }
+
 
 /* Given a virtual address this will unmap both the virtual and 
  * physical address from the pools and unamp the virtal address also.
@@ -394,11 +399,12 @@ void *palloc_kern(size_t n, uint8_t flags){
     if(!paddr) return NULL;
 
     for(size_t i=0;i<n;i++){
-        map_page(paddr,Kptov(paddr),0);
+        map_page(paddr+i*PGSIZE,Kptov(paddr+i*PGSIZE),0);
     }
 
     return Kptov(paddr);
 }
+
 
 /* Used by new processes to duplicate the base kernel page directory */
 void *new_pd(){

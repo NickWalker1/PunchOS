@@ -1,20 +1,45 @@
 #include "heap.h"
 
 /* pointer to the first head of the linked-list */
-MemorySegmentHeader_t *firstSegment;
+MemorySegmentHeader_t *first_segment;
+
+MemorySegmentHeader_t *kernel_first_seg;
 
 
-void intialiseHeap(void *base, void *limit){
-    firstSegment=(MemorySegmentHeader_t*) base;
-    firstSegment->free=true;
-    firstSegment->size=limit - base - sizeof(MemorySegmentHeader_t);
-    firstSegment->next=0;
-    firstSegment->previous=0;
+/* Initialise shared kernel heap space */
+MemorySegmentHeader_t *intialise_heap(void *base, void *limit){
+    MemorySegmentHeader_t *s=(MemorySegmentHeader_t*) base;
+    s->free=true;
+    s->size=limit - base - sizeof(MemorySegmentHeader_t);
+    s->next=0;
+    s->previous=0;
+
+    return s;
 }
 
-/* Returns pointer to the start of size many bytes in dynamic memory, returns NULL on failure */
-void *malloc(uint32_t size){
-    MemorySegmentHeader_t *currSeg = firstSegment;
+
+/* Returns pointer to the start of size many bytes in process' dynamic memory space, returns NULL on failure */
+void *malloc(uint32_t size){    
+    return alloc(size);
+}
+
+
+/* Returns pointer to the start of size many bytes in shared kernel dynamic memory space, returns NULL on failure */
+void *kalloc(uint32_t size){
+    //Wrapper to update segment pointer to shared kernel memory
+    first_segment=kernel_first_seg;
+
+    void* addr=alloc(size);
+
+    first_segment=current_proc()->first_segment;
+
+    return addr;
+}
+
+
+/* Should not be called by the programmer. Use malloc or Kalloc instead */
+void *alloc(uint32_t size){
+    MemorySegmentHeader_t *currSeg=first_segment;
 
     //traverse linked list to find one that meets conditions
     //if at end return NULL
@@ -84,7 +109,7 @@ void *malloc(uint32_t size){
     return (uint32_t*) ((uint32_t)currSeg+sizeof(MemorySegmentHeader_t));
 }
 
-
+/* Free the associated memory segment with addr */
 void free(void* addr){
     //Assumption made that addr is base of the free space
     MemorySegmentHeader_t *currSeg = (MemorySegmentHeader_t*) (addr - sizeof(MemorySegmentHeader_t));
@@ -135,6 +160,7 @@ void free(void* addr){
     return;
 
 }
+
 
 //used to wipe heap space clean for testing
 //only call once heap initialised.

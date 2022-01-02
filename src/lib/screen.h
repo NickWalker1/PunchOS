@@ -5,7 +5,11 @@
 #include "string.h"
 #include "typedefs.h"
 
-#define VIDEO_ADDRESS 0xC00b8000
+#define VIDEO_ADDRESS 0xc00b8000
+#define TOP_RIGHT 158
+#define TOP_LEFT 0
+#define BOTTOM_LEFT (0+80*24)*2
+#define BOTTOM_RIGHT (79+80*24)*2
 #define MAX_ROWS 25
 #define MAX_COLS 80
 
@@ -33,7 +37,11 @@ uint16_t get_cursor();
 struct pos get_position(int offset);
 void set_cursor(int offset);
 int handle_scrolling(int offset);
+void print_char(char character, char attribute_type);
 void print_char_loc(char character, int col, int row, char attribute_type);
+void print_to(char *message, int offset);
+void print_from(char *message, int offset);
+void print_char_offset(char character, char attribute_type,int offset);
 void print_at(char* message, int col, int row);
 void print(char* message);
 void println(char* message);

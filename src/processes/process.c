@@ -22,6 +22,11 @@ static int cur_tick_count;
 
 static int num_procs=0;
 
+MemorySegmentHeader_t *proc_heap_init(){
+    void *base = palloc_kern(HEAP_SIZE,F_ASSERT);
+    return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
+}
+
 /* Changes the current running code into the main kernel process.
     and creates idle process.*/
 void processes_init(){
@@ -34,8 +39,6 @@ void processes_init(){
     esp=esp-(esp%PGSIZE)-PGSIZE;
     init_proc = (PCB_t*)esp;
 
-    // if(init_proc!=current_proc()) PANIC("stack in wrong place");
-
 
     init_proc->magic=PROC_MAGIC;
     init_proc->id=create_id();
@@ -45,7 +48,9 @@ void processes_init(){
     init_proc->priority=1;
     init_proc->status=P_RUNNING;
     init_proc->stack=get_esp(); //Goes to top of page and works downwards.
+    init_proc->first_segment=proc_heap_init();
     
+
 
     all_procs=list_init_with(init_proc);
     ready_procs=list_init();
@@ -79,6 +84,7 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux){
     new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
+    new->first_segment=proc_heap_init();
 
     int int_level = int_disable();
 
@@ -127,7 +133,8 @@ void proc_tick(){
     //TODO get proc to do some analytics n shit
 
 
-    timer_tick();
+    // timer_tick(); //Simple 1 second tick counter
+
     sleep_tick();
 
     total_tick++;
@@ -179,6 +186,9 @@ void switch_complete(PCB_t* prev){
     cur_tick_count=0;
 
     //TODO update cr3 if required.
+
+    //update base heap pointer
+    first_segment=curr->first_segment;
 
     if(prev->status==P_DYING) proc_kill(prev);
 
@@ -323,7 +333,7 @@ void sleep_tick(){
         s->tick_remaining--;
         if(s->tick_remaining==0){
             int level= int_disable();
-            println("Waking: ");print(s->waiting->name);
+            // println("Waking: ");print(s->waiting->name);
 
             remove(sleeper_list,s);
             proc_unblock(s->waiting);
@@ -336,7 +346,10 @@ void sleep_tick(){
 
 /* Will sleep the current process.
  * Format var either UNIT_TICK or UNIT_SEC.
- * 18 ticks per second by default. */
+ * 18 ticks per second by default. 
+ * NOTE: When woken up, it will be rescheduled
+ * rather than switched to hence delay not exact.
+ * For exact timings implement proc_alarm instead.*/
 void proc_sleep(uint32_t time, uint8_t format){
     if(time==0) return;
 
@@ -368,7 +381,7 @@ void proc_sleep(uint32_t time, uint8_t format){
 void proc_echo(){
     while(1){
         int a=0;
-        for(int i=0;i<2000000000;i++) a = a+1;
+        for(int i=0;i<1000000000;i++) a = a+1;
     }
 }
 
@@ -392,12 +405,6 @@ void* push_stack(PCB_t* p, uint32_t size){
     return p->stack;
 }
 
-/* Checks if the process is not corrupted by checking magic value */
-bool is_proc(PCB_t* p){
-    return p->magic==PROC_MAGIC;
-}
-
-
 /* Returns address stored in cr3 register */
 void* get_pd(){
     void* pd;
@@ -406,60 +413,11 @@ void* get_pd(){
 }
 
 
-/* Returns current esp value */
-void* get_esp(){
-    void* esp;
-
-    asm("mov %%esp, %0" : "=g" (esp));
-    return esp;
-}
-
-
-/* Returns pointer to current PCB_t */
-PCB_t* current_proc(){
-    PCB_t* p= (PCB_t*) get_base_page((uint32_t*)get_esp());
-
-    if(p->magic != PROC_MAGIC) PANIC("Attempted to retrieve non-process page or process corrupted");
-    return p;
-}
-
-
 p_id create_id(){
     //TODO improve
     return ++num_procs;
 }
 
-/* Rounds down address to nearest 4k alligned number */
-uint32_t* get_base_page(uint32_t* addr){
-    //TODO this is so fucking ugly surely it must be fixable
-    uint32_t remainder = (uint32_t)addr % PGSIZE;
-    uint32_t base = (uint32_t)addr;
-
-    return (uint32_t*)(base-remainder);
-}
-
-/* Gets the contents of the current process and prints it */
-void process_dump(PCB_t* p){
-    if(!is_proc(p)) PANIC("Cannot p-dump non-process");
-    
-
-    println("ID: ");
-    print(itoa(p->id,str,BASE_DEC));
-    println("Name: ");
-    print(p->name);
-    println("Status: ");
-    print(itoa(p->status,str,BASE_DEC));
-    println("Stack: ");
-    print(itoa((uint32_t)p->stack,str,BASE_HEX));
-    println("PD: ");
-    print(itoa((uint32_t)p->page_directory,str,BASE_HEX));
-    println("Pool: ");
-    print(itoa((uint32_t)p->pool,str,BASE_HEX));
-    println("Priority: ");
-    print(itoa(p->priority,str,BASE_HEX));
-    println("Magic: ");
-    print(itoa(p->magic,str,BASE_HEX));
-}
 
 void ready_dump(){
     list_dump(ready_procs);

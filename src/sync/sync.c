@@ -7,6 +7,7 @@ void sema_init(semaphore* s, uint32_t value){
     s->waiters=list_init();
 }
 
+
 /* Waits for semaphore to become positive then automatically
  * decrements it.
  * It may sleep so must not be called within interrupt handler.
@@ -59,6 +60,7 @@ void lock_init(lock* l){
     sema_init(&l->semaphore,1);
 }
 
+
 /* Accquires the lock using sema down
  * this function may sleep so cannot 
  * be called within interrupt handler
@@ -72,6 +74,7 @@ void lock_acquire(lock* l){
     l->holder=current_proc();
 }
 
+
 /* Releases lock using sema_up
  * and sets holder to NULL
  */
@@ -83,6 +86,7 @@ void lock_release(lock* l){
     sema_up(&l->semaphore);
 }
 
+
 /* Initialises condition variable
  * Allows one thread to send signals 
  * to one or all threads to wake up when some 
@@ -93,6 +97,7 @@ void cond_init(condition* cond){
 
     list_init(&cond->waiters);
 }
+
 
 /* Releases lock then waits until has been signaled by another process to wake up.
  * will reaquire lock on wakeup so may block
@@ -125,6 +130,7 @@ void cond_wait(condition* c, lock* l){
     lock_acquire(l);
 }
 
+
 /* Signals to wakeup a thread waiting on c
  * Process must have ownership of lock l */
 void cond_signal(condition* c, lock* l){
@@ -137,6 +143,7 @@ void cond_signal(condition* c, lock* l){
     if(get_size(&c->waiters))
         sema_up((semaphore*) pop(&c->waiters));
 }
+
 
 /* Signals all processes waiting on cond c to wakeup */
 void cond_broadcast(condition* c, lock* l){

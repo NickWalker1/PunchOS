@@ -5,10 +5,13 @@
 #include "../lib/typedefs.h"
 #include "../lib/screen.h"
 
+typedef struct MemorySegmentHeader MemorySegmentHeader_t;
+
+#include "../processes/pcb.h"
+
 
 #define HEAP_SIZE 2 /* Number of pages to allocated to each heap */
 
-typedef struct MemorySegmentHeader MemorySegmentHeader_t;
 
 struct MemorySegmentHeader{
     //implement here
@@ -18,7 +21,9 @@ struct MemorySegmentHeader{
     MemorySegmentHeader_t* previous;
 };
 
-void intialiseHeap(void* base, void* limit);
+MemorySegmentHeader_t *intialise_heap(void* base, void* limit);
 void *malloc(uint32_t size);
+void *kalloc(uint32_t size);
+void  *alloc(uint32_t size);
 void free(void* addr);
 void clear_heap(void* addr);

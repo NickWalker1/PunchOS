@@ -20,7 +20,7 @@
  * an index to the next free one */
 typedef struct pool{
     int first_free_idx;
-    page_entry_t pages[MAX_PHYS_PAGE];
+    page_entry_t pages[PG_COUNT];
 } pool_t;
 
 void *Kvtop(void* virt);

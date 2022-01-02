@@ -24,6 +24,7 @@ INPUT
     src/paging/heap.o
     src/paging/pd_swp.o
     src/sync/sync.o
+    src/processes/pcb.o
     src/processes/process.o
     src/processes/pswap.o
 )

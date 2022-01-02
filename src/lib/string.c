@@ -30,3 +30,12 @@ char *strcpy(char *dest, char *src){
     }
     return dest;
 }
+
+/* Returns the length of the string up to STR_MAX_LEN */
+int strlen(char* str){
+    size_t i=0;
+    while(str[i]!=0 && i<STR_MAX_LEN){
+        i++;
+    }
+    return i;
+}

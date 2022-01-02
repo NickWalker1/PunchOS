@@ -5,19 +5,16 @@
 
 #include "../lib/typedefs.h"
 
-#define PROC_MAGIC 0x12345678
-#define MAX_THREADS 64
+#define MAX_PROCS 64
 #define TIME_SLICE 4
 
 typedef void proc_func(void* aux);
 
+extern MemorySegmentHeader_t *first_segment;
 
 //assembly functions
 PCB_t *context_switch(PCB_t *cur, PCB_t *next);
 void first_switch();
-
-
-
 
 
 #include "../lib/list.h"
@@ -29,14 +26,6 @@ void first_switch();
 #include "../paging/paging.h"
 
 extern pool_t K_virt_pool;
-
-
-
-//TODO remove
-typedef struct cl{
-    condition *c;
-    lock *l;
-} cl;
 
 
 typedef struct runframe
@@ -63,6 +52,7 @@ typedef struct switch_entry_stack{
 }__attribute__((packed, aligned(4))) switch_entry_stack;
 
 void processes_init();
+MemorySegmentHeader_t *proc_heap_init();
 PCB_t *create_proc(char* name, proc_func* func, void* aux);
 void proc_tick();
 void proc_yield();
@@ -79,16 +69,10 @@ void proc_echo();
 void proc_test_A();
 
 void *push_stack(PCB_t *p, uint32_t size);
-bool is_proc(PCB_t *p);
 void *get_pd();
-void *get_esp();
 
-PCB_t *current_proc();
 p_id create_id();
-uint32_t* get_base_page(uint32_t *addr);
-void process_dump(PCB_t *p);
 void ready_dump();
-
 
 #define UNIT_TICK 1<<1
 #define UNIT_SEC 1<<2

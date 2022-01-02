@@ -131,6 +131,28 @@ void print_char_loc(char character, int col, int row, char attribute_type){
     }
 }
 
+/* Calculates length of message, and recalculates offset so to end at given offset */
+void print_to(char* message, int offset){
+    offset= offset-(strlen(message)-1)*2;
+    if(offset<0) offset=0;
+    print_from(message, offset);
+}
+
+/* Prints string to display from the offset */
+void print_from(char* message, int offset){
+    int cursor = get_cursor();
+    set_cursor(offset);
+    print(message);
+    set_cursor(cursor);
+}
+
+/* Writes character to the current cursor position */
+void print_char_offset(char character, char attribute_type, int offset){
+    unsigned char * vidmem = (unsigned char*)VIDEO_ADDRESS;
+    vidmem[offset]=character;
+    vidmem[offset+1]=attribute_type;
+}
+
 /* Inefficient function writing a string to a given location */
 void print_at(char* message, int col, int row){
     set_cursor(get_screen_offset(col,row));
