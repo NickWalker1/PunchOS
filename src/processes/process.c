@@ -40,7 +40,7 @@ void processes_init(){
     init_proc->magic=PROC_MAGIC;
     init_proc->id=create_id();
     strcpy(init_proc->name,"Kernel Main");
-    init_proc->page_directory=(page_directory_entry_t*) get_pd();
+    init_proc->page_directory=get_pd();
     init_proc->pool=(void*) &K_virt_pool;
     init_proc->priority=1;
     init_proc->status=P_RUNNING;
@@ -74,7 +74,7 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux){
     new->id=create_id();
     new->magic=PROC_MAGIC;
     strcpy(new->name,name); 
-    new->page_directory=get_pd();
+    new->page_directory=get_pd(); //TODO update
     new->pool=(void*) &K_virt_pool; //TODO UPDATE
     new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
@@ -175,15 +175,19 @@ void proc_yield(){
 void switch_complete(PCB_t* prev){
     PCB_t* curr = current_proc();
     curr->status=P_RUNNING;
+
     cur_tick_count=0;
+
     //TODO update cr3 if required.
-    //TODO if PCB_t is dying kill it 
+
     if(prev->status==P_DYING) proc_kill(prev);
 
 }
 
 
-/* must be called with interrupts off */
+
+/* Primary context switching function
+ * Must be called with interrupts off */
 void schedule(){
     PCB_t* curr = current_proc();
     PCB_t* next = get_next_process();
@@ -199,13 +203,16 @@ void schedule(){
 
 
     if(curr!=next){
-        println("switching from: ");
-        // print(itoa((uint32_t)curr,str,BASE_HEX));
-        print(curr->name);
-        print(" to ");
-        // print(itoa((uint32_t)next,str,BASE_HEX));
-        print(next->name);
+        if(0){
+            println("switching from: ");
+            // print(itoa((uint32_t)curr,str,BASE_HEX));
+            print(curr->name);
+            print(" to ");
+            // print(itoa((uint32_t)next,str,BASE_HEX));
+            print(next->name);
+        }
 
+        //perform the context switch function from pswap.asm
         prev=context_switch(curr,next);
         
     }
@@ -251,12 +258,8 @@ void proc_block(){
 
     current_proc()->status=P_BLOCKED; 
 
+    //Force an early context switch
     schedule();
-    /* this is fine as when something is scheduled 
-     * it is popped from the ready queue, 
-     * so simply marking it as blocked and scheduling
-     * something else will in effect block the process
-     */
 }
 
 
@@ -285,7 +288,9 @@ void proc_kill(PCB_t* p){
     remove(all_procs,p);
     remove(ready_procs,p);
     
-    //TODO FREE ALL RELATED MEMORY
+    //Free all related memory
+    free_virt_page(Kptov(p->page_directory),1);
+    
 
     free_virt_page(p,1);
 }

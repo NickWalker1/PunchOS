@@ -9,7 +9,10 @@ extern uint32_t _KERNEL_END;
  * NOTE IN VIRTUAL ADDRESS SPACE
  * MUST BE CONVERTED TO PHYS ADDR WHEN UPDATING CR3
  */
-page_directory_entry_t* kernel_pd;
+page_directory_entry_t *kernel_pd;
+
+/* Kernel virtual address of a page from which to copy the base required mappings for new proceses */
+page_directory_entry_t *base_pd;
 
 /* To page pool with only 128 available pages.
  * The actual available memory space is far larger than this.
@@ -70,7 +73,11 @@ void paging_init(){
 
 
     //Create new kernel page directory.
-    kernel_pd=Kptov(get_next_free_phys_page(1,F_ZERO));
+    kernel_pd=Kptov(get_next_free_phys_page(1,F_ZERO | F_ASSERT));
+    
+    //acquire another page for the base pd for new processes.
+    base_pd = Kptov(get_next_free_phys_page(1,F_ASSERT));
+
 
     map_page(Kvtop(kernel_pd),(void*)kernel_pd,F_ASSERT);
 
@@ -81,12 +88,18 @@ void paging_init(){
         map_page((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),F_ASSERT);
     }
 
+    //copy the current kernel_pd into the base_pd
+    memcpy(base_pd,kernel_pd,PGSIZE);
+
+    map_page(Kvtop(base_pd),base_pd,F_ASSERT);
+
     //allocate a page by default for kernel heap.
     // map_page(get_next_free_phys_page(1,F),get_next_free_virt_page(),F_ASSERT,F_KERN);
 
     //switch to using kernel_pd rather than temporary setup one.
     update_pd(Kvtop(kernel_pd));
-    
+
+
 }
 
 /* Adds pd, pt mappings for a new page given a virtual and physical address
@@ -385,4 +398,14 @@ void *palloc_kern(size_t n, uint8_t flags){
     }
 
     return Kptov(paddr);
+}
+
+/* Used by new processes to duplicate the base kernel page directory */
+void *new_pd(){
+    void* pd =get_next_free_phys_page(1,F_ASSERT);
+    //requires janky temporary mapping to write to this new p
+    map_page(pd,Kptov(pd),0);
+    memcpy(pd,base_pd,PGSIZE);
+
+    return pd;
 }

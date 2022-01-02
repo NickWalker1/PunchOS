@@ -86,7 +86,8 @@ bool remove(list* l, void* data){
     }else{
         elem->next->prev=elem->prev;
     }
-    // free(elem);
+    
+    free(elem);
     l->size--;
     return true;
 }

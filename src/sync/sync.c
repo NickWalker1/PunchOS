@@ -21,7 +21,6 @@ void sema_down(semaphore* s){
     itr_level=int_disable();
     while(s->value==0){
         append(s->waiters,current_proc());
-        println("Proc ");
         proc_block();
     }
     s->value--;

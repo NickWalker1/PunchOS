@@ -7,6 +7,7 @@
 #include "../lib/typedefs.h"
 #include "../lib/screen.h"
 #include "../lib/debug.h"
+#include "../processes/pcb.h"
 
 #define KERN_BASE           0xC0000000
 
@@ -37,6 +38,7 @@ bool free_virt_page(void* vaddr,size_t n);
 bool free_phys_page(void* paddr, size_t n);
 bool free_virt_phys_page(void* vaddr);
 void *palloc_kern(size_t n, uint8_t flags);
+void *new_pd();
 
 
 
