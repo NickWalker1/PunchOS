@@ -56,6 +56,7 @@ bool push(list* l, void* data){
 bool append(list* l, void* data){
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
     if(!elem) return false;
+    println("append:");print(itoa(elem,str,BASE_HEX));
     elem->data=data;
     elem->next=NULL;
     if(is_empty(l)) {
@@ -81,6 +82,7 @@ bool is_empty(list* l){
 /* Removes the element with the given data from the list.
  * Returns true on if the data was present and removed.*/
 bool remove(list* l, void* data){
+    // println("remove:");print(itoa(data,str,BASE_HEX));
     list_elem* elem=l->head;
     helper_variable=1;
     while(elem->data!=data && elem->next!=NULL){

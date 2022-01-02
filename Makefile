@@ -31,7 +31,7 @@ GRUB=grub-mkrescue
 
 #Uncomment run when running not at DCS
 run: all
-	$(QEMU) -cdrom os.iso -D ./log.txt -no-reboot -no-shutdown -d cpu_reset
+	$(QEMU) -cdrom os.iso -D ./log.txt -d cpu_reset
 
 os.iso: os.bin
 	cp $< isodir/boot/os.bin

@@ -123,6 +123,9 @@ void *alloc(uint32_t size){
 
 /* Free the associated memory segment with addr */
 void free(void* addr){
+
+    println("free:");print(itoa(addr,str,BASE_HEX));
+
     //Assumption made that addr is base of the free space
     MemorySegmentHeader_t *currSeg = (MemorySegmentHeader_t*) (addr - sizeof(MemorySegmentHeader_t));
     

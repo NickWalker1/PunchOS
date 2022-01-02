@@ -162,7 +162,7 @@ void proc_reschedule(PCB_t *p){
 
     //appending to ready processes if not idle process
     if(p!=idle_proc)
-        if(!append(ready_procs,p))PANIC("NICK 1");
+        append(ready_procs,p);
     
     p->status=P_READY;
 }
@@ -343,10 +343,11 @@ void sleep_tick(){
         s->tick_remaining--;
         if(s->tick_remaining==0){
             int level= int_disable();
-            // println("Waking: ");print(s->waiting->name);
-
             remove(sleeper_list,s);
             proc_unblock(s->waiting);
+
+            free(s);
+            
             int_set(level);
         }
     }

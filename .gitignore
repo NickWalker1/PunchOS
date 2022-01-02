@@ -57,3 +57,4 @@ dkms.conf
 
 .vscode/
 src/graveyard/
+log.txt
