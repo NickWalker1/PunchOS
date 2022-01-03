@@ -5,7 +5,6 @@
 
 #include "../lib/typedefs.h"
 
-#define MAX_PROCS 64
 #define TIME_SLICE 4
 
 typedef void proc_func(void* aux);
@@ -62,11 +61,14 @@ void proc_kill(PCB_t* p);
 void run(proc_func *function, void *aux);
 void proc_echo();
 void proc_test_A();
+void sleep_tick();
+void proc_sleep(uint32_t time, uint8_t format);
 
+void multi_proc_start();
 void *push_stack(PCB_t *p, uint32_t size);
 void *get_pd();
 
-p_id create_id();
+p_id get_new_pid();
 void ready_dump();
 
 #define UNIT_TICK 1<<1
@@ -76,6 +78,3 @@ typedef struct sleeper{
     uint32_t tick_remaining;
     PCB_t *waiting;
 } sleeper;
-
-void sleep_tick();
-void proc_sleep(uint32_t time, uint8_t format);

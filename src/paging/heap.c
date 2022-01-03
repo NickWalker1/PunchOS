@@ -124,8 +124,6 @@ void *alloc(uint32_t size){
 /* Free the associated memory segment with addr */
 void free(void* addr){
 
-    println("free:");print(itoa(addr,str,BASE_HEX));
-
     //Assumption made that addr is base of the free space
     MemorySegmentHeader_t *currSeg = (MemorySegmentHeader_t*) (addr - sizeof(MemorySegmentHeader_t));
     
@@ -183,6 +181,24 @@ void kfree(void *addr){
     lock_acquire(&kernel_heap_lock);
     free(addr);
     lock_release(&kernel_heap_lock);
+}
+
+
+/* Returns integer between 0 and 100 of the percentage heap usage given a start pointer */
+uint32_t heap_usage(MemorySegmentHeader_t *s){
+    uint32_t used,all,size;
+ 
+    used=all=0;
+
+    while(s!=NULL){
+        size=s->size+sizeof(MemorySegmentHeader_t);
+
+        if(!s->free)
+            used+=size;
+        
+        s=s->next;
+    }
+    return used*100/all;
 }
 
 

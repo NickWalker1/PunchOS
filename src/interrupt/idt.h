@@ -20,6 +20,7 @@
 
 extern void proc_tick();
 
+extern bool block_PIT;
 
 typedef struct idt_entry
 {

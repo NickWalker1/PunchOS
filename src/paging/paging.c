@@ -33,6 +33,8 @@ pool_t phys_page_pool;
 pool_t K_virt_pool;
 
 
+void *base_PCB_block;
+
 /* Converts physical address to kernel virtual address */
 void *Kptov(void* phys){
     return (void*) (phys+(uint32_t)KERN_BASE);
@@ -48,6 +50,7 @@ void *Kvtop(void* virt){
  * and the kernel heap.
  */
 void paging_init(){
+    int i;
     //First step to work out where the free pages start from.
     //Must ensure is after kernel end.
 
@@ -57,25 +60,26 @@ void paging_init(){
     //Align to next 4k boundary (4096 = 0x1000)
     kernel_end= (uint32_t)Kvtop((void*)(kernel_end-kernel_end%0x1000 + 0x1000));
 
-    //Must initialise the pools first as they are used by key functions such as map_page.
+
+    void *end_addr =(void*)kernel_end;
+    base_PCB_block=Kptov(end_addr);
+
+    // //The overarching table of process info
+    // perform_map(end_addr,Kptov(end_addr),kernel_pd,F_ASSERT);
+    // end_addr+=PGSIZE;
+
+    end_addr+=MAX_PROCS*PGSIZE;
 
     //Initialise physical page pool.
-    int i;
+    phys_page_pool.first_free_idx=0;
+
     for(i=0;i<PG_COUNT;i++){
-        phys_page_pool.pages[i].base_addr=(void*)(kernel_end+(i*PGSIZE));
+        phys_page_pool.pages[i].base_addr=(void*)(end_addr+(i*PGSIZE));
         phys_page_pool.pages[i].type=M_FREE;
     }
 
-    //Initialise virtual page pool.
-    //Virtual addresses start at 0xb0000000 for logical seperation.
-    uint32_t addr = 0xb0000000;
-    K_virt_pool.first_free_idx=0;
-
-    for(i=0;i<PG_COUNT;i++){
-        K_virt_pool.pages[i].base_addr=(void*)addr;
-        K_virt_pool.pages[i].type=M_FREE;
-        addr+=0x1000;
-    }
+    //Initialise default pool for the first process
+    init_vpool(&K_virt_pool);
 
 
     //Create new kernel page directory.
@@ -84,24 +88,44 @@ void paging_init(){
     //acquire another page for the base pd for new processes.
     base_pd = Kptov(get_next_free_phys_page(1,F_ASSERT));
 
-
-    map_page(Kvtop(kernel_pd),(void*)kernel_pd,F_ASSERT);
+    //Map the kernel and base pd //TODO don't ever use kernel_pd
+    perform_map(Kvtop(kernel_pd),(void*)kernel_pd,kernel_pd ,F_ASSERT);
+    perform_map(Kvtop(base_pd),(void*)base_pd,kernel_pd,F_ASSERT);
 
     //Map kernel code pages.
     int kernel_pages_count = kernel_end/PGSIZE; //Includes all pages beneath kernel also
 
     for(i=0;i<kernel_pages_count;i++){
-        map_page((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),F_ASSERT);
+        perform_map((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),kernel_pd,F_ASSERT);
     }
 
+    //add PCB block mappings to the 64 page space saved earlier.
+    void *addr = base_PCB_block;
+    for(i=0;i<MAX_PROCS;i++){
+        perform_map(Kvtop(addr),addr,kernel_pd,F_ASSERT);
+        addr+=PGSIZE;
+    }
+
+
+    //TODO this is insufficient
     //copy the current kernel_pd into the base_pd
     memcpy(base_pd,kernel_pd,PGSIZE);
 
-    map_page(Kvtop(base_pd),base_pd,F_ASSERT);
+    perform_map(Kvtop(base_pd),base_pd,kernel_pd,F_ASSERT);
 
-    //allocate a page by default for kernel heap.
+    
+    //DO NOT HAVE THIS. ONLY HAVE IN PROC_CREATE THIS BAD TODO TODO
+    //Allocate a page by default for kernel heap.
+    //Must request and allocate manually as cannot use palloc_kern yet due to processes
+    //not being initialised yet.
+	void *heap_addr=Kptov(get_next_free_phys_page(1,F_ASSERT));
+    perform_map(Kvtop(heap_addr),heap_addr,kernel_pd,F_ASSERT);
+    for(i=1;i<8;i++){
+        void* addr=get_next_free_phys_page(1,F_ASSERT);
+        perform_map(addr,Kptov(addr),kernel_pd,F_ASSERT);
+    }
 
-	void *heap_addr=palloc_kern(8,F_ASSERT);
+    //palloc_kern(8,F_ASSERT);
 	kernel_first_seg = intialise_heap(heap_addr,heap_addr+(HEAP_SIZE*PGSIZE));
 
     //by default before processes
@@ -112,9 +136,22 @@ void paging_init(){
 }
 
 
-/* Adds pd, pt mappings for a new page given a virtual and physical address
- * Currently only maps in the kernel page directory*/
-void map_page(void* paddr, void* vaddr, uint8_t flags){
+/* Initialises a virtual pool from 0xb0000000 and sets all pages to free */
+void init_vpool(pool_t *pool){
+    
+    uint32_t addr = 0xb0000000;
+    pool->first_free_idx=0;
+    int i;
+    for(i=0;i<PG_COUNT;i++){
+        pool->pages[i].base_addr=(void*)addr;
+        pool->pages[i].type=M_FREE;
+        addr+=0x1000;
+    }
+}
+
+
+/* Adds pd, pt mappings in the given page directory */
+void perform_map(void *paddr, void *vaddr, page_directory_entry_t* pd, uint8_t flags){
     if((uint32_t)vaddr%PGSIZE || (uint32_t)paddr%4096) PANIC("VADDR NOT 4k ALIGNED"); 
         
     size_t pd_idx, pt_idx;
@@ -123,8 +160,6 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
     pd_idx=pd_no(vaddr);
     pt_idx=pt_no(vaddr);
 
-    //TODO load pd from PCB instead of just using kernel.
-    page_directory_entry_t* pd = kernel_pd;
     //if the page table page does not exist, create one and fill out the entry
     //in the PD.
     helper_variable=0;
@@ -134,9 +169,9 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
         pd[pd_idx].page_table_base_addr=((uint32_t)pt_addr >> PGBITS); //Only most significant 20bits
         pd[pd_idx].present=1;
         pd[pd_idx].read_write=1;
-        map_page(pt_addr,Kptov(pt_addr),0 ); /* so that you can write to this address in kernel address space */
+        perform_map(pt_addr,Kptov(pt_addr),pd,flags); /* so that you can write to this address in kernel address space */
     }
-    pt=(page_table_entry_t*) Kptov((void*)(kernel_pd[pd_idx].page_table_base_addr<<PGBITS)); //Push back to correct address
+    pt=(page_table_entry_t*) Kptov((void*)(pd[pd_idx].page_table_base_addr<<PGBITS)); //Push back to correct address
     pt[pt_idx].page_base_addr=(uint32_t) paddr>>PGBITS; //Only 20 most significant bits
     pt[pt_idx].present=1;
     pt[pt_idx].read_write=1;
@@ -149,6 +184,14 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
         print(":");
         print(itoa((int)vaddr,str,BASE_HEX));
     }
+}
+
+
+/* Adds pd, pt mappings in current process' virtual
+ * address space for a new page given a virtual and physical address 
+ * NOTE: Must not be called before processes initialised. */
+void map_page(void* paddr, void* vaddr, uint8_t flags){
+    perform_map(paddr,vaddr,current_proc()->page_directory,flags);
 }
 
 
@@ -396,9 +439,18 @@ bool free_virt_phys_page(void* vaddr){
     return true;
 }
 
+/* Returns pointer to a free page in the  MAX_PROCS*PGSIZE sized Kernel PCB Block of memory. */
+void *palloc_pcb(int pid){
+    //needs process ID to index the block
+    void *addr=base_PCB_block+(pid-1)*PGSIZE;
+    helper_variable=addr;
+    memset(addr,0,PGSIZE);
+    return addr;
+}
+
 
 /* Returns virtual address pointer to the start of an n-page free
- * address in kernel space */
+ * address in kernel address space */
 void *palloc_kern(size_t n, uint8_t flags){
     void *paddr= get_next_free_phys_page(n,flags);
     if(!paddr) return NULL;

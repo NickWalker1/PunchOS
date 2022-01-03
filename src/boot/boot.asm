@@ -209,8 +209,8 @@ section .text
 higher:
 
     ; Jump to kernel main function in C.     
-    extern kernel_main
-    call kernel_main
+    extern kernel_entry
+    call kernel_entry
 
     ; Incase kernel main ever returns, just loop.
 	cli

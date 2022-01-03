@@ -8,7 +8,7 @@
 #include "../paging/heap.h"
 #include "../paging/paging.h"
 
-//TODO  proper address space shit between processes
+extern void init_main();
 
 
 
@@ -19,10 +19,10 @@ static PCB_t* idle_proc; /* Just spins */
 //Declare some useful data structures 
 static list*   all_procs;
 static list* ready_procs;
-static list* sleeper_list;
+static list* sleeper_procs;
 
-
-
+// True at index i if a process is using pid i.
+static bool PCB_PID_TRACKER[MAX_PROCS];
 
 static int total_tick;
 
@@ -35,45 +35,45 @@ MemorySegmentHeader_t *proc_heap_init(){
     return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
 }
 
-/* Changes the current running code into the main kernel process.
-    and creates idle process.*/
+
+/* Creates new init and idle processes.
+ * This thread of execution will not be returned to on successful context switching. */
 void processes_init(){
     int_disable(); //Sanity check
+    
     
     //counts total number of ticks for performance reports
     total_tick=0;
 
+    /*Create a dummy process so it can be scheduled out of and killed.
+    It must exist long enough to finish the setup process however, then the final section
+    setup is to start multiprocesing. */ 
     int esp  = (int) get_esp();
     esp=esp-(esp%PGSIZE)-PGSIZE;
-    init_proc = (PCB_t*)esp;
+    PCB_t *dummy_proc = (PCB_t*)esp;
+    dummy_proc->dummy=true;
+    dummy_proc->magic=PROC_MAGIC;
+    dummy_proc->id=get_new_pid();
+    dummy_proc->status=P_DYING;
+  
 
-
-    init_proc->magic=PROC_MAGIC;
-    init_proc->id=create_id();
-    strcpy(init_proc->name,"Kernel Main");
-    init_proc->page_directory=get_pd();
-    init_proc->pool=(void*) &K_virt_pool;
-    init_proc->priority=1;
-    init_proc->status=P_RUNNING;
-    init_proc->stack=get_esp(); //Goes to top of page and works downwards.
-    init_proc->first_segment=proc_heap_init();
-    
-
-
-    all_procs=list_init_with(init_proc);
+    all_procs=list_init();
     ready_procs=list_init();
-    sleeper_list=list_init();
+    sleeper_procs=list_init();
 
 
-    semaphore init_started;
-    sema_init(&init_started,0);
+    // semaphore init_started;
+    // sema_init(&init_started,0);
 
     lock_init(&kernel_heap_lock);
 
-    create_proc("Idle",(proc_func*) idle,&init_started);
+
+    idle_proc=create_proc("idle",(proc_func*) idle,NULL);
+    create_proc("init", init_main,NULL); //TODO update with parent pid etc stuff
 
     int_enable();
-    sema_down(&init_started); //when sema_down is called the process will
+
+    // sema_down(&init_started); //when sema_down is called the process will
     //block and schedule the next process. This next process will be
     // the idle process as the last thing create_proc does is unblock
     // the process by changing the state and adding it to the ready queue
@@ -85,8 +85,9 @@ void processes_init(){
  * some basic info in PCB_t struct and returns pointer to it.
  */
 PCB_t* create_proc(char* name, proc_func* func, void* aux){
-    PCB_t* new= (PCB_t*) palloc_kern(1,F_ASSERT | F_ZERO );
-    new->id=create_id();
+    p_id pid = get_new_pid();
+    PCB_t* new= (PCB_t*) palloc_pcb(pid);
+    new->id=pid;
     new->magic=PROC_MAGIC;
     strcpy(new->name,name); 
     new->page_directory=get_pd(); //TODO update
@@ -141,6 +142,9 @@ void proc_tick(){
     outportb(PIC1_COMMAND, PIC_EOI);
 
     //TODO get proc to do some analytics n shit
+    //add to each proc in the ready queue their current latency
+    //when actualy being scheduled add that latency to the total wait
+    //and update average latency using a "num times scheduled count" avg_latency=(avg_latency*n-1 + latency)/n
 
 
     // timer_tick(); //Simple 1 second tick counter
@@ -258,8 +262,8 @@ PCB_t* get_next_process(){
 
 /* function run by idle process*/
 void idle(semaphore* idle_started){
-    idle_proc=current_proc();
-    sema_up(idle_started);
+    // idle_proc=current_proc();
+    // sema_up(idle_started);
     for(;;){
         /* Let someone else run. */
         int_disable ();
@@ -302,13 +306,17 @@ void proc_kill(PCB_t* p){
     ASSERT(p!=current_proc(),"Cannot kill running process.");
 
 
+    if(p->dummy) return;
+
+
     println("KILLING PROCESS: ");
     print(itoa(p->id,str,BASE_DEC));
 
     remove(all_procs,p);
     remove(ready_procs,p);
     
-    //Free all related memory
+    
+    //TODO update free all related memory
     free_virt_page(Kptov(p->page_directory),1);
     
 
@@ -338,12 +346,12 @@ void run(proc_func* function, void* aux){
  * If counter now 0, wakeup that process */
 void sleep_tick(){
     uint32_t i;
-    for(i=0;i<sleeper_list->size;i++){
-        sleeper* s=list_get(sleeper_list,i);
+    for(i=0;i<sleeper_procs->size;i++){
+        sleeper* s=list_get(sleeper_procs,i);
         s->tick_remaining--;
         if(s->tick_remaining==0){
             int level= int_disable();
-            remove(sleeper_list,s);
+            remove(sleeper_procs,s);
             proc_unblock(s->waiting);
 
             free(s);
@@ -378,7 +386,7 @@ void proc_sleep(uint32_t time, uint8_t format){
 
     int level=int_disable();
 
-    append(sleeper_list,s);
+    append(sleeper_procs,s);
 
     proc_block();
 
@@ -416,6 +424,7 @@ void* push_stack(PCB_t* p, uint32_t size){
     return p->stack;
 }
 
+
 /* Returns address stored in cr3 register */
 void* get_pd(){
     void* pd;
@@ -424,11 +433,21 @@ void* get_pd(){
 }
 
 
-p_id create_id(){
-    //TODO improve
-    return ++num_procs;
+/* Returns an unused PID, and sets status to True in PCB_PID_TRACKER.
+ * Returns -1 on failure. */
+p_id get_new_pid(){
+    int i=1;
+    while(PCB_PID_TRACKER[i-1] && i<=MAX_PROCS) i++;
+
+    if(i==MAX_PROCS) return -1;
+
+    return i;
 }
 
+
+void multi_proc_start(){
+    block_PIT=0;
+}
 
 void ready_dump(){
     list_dump(ready_procs);

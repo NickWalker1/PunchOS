@@ -25,4 +25,5 @@ void *kalloc(uint32_t size);
 void  *alloc(uint32_t size);
 void free(void *addr);
 void kfree(void *addr);
+uint32_t heap_usage(MemorySegmentHeader_t *s);
 void clear_heap(void* addr, int pg_count);

@@ -2,8 +2,8 @@
 
 char spinBars[] = {'|','/','-','\\'};
 
-/* Main entry point into the OS */
-int kernel_main(uint32_t magic, uint32_t addr){
+/* Entry point into the OS */
+int kernel_entry(uint32_t magic, uint32_t addr){
 	print("Entering Kernel Code.");
 
 	print_attempt("Boot process");
@@ -14,7 +14,16 @@ int kernel_main(uint32_t magic, uint32_t addr){
 		halt();
 	}
 	print_ok();
-	
+
+
+	/* Wait to be killed :( */
+	while(1);
+}
+
+
+/* Main function run by init process */
+int init_main(){
+
 	//Sleep to display bootscreen.
 	proc_sleep(1,UNIT_SEC);
 
@@ -39,6 +48,7 @@ int kernel_main(uint32_t magic, uint32_t addr){
 	return 0;
 }
 
+
 /* Little function that causes a bar to spin indefinitely...
  * NOTE: Highly inefficient as requires lots of context switches */
 void spin(int offset){
@@ -62,22 +72,31 @@ bool setup(uint32_t magic, uint32_t addr){
 	gdt_init();
 	print_ok();
 
+
 	if(!validate_memory(addr)){
 		println("Memory unable to meet assumptions.");
 		return false;
 	}
 
+
 	print_attempt("IDT init.");
 	idt_init();
 	print_ok();
+
 
 	print_attempt("Paging init.");
 	paging_init();
 	print_ok();
 
+
 	print_attempt("Processes init.");
 	processes_init();
 	print_ok();
+
+
+	/* Final job of setup is to start multiprocesing.
+	Must be final otherwise any other setup jobs may have not finished yet.*/
+	multi_proc_start();
 
 	return true;
 }

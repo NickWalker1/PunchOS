@@ -2,6 +2,8 @@
 
 #include "../lib/typedefs.h"
 
+#define MAX_PROCS 64
+
 typedef uint32_t p_id;
 typedef struct PCB PCB_t;
 
@@ -58,6 +60,8 @@ struct  PCB{
     char name[16];
 
     proc_status status;
+
+    bool dummy; /* Dummy value to know if it was the intial boot process before processing initialised */
 
     page_directory_entry_t* page_directory;
     void *pool; //was heap before

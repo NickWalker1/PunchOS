@@ -2,6 +2,8 @@
 
 static bool in_ext_int;
 
+bool block_PIT=1;
+
 __attribute__((aligned(0x10)))
 static idt_entry idt[256];
 
@@ -155,7 +157,7 @@ void idt_global_int_wrapper(interrupt_state *state){
     outportb(PIC1_COMMAND, PIC_EOI);
     
 
-    if(state->interrupt_number==32) proc_tick();
+    if(state->interrupt_number==32 && !block_PIT) proc_tick();
 
     in_ext_int=false;
 }

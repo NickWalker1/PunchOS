@@ -13,6 +13,8 @@ void PANIC(char* msg){
     println("PANIC");
     println("System Error Occured");
     println(msg);
+    println("helper: ");
+    print(itoa(helper_variable,str,BASE_HEX));
 
     halt();
 }

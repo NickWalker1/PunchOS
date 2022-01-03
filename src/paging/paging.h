@@ -19,21 +19,25 @@ typedef struct pool{
     page_entry_t pages[PG_COUNT];
 } pool_t;
 
+
 void *Kvtop(void* virt);
 void *Kptov(void* phys);
 
 void paging_init();
-void map_page(void* paddr, void* vaddr, uint8_t flags);
-void *unmap_page(void* vaddr,uint8_t flags);
+void init_vpool(pool_t *pool);
+void perform_map(void *paddr, void *vaddr,page_directory_entry_t *pd, uint8_t flags);
+void map_page(void *paddr, void *vaddr, uint8_t flags);
+void *unmap_page(void *vaddr,uint8_t flags);
 void setup_page_pool();
 void setup_kernel_heap();
 void *get_next_free_phys_page(size_t n, uint8_t flags);
 void *get_next_free_virt_page(size_t n, uint8_t flags);
-void *lookup_phys(void* vaddr);
-bool free_virt_page(void* vaddr,size_t n);
-bool free_phys_page(void* paddr, size_t n);
-bool free_virt_phys_page(void* vaddr);
+void *lookup_phys(void *vaddr);
+bool free_virt_page(void *vaddr,size_t n);
+bool free_phys_page(void *paddr, size_t n);
+bool free_virt_phys_page(void *vaddr);
 void *palloc_kern(size_t n, uint8_t flags);
+void *palloc_pcb(int pid);
 void *new_pd();
 
 
