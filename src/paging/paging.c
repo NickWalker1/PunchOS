@@ -106,7 +106,6 @@ void paging_init(){
         addr+=PGSIZE;
     }
 
-
     //TODO this is insufficient
     //copy the current kernel_pd into the base_pd
     memcpy(base_pd,kernel_pd,PGSIZE);
@@ -162,10 +161,8 @@ void perform_map(void *paddr, void *vaddr, page_directory_entry_t* pd, uint8_t f
 
     //if the page table page does not exist, create one and fill out the entry
     //in the PD.
-    helper_variable=0;
     if(pd[pd_idx].present==0){
         void* pt_addr = get_next_free_phys_page(1,F_ASSERT); //TODO fix bug to readd F_ZERO
-
         pd[pd_idx].page_table_base_addr=((uint32_t)pt_addr >> PGBITS); //Only most significant 20bits
         pd[pd_idx].present=1;
         pd[pd_idx].read_write=1;
@@ -205,7 +202,6 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
             PANIC("NO PHYS PAGES AVAILABLE");
         return NULL;
     }
-    
     void* base_addr= pool->pages[pool->first_free_idx].base_addr;
     //pool.pages[pool.first_free_idx].type=M_ALLOCATED;
     int idx=pool->first_free_idx;
@@ -443,7 +439,6 @@ bool free_virt_phys_page(void* vaddr){
 void *palloc_pcb(int pid){
     //needs process ID to index the block
     void *addr=base_PCB_block+(pid-1)*PGSIZE;
-    helper_variable=addr;
     memset(addr,0,PGSIZE);
     return addr;
 }
@@ -451,12 +446,13 @@ void *palloc_pcb(int pid){
 
 /* Returns virtual address pointer to the start of an n-page free
  * address in kernel address space */
-void *palloc_kern(size_t n, uint8_t flags){
+void *palloc_kern(size_t n, page_directory_entry_t *pd, uint8_t flags){
     void *paddr= get_next_free_phys_page(n,flags);
     if(!paddr) return NULL;
 
+    //TODO surely should use processes own vpool???
     for(size_t i=0;i<n;i++){
-        map_page(paddr+i*PGSIZE,Kptov(paddr+i*PGSIZE),0);
+        perform_map(paddr+i*PGSIZE,Kptov(paddr+i*PGSIZE),pd,F_ASSERT);
     }
 
     return Kptov(paddr);

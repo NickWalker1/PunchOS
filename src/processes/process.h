@@ -54,7 +54,7 @@ void proc_reschedule(PCB_t *p);
 void switch_complete(PCB_t *prev);
 void schedule();
 PCB_t *get_next_process();
-void idle(semaphore *idle_started);
+void idle();
 void proc_block();
 void proc_unblock(PCB_t *p);
 void proc_kill(PCB_t* p);

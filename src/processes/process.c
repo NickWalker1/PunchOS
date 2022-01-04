@@ -8,7 +8,7 @@
 #include "../paging/heap.h"
 #include "../paging/paging.h"
 
-extern void init_main();
+extern void main();
 
 
 
@@ -21,7 +21,7 @@ static list*   all_procs;
 static list* ready_procs;
 static list* sleeper_procs;
 
-// True at index i if a process is using pid i.
+// True at index i-1 if a process is using pid i.
 static bool PCB_PID_TRACKER[MAX_PROCS];
 
 static int total_tick;
@@ -30,10 +30,22 @@ static int cur_tick_count;
 
 static int num_procs=0;
 
-MemorySegmentHeader_t *proc_heap_init(){
-    void *base = palloc_kern(HEAP_SIZE,F_ASSERT);
-    return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
+
+/* Begins mutliprocessing. THIS FUNCTION SHOULD NEVER RETURN */
+void multi_proc_start(){
+    ASSERT(is_proc(idle_proc),"idle process not created on multiproc start");
+    ASSERT(!is_empty(ready_procs),"ready queue empty on mutliproc start");
+
+    //Allow PIT interrupts
+    block_PIT=0;
+
+    int_disable();
+    
+    //Switch to init process
+    schedule();
 }
+
+
 
 
 /* Creates new init and idle processes.
@@ -53,7 +65,7 @@ void processes_init(){
     PCB_t *dummy_proc = (PCB_t*)esp;
     dummy_proc->dummy=true;
     dummy_proc->magic=PROC_MAGIC;
-    dummy_proc->id=get_new_pid();
+    dummy_proc->pid=get_new_pid();
     dummy_proc->status=P_DYING;
   
 
@@ -68,8 +80,9 @@ void processes_init(){
     lock_init(&kernel_heap_lock);
 
 
-    idle_proc=create_proc("idle",(proc_func*) idle,NULL);
-    create_proc("init", init_main,NULL); //TODO update with parent pid etc stuff
+    idle_proc=create_proc("idle",idle,NULL);
+    create_proc("init", main,NULL); //TODO update with parent pid etc stuff
+
 
     int_enable();
 
@@ -79,15 +92,17 @@ void processes_init(){
     // the process by changing the state and adding it to the ready queue
 }
 
-
-
 /* Allocates a page in kernel space for the PCB and sets
  * some basic info in PCB_t struct and returns pointer to it.
  */
-PCB_t* create_proc(char* name, proc_func* func, void* aux){
+PCB_t* create_proc(char* name, proc_func* func, void* aux){ //TODO update for flags
+    int int_level = int_disable();
+
     p_id pid = get_new_pid();
-    PCB_t* new= (PCB_t*) palloc_pcb(pid);
-    new->id=pid;
+    if(pid==-1) return NULL;
+    PCB_t *new= (PCB_t*) palloc_pcb(pid);
+    if(!new) return NULL;
+    new->pid=pid;
     new->magic=PROC_MAGIC;
     strcpy(new->name,name); 
     new->page_directory=get_pd(); //TODO update
@@ -95,9 +110,8 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux){
     new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
-    new->first_segment=proc_heap_init();
+    new->first_segment=proc_heap_init(Kptov(new->page_directory));
 
-    int int_level = int_disable();
 
     //Context for these next few stack pushes:
     //On each function call a few things are pushed to the stack.
@@ -125,16 +139,25 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux){
     context_stack->ebp = 0;
 
     
+    /* Add to all procs list */
+    append(all_procs,new);
+
+
     int_set(int_level);
 
-    //Add to all PCB_ts list
-    append(all_procs,new);
 
     /* add to ready queue */
     proc_unblock(new);
 
     return new;
 }
+
+/* Initialses the processes inidivual heap space */
+MemorySegmentHeader_t *proc_heap_init(page_directory_entry_t *pd){
+    void *base = palloc_kern(HEAP_SIZE,pd,F_ASSERT);
+    return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
+}
+
 
 /* called by PIT interrupt handler */
 void proc_tick(){
@@ -205,7 +228,6 @@ void switch_complete(PCB_t* prev){
     first_segment=curr->first_segment;
 
     if(prev->status==P_DYING) proc_kill(prev);
-
 }
 
 
@@ -216,14 +238,13 @@ void schedule(){
     PCB_t* curr = current_proc();
     PCB_t* next = get_next_process();
     PCB_t* prev = curr; //in case of no switch
-
     if(int_get_level()) PANIC("SCHEDULING WITH INTERUPTS ENABLED");
     if(curr->status==P_RUNNING) PANIC("Current process is still running...");
 
     // println("curr:");
-    // print(itoa(curr->id,str,BASE_DEC));
+    // print(itoa(curr->pid,str,BASE_DEC));
     // print(" next: ");
-    // print(itoa(next->id,str,BASE_DEC));
+    // print(itoa(next->pid,str,BASE_DEC));
 
 
     if(curr!=next){
@@ -244,6 +265,7 @@ void schedule(){
     //schedule the old proc backinto ready queue
     //and update the new proc details 
     switch_complete(prev);
+
 }
 
 
@@ -261,7 +283,7 @@ PCB_t* get_next_process(){
 
 
 /* function run by idle process*/
-void idle(semaphore* idle_started){
+void idle(){
     // idle_proc=current_proc();
     // sema_up(idle_started);
     for(;;){
@@ -305,16 +327,20 @@ void proc_kill(PCB_t* p){
     ASSERT(is_proc(p),"Cannot kill non-process");
     ASSERT(p!=current_proc(),"Cannot kill running process.");
 
-
-    if(p->dummy) return;
+    if(p->dummy) return; //Nothing to do if dummy
 
 
     println("KILLING PROCESS: ");
-    print(itoa(p->id,str,BASE_DEC));
+    print(itoa(p->pid,str,BASE_DEC));
+    
+    //TODO FIX THIS
+    return;
 
     remove(all_procs,p);
     remove(ready_procs,p);
-    
+
+
+    //TODO Free PID 
     
     //TODO update free all related memory
     free_virt_page(Kptov(p->page_directory),1);
@@ -441,13 +467,10 @@ p_id get_new_pid(){
 
     if(i==MAX_PROCS) return -1;
 
+    PCB_PID_TRACKER[i-1]=true;
     return i;
 }
 
-
-void multi_proc_start(){
-    block_PIT=0;
-}
 
 void ready_dump(){
     list_dump(ready_procs);

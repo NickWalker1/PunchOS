@@ -3,7 +3,7 @@
 char spinBars[] = {'|','/','-','\\'};
 
 /* Entry point into the OS */
-int kernel_entry(uint32_t magic, uint32_t addr){
+void kernel_entry(uint32_t magic, uint32_t addr){
 	print("Entering Kernel Code.");
 
 	print_attempt("Boot process");
@@ -15,14 +15,16 @@ int kernel_entry(uint32_t magic, uint32_t addr){
 	}
 	print_ok();
 
+	/* Final job of setup is to start multiprocesing.
+	Must be final as this function will not return */
+	multi_proc_start();
 
-	/* Wait to be killed :( */
-	while(1);
+
 }
 
 
 /* Main function run by init process */
-int init_main(){
+void main(){
 
 	//Sleep to display bootscreen.
 	proc_sleep(1,UNIT_SEC);
@@ -44,8 +46,6 @@ int init_main(){
 
 	spin(TOP_RIGHT);
 
-
-	return 0;
 }
 
 
@@ -94,9 +94,6 @@ bool setup(uint32_t magic, uint32_t addr){
 	print_ok();
 
 
-	/* Final job of setup is to start multiprocesing.
-	Must be final otherwise any other setup jobs may have not finished yet.*/
-	multi_proc_start();
 
 	return true;
 }

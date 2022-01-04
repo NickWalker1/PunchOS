@@ -36,7 +36,7 @@ void *lookup_phys(void *vaddr);
 bool free_virt_page(void *vaddr,size_t n);
 bool free_phys_page(void *paddr, size_t n);
 bool free_virt_phys_page(void *vaddr);
-void *palloc_kern(size_t n, uint8_t flags);
+void *palloc_kern(size_t n,page_directory_entry_t *pd, uint8_t flags);
 void *palloc_pcb(int pid);
 void *new_pd();
 

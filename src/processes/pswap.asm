@@ -2,11 +2,9 @@
 curr_offset equ 20
 next_offset equ 24
 
+
 global context_switch
 ; PCB_t *context_switch(PCB_t *cur, PCB_t *next);
-; pushes registers 
-;
-
 context_switch:
     ; Save old callee-preserved registers
     ; No need to store eax-edx as they are handled 
@@ -57,8 +55,3 @@ first_switch:
     ret
 
 
-
-; void esp_move(void* new_addr);
-global esp_move
-esp_move:
-    

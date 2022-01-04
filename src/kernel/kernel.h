@@ -11,8 +11,8 @@
 #include "../processes/process.h"
 
 
-int kernel_entry(uint32_t, uint32_t addr);
-int init_main();
+void kernel_entry(uint32_t, uint32_t addr);
+void main();
 bool setup(uint32_t magic, uint32_t addr);
 bool validate_memory(uint32_t addr);
 void test_func();

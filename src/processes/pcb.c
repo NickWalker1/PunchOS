@@ -41,7 +41,7 @@ void process_dump(PCB_t* p){
     
 
     println("ID: ");
-    print(itoa(p->id,str,BASE_DEC));
+    print(itoa(p->pid,str,BASE_DEC));
     println("Name: ");
     print(p->name);
     println("Status: ");
