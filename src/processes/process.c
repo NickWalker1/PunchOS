@@ -12,9 +12,8 @@ extern void main();
 
 
 
-//setup data stuff
-static PCB_t* init_proc; /* Main kernel and initial PCB_t stored at K_THREAD_BASE */
 static PCB_t* idle_proc; /* Just spins */
+
 
 //Declare some useful data structures 
 static list*   all_procs;
@@ -27,8 +26,6 @@ static bool PCB_PID_TRACKER[MAX_PROCS];
 static int total_tick;
 
 static int cur_tick_count;
-
-static int num_procs=0;
 
 
 /* Begins mutliprocessing. THIS FUNCTION SHOULD NEVER RETURN */
@@ -65,7 +62,7 @@ void processes_init(){
     PCB_t *dummy_proc = (PCB_t*)esp;
     dummy_proc->dummy=true;
     dummy_proc->magic=PROC_MAGIC;
-    dummy_proc->pid=get_new_pid();
+    dummy_proc->pid=get_new_pid(); //TODO check this??
     dummy_proc->status=P_DYING;
   
 
@@ -77,12 +74,11 @@ void processes_init(){
     // semaphore init_started;
     // sema_init(&init_started,0);
 
-    lock_init(&kernel_heap_lock);
+    lock_init(&shared_heap_lock);
 
 
-    idle_proc=create_proc("idle",idle,NULL);
-    create_proc("init", main,NULL); //TODO update with parent pid etc stuff
-
+    idle_proc=create_proc("idle",idle,NULL,PC_IDLE);
+    create_proc("init", main,NULL, PC_INIT); 
 
     int_enable();
 
@@ -95,32 +91,59 @@ void processes_init(){
 /* Allocates a page in kernel space for the PCB and sets
  * some basic info in PCB_t struct and returns pointer to it.
  */
-PCB_t* create_proc(char* name, proc_func* func, void* aux){ //TODO update for flags
+PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     int int_level = int_disable();
 
     p_id pid = get_new_pid();
     if(pid==-1) return NULL;
     PCB_t *new= (PCB_t*) palloc_pcb(pid);
     if(!new) return NULL;
+
+    /* Update pid and ppid */
     new->pid=pid;
+    if(flags & PC_INIT){
+        new->ppid=0;
+    }
+    else{
+        if(flags & PC_IDLE){
+            new->ppid=1; //Set to init proc
+        }
+        else{
+            new->ppid=current_proc()->pid;
+        }
+    }
+
     new->magic=PROC_MAGIC;
+    
     strcpy(new->name,name); 
-    new->page_directory=get_pd(); //TODO update
-    new->pool=(void*) &K_virt_pool; //TODO UPDATE
+    
+    new->page_directory=Kptov(get_pd()); //TODO update
+    
+    new->virt_pool=(void*) &K_virt_pool; //TODO UPDATE
+
+
+    /* Default setup values */
     new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
-    new->first_segment=proc_heap_init(Kptov(new->page_directory));
+
+    /* Don't need to give it a heap if it's the idle thread */
+    // if(!(flags&PC_IDLE))
+        new->first_segment=proc_heap_init(new->page_directory);
 
 
-    //Context for these next few stack pushes:
-    //On each function call a few things are pushed to the stack.
-    //Firstly: the address of the line to return to when the ret instruction
-    //is called, this is how nested calls work.
-    //Thus each stack struct starts with the eip value of the function of which
-    //to 'return' to, but infact it has never been there before. Ha sneaky.
-    //Secondly: each of the function arguments
-    //Finally: Some default values to pretend it has just come from an interrupt
+    /*
+
+        Context for these next few stack pushes:
+    On each function call a few things are pushed to the stack.
+    Firstly: the address of the line to return to when the ret instruction
+    is called, this is how nested calls work.
+    Thus each stack struct starts with the eip value of the function of which
+    to 'return' to, but infact it has never been there before. Ha sneaky.
+    Secondly: each of the function arguments
+    Finally: Some default values to pretend it has just come from an interrupt
+
+    */
 
     //run stack frame
     runframe* run_stack=(runframe*) push_stack(new,sizeof(runframe));/*sizeof(runframe)=24*/
@@ -186,7 +209,6 @@ void proc_tick(){
  *  to the appropriate queue.
  * Must be called with interrupts disabled.*/
 void proc_reschedule(PCB_t *p){
-
     //appending to ready processes if not idle process
     if(p!=idle_proc)
         append(ready_procs,p);
@@ -311,11 +333,11 @@ void proc_block(){
 
 /* Unblocks the current process and adds it to the ready queue. */
 void proc_unblock(PCB_t* p){
+    helper_variable=0;
     if(!is_proc(p)) PANIC("NOT THREAD");
     if(p->status!=P_BLOCKED) PANIC("UNBLOCKING NON-BLOCKED Thread");
 
     int level=int_disable();
-    
     proc_reschedule(p);
 
     int_set(level);
@@ -327,7 +349,7 @@ void proc_kill(PCB_t* p){
     ASSERT(is_proc(p),"Cannot kill non-process");
     ASSERT(p!=current_proc(),"Cannot kill running process.");
 
-    if(p->dummy) return; //Nothing to do if dummy
+    if(p->dummy) return; /* Nothing to do if dummy process */
 
 
     println("KILLING PROCESS: ");
@@ -343,7 +365,7 @@ void proc_kill(PCB_t* p){
     //TODO Free PID 
     
     //TODO update free all related memory
-    free_virt_page(Kptov(p->page_directory),1);
+    free_virt_page(p->page_directory,1);
     
 
     free_virt_page(p,1);
@@ -403,7 +425,7 @@ void proc_sleep(uint32_t time, uint8_t format){
     if(format&UNIT_TICK){
         s->tick_remaining=time;
     }
-    if(format&UNIT_SEC){
+    else if(format&UNIT_SEC){
         s->tick_remaining=time*18; //TODO do proper checks for bit overflow
     }
     else{//default to tick

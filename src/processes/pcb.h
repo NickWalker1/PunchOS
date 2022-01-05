@@ -64,8 +64,8 @@ struct  PCB{
 
     bool dummy; /* Dummy value to know if it was the intial boot process before processing initialised */
 
-    page_directory_entry_t* page_directory; /* NOTE: is physical address not virtual */
-    void *pool; //was heap before
+    page_directory_entry_t* page_directory; /* NOTE: is virtual address not physical */
+    void *virt_pool; //was heap before
 
     int priority; /* 1 is highest priority, 5 is lowest NOT CURRENTLY USED WITH ROUND ROBIN AND SUBJECT TO CHANGE */
 

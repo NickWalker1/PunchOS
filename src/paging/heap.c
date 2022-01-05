@@ -6,9 +6,9 @@
 /* pointer to the first head of the linked-list */
 MemorySegmentHeader_t *first_segment;
 
-MemorySegmentHeader_t *kernel_first_seg;
+MemorySegmentHeader_t *shared_first_seg;
 
-lock kernel_heap_lock;
+lock shared_heap_lock;
 
 
 /* Initialise shared kernel heap space */
@@ -31,18 +31,19 @@ void *malloc(uint32_t size){
 
 /* Returns pointer to the start of size many bytes in shared kernel dynamic memory space, returns NULL on failure.
  * May block so must not be called inside interrupt handler. */
-void *kalloc(uint32_t size){
-    //Wrapper to update segment pointer to shared kernel memory
-    first_segment=kernel_first_seg;
-    
+void *shr_malloc(uint32_t size){
     //Must acquire lock to work with shared memory.
-    lock_acquire(&kernel_heap_lock);
+    lock_acquire(&shared_heap_lock);
+
+    //Wrapper to update segment pointer to shared kernel memory
+    first_segment=shared_first_seg;
+    
 
     void* addr=alloc(size);
 
     first_segment=current_proc()->first_segment;
 
-    lock_release(&kernel_heap_lock);
+    lock_release(&shared_heap_lock);
 
     return addr;
 }
@@ -177,10 +178,10 @@ void free(void* addr){
 
 /* Frees memory from shared kernel space.
  * May block so must not be called inside interrupt handler */ 
-void kfree(void *addr){
-    lock_acquire(&kernel_heap_lock);
+void shr_free(void *addr){
+    lock_acquire(&shared_heap_lock);
     free(addr);
-    lock_release(&kernel_heap_lock);
+    lock_release(&shared_heap_lock);
 }
 
 

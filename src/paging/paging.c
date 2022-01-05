@@ -10,14 +10,14 @@ extern uint32_t helper_variable;
 
 extern uint32_t _KERNEL_END;
 
-extern MemorySegmentHeader_t *kernel_first_seg;
+extern MemorySegmentHeader_t *shared_first_seg;
 extern MemorySegmentHeader_t *first_segment;
 
 /* pointer to Kernel page directory.
  * NOTE IN VIRTUAL ADDRESS SPACE
  * MUST BE CONVERTED TO PHYS ADDR WHEN UPDATING CR3
  */
-page_directory_entry_t *kernel_pd;
+// page_directory_entry_t *kernel_pd;
 
 /* Kernel virtual address of a page from which to copy the base required mappings for new proceses */
 page_directory_entry_t *base_pd;
@@ -83,55 +83,48 @@ void paging_init(){
 
 
     //Create new kernel page directory.
-    kernel_pd=Kptov(get_next_free_phys_page(1,F_ZERO | F_ASSERT));
+    // kernel_pd=Kptov(get_next_free_phys_page(1,F_ZERO | F_ASSERT));
     
     //acquire another page for the base pd for new processes.
     base_pd = Kptov(get_next_free_phys_page(1,F_ASSERT));
 
     //Map the kernel and base pd //TODO don't ever use kernel_pd
-    perform_map(Kvtop(kernel_pd),(void*)kernel_pd,kernel_pd ,F_ASSERT);
-    perform_map(Kvtop(base_pd),(void*)base_pd,kernel_pd,F_ASSERT);
+    // perform_map(Kvtop(kernel_pd),(void*)kernel_pd,kernel_pd ,F_ASSERT);
+    perform_map(Kvtop(base_pd),(void*)base_pd,base_pd,F_ASSERT);
 
     //Map kernel code pages.
     int kernel_pages_count = kernel_end/PGSIZE; //Includes all pages beneath kernel also
 
     for(i=0;i<kernel_pages_count;i++){
-        perform_map((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),kernel_pd,F_ASSERT);
+        perform_map((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),base_pd,F_ASSERT);
     }
 
     //add PCB block mappings to the 64 page space saved earlier.
     void *addr = base_PCB_block;
     for(i=0;i<MAX_PROCS;i++){
-        perform_map(Kvtop(addr),addr,kernel_pd,F_ASSERT);
+        perform_map(Kvtop(addr),addr,base_pd,F_ASSERT);
         addr+=PGSIZE;
     }
 
-    //TODO this is insufficient
-    //copy the current kernel_pd into the base_pd
-    memcpy(base_pd,kernel_pd,PGSIZE);
-
-    perform_map(Kvtop(base_pd),base_pd,kernel_pd,F_ASSERT);
-
     
-    //DO NOT HAVE THIS. ONLY HAVE IN PROC_CREATE THIS BAD TODO TODO
-    //Allocate a page by default for kernel heap.
+    //Allocate 8 pages as a shared heap space for all processes.
     //Must request and allocate manually as cannot use palloc_kern yet due to processes
     //not being initialised yet.
 	void *heap_addr=Kptov(get_next_free_phys_page(1,F_ASSERT));
-    perform_map(Kvtop(heap_addr),heap_addr,kernel_pd,F_ASSERT);
+    perform_map(Kvtop(heap_addr),heap_addr,base_pd,F_ASSERT);
     for(i=1;i<8;i++){
         void* addr=get_next_free_phys_page(1,F_ASSERT);
-        perform_map(addr,Kptov(addr),kernel_pd,F_ASSERT);
+        perform_map(addr,Kptov(addr),base_pd,F_ASSERT);
     }
 
     //palloc_kern(8,F_ASSERT);
-	kernel_first_seg = intialise_heap(heap_addr,heap_addr+(HEAP_SIZE*PGSIZE));
+	shared_first_seg = intialise_heap(heap_addr,heap_addr+(HEAP_SIZE*PGSIZE));
 
     //by default before processes
-    first_segment=kernel_first_seg;
+    first_segment=shared_first_seg;
 
     //switch to using kernel_pd rather than temporary setup one.
-    update_pd(Kvtop(kernel_pd));
+    update_pd(Kvtop(base_pd));
 }
 
 
@@ -149,7 +142,7 @@ void init_vpool(pool_t *pool){
 }
 
 
-/* Adds pd, pt mappings in the given page directory */
+/* Adds pd, pt mappings in the given page directory virtual address*/
 void perform_map(void *paddr, void *vaddr, page_directory_entry_t* pd, uint8_t flags){
     if((uint32_t)vaddr%PGSIZE || (uint32_t)paddr%4096) PANIC("VADDR NOT 4k ALIGNED"); 
         
@@ -323,14 +316,14 @@ void* unmap_page(void* vaddr,uint8_t flags){
     if((uint32_t)vaddr%4096) PANIC("Attempted to unmap non 4k aligned address");
 
     //TODO retrieve associated PD from PCB
-    page_directory_entry_t* pd = kernel_pd;
+    page_directory_entry_t* pd = current_proc()->page_directory;
 
     uint32_t pd_idx, pt_idx;
     pd_idx=pd_no(vaddr);
     pt_idx=pt_no(vaddr);
 
-    page_table_entry_t* pt=(page_table_entry_t*) Kptov((void*)(pd[pd_idx].page_table_base_addr<<PGBITS)); //Push back to correct address
-    void* paddr= (void*)(pt[pt_idx].page_base_addr<<PGBITS);
+    page_table_entry_t* pt=(page_table_entry_t*) Kptov((void*)(pd[pd_idx].page_table_base_addr<<PTBITS)); //Push back to correct address
+    void* paddr= (void*)(pt[pt_idx].page_base_addr<<PTSHIFT);
     pt[pt_idx].present=0;
 
     //Flushing TLB is an expensive operation, and is done automatically on context switch
@@ -353,7 +346,7 @@ void *lookup_phys(void* vaddr){
     if(!(uint32_t) vaddr%4096) PANIC("Vaddr not PGSIZE alligned on lookup.");
 
     //TODO update to PCB pd.
-    page_directory_entry_t* pd = kernel_pd;
+    page_directory_entry_t* pd = current_proc()->page_directory;
     
     uint32_t pd_idx, pt_idx;
     pd_idx=pd_no(vaddr);
@@ -399,7 +392,7 @@ bool free_virt_page(void* vaddr, size_t n){
     if((uint32_t)vaddr%4096) PANIC("Cannot free unaligned vaddr");
 
     //TODO update pool from PCB
-    pool_t *pool=&K_virt_pool;
+    pool_t *pool=current_proc()->virt_pool;
     //Highly inefficient approach
     int i;
     for(i=0;i<PG_COUNT;i++){
@@ -445,7 +438,8 @@ void *palloc_pcb(int pid){
 
 
 /* Returns virtual address pointer to the start of an n-page free
- * address in kernel address space */
+ * address in kernel address space 
+ * TODO check this function. Not sure it makes sense anymore. */
 void *palloc_kern(size_t n, page_directory_entry_t *pd, uint8_t flags){
     void *paddr= get_next_free_phys_page(n,flags);
     if(!paddr) return NULL;
@@ -459,12 +453,40 @@ void *palloc_kern(size_t n, page_directory_entry_t *pd, uint8_t flags){
 }
 
 
-/* Used by new processes to duplicate the base kernel page directory */
-void *new_pd(){
-    void* pd =get_next_free_phys_page(1,F_ASSERT);
-    //requires janky temporary mapping to write to this new p
-    map_page(pd,Kptov(pd),0);
-    memcpy(pd,base_pd,PGSIZE);
+/* Duplicates the given virtual address space by creating new PD and associated PTs
+ * Returns PHYSICAL address of new page directory.
+ * NOTE: pd arg must be current process pd or base pd otherwise will cause pgfault */
+void *virt_addr_space_duplication(page_directory_entry_t *pd){
+    ASSERT(pd==base_pd || pd==current_proc()->page_directory ,"Cannot duplicate inaccessible address space.");
+    void* new_pd =get_next_free_phys_page(1,F_ASSERT);
+
+    //temporary map
+    map_page(new_pd,Kptov(new_pd),F_ASSERT);
+
+    //map itself 
+    perform_map(new_pd,Kptov(new_pd),Kptov(new_pd),F_ASSERT);
+
+    page_directory_entry_t pde;
+    void *pt_addr;
+    /* Iterate through the pd and create new PT's as required */
+    int i;
+    for(i=0;i<1024;i++){
+        pde=pd[i];
+        if(pde.present){
+            pt_addr=get_next_free_phys_page(1,F_ASSERT);
+            /* Map page temporarily so we can write to it. */
+            map_page(pt_addr,Kptov(pt_addr),F_ASSERT);
+
+            /* Copy the page table over into the new pt */
+            memcpy(Kptov(pt_addr),Kptov((void*)(pde.page_table_base_addr<<PTSHIFT)),PGSIZE);
+
+            /* Unmap again */
+            unmap_page(Kptov(pt_addr),F_ASSERT);
+
+            //TODO add the new mapping into new_pd
+        }
+    }
+    
 
     return pd;
 }

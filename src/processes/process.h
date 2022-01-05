@@ -7,6 +7,12 @@
 
 #define TIME_SLICE 4
 
+#define PC_NFLAG 0 /* No flags */
+#define PC_INIT 1<<0 /* Is the init proc */
+#define PC_IDLE 1<<1 /* Is the idle proc */
+#define PC_ADDR_DUP 1<<2
+
+
 typedef void proc_func(void* aux);
 
 extern MemorySegmentHeader_t *first_segment;
@@ -47,7 +53,7 @@ typedef struct switch_entry_stack{
 
 void processes_init();
 MemorySegmentHeader_t *proc_heap_init();
-PCB_t *create_proc(char* name, proc_func* func, void* aux);
+PCB_t *create_proc(char* name, proc_func* func, void* aux,uint8_t flags);
 void proc_tick();
 void proc_yield();
 void proc_reschedule(PCB_t *p);

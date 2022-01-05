@@ -10,7 +10,7 @@ typedef struct MemorySegmentHeader MemorySegmentHeader_t;
 
 #define HEAP_SIZE 2 /* Number of pages to allocated to each heap */
 
-extern lock kernel_heap_lock;
+extern lock shared_heap_lock;
 
 struct MemorySegmentHeader{
     bool free;
@@ -21,9 +21,9 @@ struct MemorySegmentHeader{
 
 MemorySegmentHeader_t *intialise_heap(void* base, void* limit);
 void *malloc(uint32_t size);
-void *kalloc(uint32_t size);
+void *shr_malloc(uint32_t size);
 void  *alloc(uint32_t size);
 void free(void *addr);
-void kfree(void *addr);
+void shr_free(void *addr);
 uint32_t heap_usage(MemorySegmentHeader_t *s);
 void clear_heap(void* addr, int pg_count);

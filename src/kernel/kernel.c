@@ -1,6 +1,5 @@
 #include "kernel.h"
 
-char spinBars[] = {'|','/','-','\\'};
 
 /* Entry point into the OS */
 void kernel_entry(uint32_t magic, uint32_t addr){
@@ -19,13 +18,13 @@ void kernel_entry(uint32_t magic, uint32_t addr){
 	Must be final as this function will not return */
 	multi_proc_start();
 
-
+	/* UNREACHABLE */
+	PANIC("Reached unreachable position.");
 }
 
 
 /* Main function run by init process */
 void main(){
-
 	//Sleep to display bootscreen.
 	proc_sleep(1,UNIT_SEC);
 
@@ -52,6 +51,8 @@ void main(){
 /* Little function that causes a bar to spin indefinitely...
  * NOTE: Highly inefficient as requires lots of context switches */
 void spin(int offset){
+	char spinBars[] = {'|','/','-','\\'};
+
 	uint8_t i=0;
 	while(1){
 		print_char_offset(spinBars[i++%4],WHITE_ON_BLACK,offset);

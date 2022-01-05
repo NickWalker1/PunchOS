@@ -51,7 +51,7 @@ void process_dump(PCB_t* p){
     println("PD: ");
     print(itoa((uint32_t)p->page_directory,str,BASE_HEX));
     println("Pool: ");
-    print(itoa((uint32_t)p->pool,str,BASE_HEX));
+    print(itoa((uint32_t)p->virt_pool,str,BASE_HEX));
     println("Priority: ");
     print(itoa(p->priority,str,BASE_HEX));
     println("Magic: ");
