@@ -14,6 +14,7 @@ list* list_init(){
     return new_list;
 }
 
+
 /* Returns pointer to a new list with one element given */
 list* list_init_with(void* data){
     list* new_list = (list*) malloc(sizeof(list));
@@ -25,30 +26,50 @@ list* list_init_with(void* data){
     return new_list;
 }
 
+
+/* Pops an element from the list,frees it and returns the data pointer */
 void* pop(list* l){
+    list_elem *elem = pop_elem(l);
+    if(elem){
+        free(elem);
+        return elem->data;
+    }
+    
+    return NULL;
+    
+}
+
+/* Pops the first element from the list and returns it.
+ * Returns NULL if the list is empty */
+list_elem *pop_elem(list *l){
     if(is_empty(l)) return NULL;
     list_elem* elem = l->head;
     l->head=elem->next;
+    l->size--;
     if(l->head)
         l->head->prev=0;
-    void* data=elem->data;
-    l->size--;
-    
-    free(elem);
 
-    return data;
+    return elem;
 }
 
+
+/* Allocates list element and pushes it to the front of the list */
 bool push(list* l, void* data){
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
     if(!elem) return false;
     elem->data=data;
     elem->next=l->head;
+    push_elem(l,elem);
+
+    return true;
+}
+
+
+/* Pushes a list element to the front of the list */
+void push_elem(list *l, list_elem *elem){
     l->head->prev=elem;
     l->head=elem;
     l->size++;
-
-    return true;
 }
 
 
@@ -58,19 +79,24 @@ bool append(list* l, void* data){
     if(!elem) return false;
     elem->data=data;
     elem->next=NULL;
+    append_elem(l,elem);
+    return true;
+}
+
+/* Appends a list element to the end of the list */
+void append_elem(list *l, list_elem *elem){
     if(is_empty(l)) {
         l->head=elem;
         l->tail=elem;
         elem->prev=NULL;
         elem->next=NULL;
         l->size++;
-        return true;
+        return;
     }
     elem->prev=l->tail;
     l->tail=elem;
     elem->prev->next=elem;
     l->size++;
-    return true;
 }
 
 /* Returns true if the list l is empty */
@@ -78,10 +104,22 @@ bool is_empty(list* l){
     return l->size==0;
 }
 
-/* Removes the element with the given data from the list.
- * Returns true on if the data was present and removed.*/
+
+/* Removes the first element with the given data from the list and frees it.
+ * Returns true on success */
 bool remove(list* l, void* data){
-    // println("remove:");print(itoa(data,str,BASE_HEX));
+    list_elem *elem = remove_elem(l,data);
+    if(elem){
+        free(elem);
+        return true;
+    }
+    return false;
+}
+
+
+/* Removes the first element from the list with the given data,
+ * and returns that element */
+list_elem *remove_elem(list *l, void *data){
     list_elem* elem=l->head;
     helper_variable=1;
     while(elem->data!=data && elem->next!=NULL){
@@ -102,12 +140,12 @@ bool remove(list* l, void* data){
     }else{
         elem->next->prev=elem->prev;
     }
-    
-    free(elem);
     l->size--;
-    return true;
+    return elem;
 }
 
+
+/* Prints elements of given list */
 void list_dump(list* l){
     list_elem* elem=l->head;
     println("[");
@@ -125,6 +163,8 @@ void list_dump(list* l){
     print("]");
 }
 
+
+/* Gets data of list element at given index */ //TODO update to return list_elem
 void* list_get(list* l, uint32_t idx){
     if(idx>=l->size) PANIC("LIST OUT OF BOUNDS EXCEPTION");
     list_elem* elem= l->head;

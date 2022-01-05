@@ -20,12 +20,16 @@ struct list_elem{
 };
 
 list* list_init();
-list* list_init_with(void* data);
+list* list_init_with(void *data);
 
-bool append(list* l, void* data);
-bool remove(list* l, void* data);
+bool append(list* l, void *data);
+void append_elem(list *l, list_elem *elem);
+bool remove(list* l, void *data);
+list_elem *remove_elem(list *l, void *data);
 bool push(list* l, void* data);
+void push_elem(list *l, list_elem *elem);
 void* pop(list* l);
+list_elem *pop_elem(list *l);
 int get_size(list* l);
 bool is_empty(list* l);
 void list_dump(list* l);

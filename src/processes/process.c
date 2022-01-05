@@ -163,7 +163,9 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
 
     
     /* Add to all procs list */
-    append(all_procs,new);
+    list_elem *elem = shr_malloc(sizeof(list_elem));
+    elem->data=new;
+    append_elem(all_procs,elem);
 
 
     int_set(int_level);
@@ -210,8 +212,11 @@ void proc_tick(){
  * Must be called with interrupts disabled.*/
 void proc_reschedule(PCB_t *p){
     //appending to ready processes if not idle process
-    if(p!=idle_proc)
-        append(ready_procs,p);
+    if(p!=idle_proc){
+        list_elem *elem = shr_malloc(sizeof(list_elem));
+        elem->data=p;
+        append_elem(ready_procs,elem);
+    }
     
     p->status=P_READY;
 }
@@ -299,7 +304,7 @@ PCB_t* get_next_process(){
     if(is_empty(ready_procs)){
         return idle_proc;
     }
-    PCB_t* p = (PCB_t*)pop(ready_procs);
+    PCB_t* p = (PCB_t*)(pop_elem(ready_procs)->data);
     return p;
 }
 
@@ -357,9 +362,12 @@ void proc_kill(PCB_t* p){
     
     //TODO FIX THIS
     return;
+    list_elem *elem;
+    elem=remove_elem(all_procs,p);
+    shr_free(elem);
 
-    remove(all_procs,p);
-    remove(ready_procs,p);
+    elem=remove_elem(ready_procs,p);
+    shr_free(elem);
 
 
     //TODO Free PID 
