@@ -5,34 +5,51 @@
 #include "../lib/debug.h"
 
 
+list *list_init_shared(){
+    list *new_list=(list*) shr_malloc(sizeof(list));
+    if(!new_list) return NULL;
 
-/* creates a new empty list */
-list* list_init(){
-    list* new_list =(list*) malloc(sizeof(list));
-    new_list->size=0;
-    new_list->head=new_list->tail=NULL;
-    return new_list;
+    return list_setup(new_list,true);
 }
 
 
-/* Returns pointer to a new list with one element given */
-list* list_init_with(void* data){
-    list* new_list = (list*) malloc(sizeof(list));
-    new_list->size=1;
-    new_list->tail=new_list->head=(list_elem*) malloc(sizeof(list_elem));
-    
-    new_list->head->data=data;
-    new_list->size=1;
-    return new_list;
+
+/* creates a new empty list in process' local heap*/
+list* list_init(){
+    list *new_list=(list*) malloc(sizeof(list));
+    if(!new_list) return NULL;
+    return list_setup(new_list,false);
+}
+
+list *list_setup(list *l, bool is_shared){
+    l->is_shared=is_shared;
+    l->size=0;
+    l->head=l->tail=NULL;
+    return l;
+
+}
+
+
+void *pop_shared(list *l){
+    ASSERT(l->is_shared,"List shared type mismatch");
+    list_elem *elem=pop_elem(l);
+    if(elem){
+        void *data=elem->data;
+        shr_free(elem);
+        return data;
+    }
+    return NULL;
 }
 
 
 /* Pops an element from the list,frees it and returns the data pointer */
 void* pop(list* l){
+    ASSERT(!l->is_shared,"List shared type mismatch");
     list_elem *elem = pop_elem(l);
     if(elem){
+        void *data=elem->data;
         free(elem);
-        return elem->data;
+        return data;
     }
     
     return NULL;
@@ -54,8 +71,20 @@ list_elem *pop_elem(list *l){
 
 
 /* Allocates list element and pushes it to the front of the list */
-bool push(list* l, void* data){
+bool push(list *l, void *data){
+    ASSERT(!l->is_shared,"List shared type mismatch");
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
+    if(!elem) return false;
+    elem->data=data;
+    elem->next=l->head;
+    push_elem(l,elem);
+
+    return true;
+}
+
+bool push_shared(list *l, void *data){
+    ASSERT(l->is_shared, "List shared type mismatch");
+    list_elem* elem = (list_elem*) shr_malloc(sizeof(list_elem));
     if(!elem) return false;
     elem->data=data;
     elem->next=l->head;
@@ -74,7 +103,8 @@ void push_elem(list *l, list_elem *elem){
 
 
 /* Appends data to list. */
-bool append(list* l, void* data){
+bool append(list *l, void *data){
+    ASSERT(!l->is_shared,"List shared type mismatch");
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
     if(!elem) return false;
     elem->data=data;
@@ -82,6 +112,18 @@ bool append(list* l, void* data){
     append_elem(l,elem);
     return true;
 }
+
+bool append_shared(list *l, void *data){
+    ASSERT(l->is_shared,"List shared tpye mismatch");
+    list_elem* elem = (list_elem*) shr_malloc(sizeof(list_elem));
+    if(!elem) return false;
+    // println("appending:"); print(itoa(elem,str,BASE_HEX));
+    elem->data=data;
+    elem->next=NULL;
+    append_elem(l,elem);
+    return true;
+}
+
 
 /* Appends a list element to the end of the list */
 void append_elem(list *l, list_elem *elem){
@@ -99,6 +141,7 @@ void append_elem(list *l, list_elem *elem){
     l->size++;
 }
 
+
 /* Returns true if the list l is empty */
 bool is_empty(list* l){
     return l->size==0;
@@ -107,7 +150,8 @@ bool is_empty(list* l){
 
 /* Removes the first element with the given data from the list and frees it.
  * Returns true on success */
-bool remove(list* l, void* data){
+bool remove(list *l, void *data){
+    ASSERT(!l->is_shared,"List shared type mismatch");
     list_elem *elem = remove_elem(l,data);
     if(elem){
         free(elem);
@@ -116,6 +160,16 @@ bool remove(list* l, void* data){
     return false;
 }
 
+bool remove_shared(list *l, void *data){
+    ASSERT(l->is_shared,"List shared type mismatch");
+    list_elem *elem = remove_elem(l,data);
+    if(elem){
+        // println("removing");print(itoa(elem,str,BASE_HEX));
+        shr_free(elem);
+        return true;
+    }
+    return false;
+}
 
 /* Removes the first element from the list with the given data,
  * and returns that element */

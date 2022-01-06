@@ -17,6 +17,7 @@ typedef void proc_func(void* aux);
 
 extern MemorySegmentHeader_t *first_segment;
 
+
 //assembly functions
 PCB_t *context_switch(PCB_t *cur, PCB_t *next);
 void first_switch();
@@ -25,7 +26,7 @@ void first_switch();
 
 #include "../paging/paging.h"
 
-extern pool_t K_virt_pool;
+extern phys_pool_t K_virt_pool;
 
 
 typedef struct runframe
@@ -66,7 +67,6 @@ void proc_unblock(PCB_t *p);
 void proc_kill(PCB_t* p);
 void run(proc_func *function, void *aux);
 void proc_echo();
-void proc_test_A();
 void sleep_tick();
 void proc_sleep(uint32_t time, uint8_t format);
 
@@ -84,3 +84,7 @@ typedef struct sleeper{
     uint32_t tick_remaining;
     PCB_t *waiting;
 } sleeper;
+
+void proc_test_A();
+void proc_heap_display();
+

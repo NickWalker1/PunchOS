@@ -11,6 +11,9 @@ MemorySegmentHeader_t *shared_first_seg;
 lock shared_heap_lock;
 
 
+extern bool multi_processing_enabled;
+
+
 /* Initialise shared kernel heap space */
 MemorySegmentHeader_t *intialise_heap(void *base, void *limit){
     MemorySegmentHeader_t *s=(MemorySegmentHeader_t*) base;
@@ -32,6 +35,14 @@ void *malloc(uint32_t size){
 /* Returns pointer to the start of size many bytes in shared kernel dynamic memory space, returns NULL on failure.
  * May block so must not be called inside interrupt handler. */
 void *shr_malloc(uint32_t size){
+    if(!multi_processing_enabled){ /* Highly insecure but works for now */
+        MemorySegmentHeader_t *before = first_segment;
+        first_segment=shared_first_seg;
+        void *addr=alloc(size);
+        first_segment=before;
+        return addr;
+    }
+
     //Must acquire lock to work with shared memory.
     lock_acquire(&shared_heap_lock);
 
@@ -49,7 +60,7 @@ void *shr_malloc(uint32_t size){
 }
 
 
-/* Should not be called by the programmer. Use malloc or Kalloc instead */
+/* Should not be called by the programmer. Use malloc or shr_malloc instead */
 void *alloc(uint32_t size){
     MemorySegmentHeader_t *currSeg=first_segment;
 
@@ -190,16 +201,19 @@ uint32_t heap_usage(MemorySegmentHeader_t *s){
     uint32_t used,all,size;
  
     used=all=0;
-
     while(s!=NULL){
-        size=s->size+sizeof(MemorySegmentHeader_t);
-
+        size=s->size+sizeof(MemorySegmentHeader_t);//TODO think about this
+        all+=size;
         if(!s->free)
             used+=size;
         
         s=s->next;
     }
     return used*100/all;
+}
+
+uint32_t get_shared_heap_usage(){
+    return  heap_usage(shared_first_seg);
 }
 
 

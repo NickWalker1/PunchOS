@@ -8,7 +8,7 @@ typedef int32_t p_id;
 typedef struct PCB PCB_t;
 
 #include "../lib/debug.h"
-#include "../paging/page.h"
+#include "../paging/paging.h"
 #include "../paging/heap.h"
 
 
@@ -65,7 +65,7 @@ struct  PCB{
     bool dummy; /* Dummy value to know if it was the intial boot process before processing initialised */
 
     page_directory_entry_t* page_directory; /* NOTE: is virtual address not physical */
-    void *virt_pool; //was heap before
+    virt_pool_t virt_pool;
 
     int priority; /* 1 is highest priority, 5 is lowest NOT CURRENTLY USED WITH ROUND ROBIN AND SUBJECT TO CHANGE */
 
@@ -77,7 +77,7 @@ struct  PCB{
     MemorySegmentHeader_t *first_segment;    
 
     uint32_t magic;
-}__attribute__((packed)); 
+};
 
 uint32_t* get_base_page(uint32_t *addr);
 void *get_esp();

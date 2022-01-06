@@ -2,11 +2,16 @@
 
 #include "../processes/process.h"
 
+
+/* NOTE:
+ * ALL SYNCHRONISATION PRIMITIVES MAKE USE OF THE SHARED KERNEL SPACE 
+ */
+
 void sema_init(semaphore* s, uint32_t value){
-    if(s==0) PANIC("Null semaphore in sema_init");
+    if(s==0) PANIC("Semaphore must be allocated before init");
 
     s->value=value;
-    s->waiters=list_init();
+    s->waiters=list_init_shared();
 }
 
 
@@ -23,7 +28,7 @@ void sema_down(semaphore* s){
     //to ensure no raceconditions as cannot context switch
     itr_level=int_disable();
     while(s->value==0){
-        append(s->waiters,current_proc());
+        append_shared(s->waiters,current_proc());
         proc_block();
     }
     s->value--;
@@ -31,7 +36,7 @@ void sema_down(semaphore* s){
 }
 
 
-/* Incremenets semaphores value, and wakes up any of the
+/* Incremenets semaphores value, and wakes one of the
  * waiting threads if they exist.
  * This may be called from an interrupt handler
  */
@@ -42,8 +47,9 @@ void sema_up(semaphore* s){
 
     //to ensure no raceconditions as cannot context switch
     itr_level=int_disable();
+    
     if(!is_empty(s->waiters)){
-        proc_unblock(pop(s->waiters));
+        proc_unblock(pop_shared(s->waiters));
     }
     s->value++;
     int_set(itr_level);
@@ -97,7 +103,7 @@ void lock_release(lock* l){
 void cond_init(condition* cond){
     if(cond==NULL) PANIC("NULL cond in init");
 
-    list_init(&cond->waiters);
+    list_init_shared(&cond->waiters);
 }
 
 
@@ -115,12 +121,12 @@ void cond_wait(condition* c, lock* l){
     //Reason using a semaphore here instead of just a pointer to the PCB
     // because incase the cond is waiting on multiple conditions, we do not
     // want it to wake up to the wrong one.
-    semaphore s; 
+    semaphore s;; 
 
     sema_init(&s,0);
 
     //Add to list of waiters on the condition
-    append(&(c->waiters),&s);
+    append_shared(&(c->waiters),&s);
 
     //Release lock
     lock_release(l);
@@ -143,7 +149,7 @@ void cond_signal(condition* c, lock* l){
 
     //wakeup the first waiter on cond c
     if(get_size(&c->waiters))
-        sema_up((semaphore*) pop(&c->waiters));
+        sema_up((semaphore*) pop_shared(&c->waiters));
 }
 
 

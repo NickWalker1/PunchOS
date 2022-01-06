@@ -14,6 +14,7 @@ extern void main();
 
 static PCB_t* idle_proc; /* Just spins */
 
+bool multi_processing_enabled = false;
 
 //Declare some useful data structures 
 static list*   all_procs;
@@ -23,7 +24,7 @@ static list* sleeper_procs;
 // True at index i-1 if a process is using pid i.
 static bool PCB_PID_TRACKER[MAX_PROCS];
 
-static int total_tick;
+static int total_ticks;
 
 static int cur_tick_count;
 
@@ -38,6 +39,7 @@ void multi_proc_start(){
 
     int_disable();
     
+    multi_processing_enabled=true;
     //Switch to init process
     schedule();
 }
@@ -52,7 +54,7 @@ void processes_init(){
     
     
     //counts total number of ticks for performance reports
-    total_tick=0;
+    total_ticks=0;
 
     /*Create a dummy process so it can be scheduled out of and killed.
     It must exist long enough to finish the setup process however, then the final section
@@ -66,15 +68,13 @@ void processes_init(){
     dummy_proc->status=P_DYING;
   
 
-    all_procs=list_init();
-    ready_procs=list_init();
-    sleeper_procs=list_init();
-
-
-    // semaphore init_started;
-    // sema_init(&init_started,0);
-
     lock_init(&shared_heap_lock);
+
+    
+    all_procs=list_init_shared();
+    ready_procs=list_init_shared();
+    sleeper_procs=list_init_shared();
+
 
 
     idle_proc=create_proc("idle",idle,NULL,PC_IDLE);
@@ -119,7 +119,8 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     
     new->page_directory=Kptov(get_pd()); //TODO update
     
-    new->virt_pool=(void*) &K_virt_pool; //TODO UPDATE
+    /* Initialses the processes individual virtual page pool */
+    init_vpool(&new->virt_pool); 
 
 
     /* Default setup values */
@@ -127,9 +128,8 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
 
-    /* Don't need to give it a heap if it's the idle thread */
-    // if(!(flags&PC_IDLE))
-        new->first_segment=proc_heap_init(new->page_directory);
+    /* Initialising heap */
+    new->first_segment=proc_heap_init(new);
 
 
     /*
@@ -178,14 +178,24 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
 }
 
 /* Initialses the processes inidivual heap space */
-MemorySegmentHeader_t *proc_heap_init(page_directory_entry_t *pd){
-    void *base = palloc_kern(HEAP_SIZE,pd,F_ASSERT);
+MemorySegmentHeader_t *proc_heap_init(PCB_t *pcb){
+    void *phys = get_next_free_phys_page(HEAP_SIZE,F_ASSERT);
+
+
+    void *base = get_virt_from_pool(HEAP_SIZE,&pcb->virt_pool,F_ASSERT);
+
+    int i;
+    for(i=0;i<HEAP_SIZE;i++){
+        perform_map(phys+i*PGSIZE,base+i*PGSIZE,pcb->page_directory,F_ASSERT);
+    }
+
     return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
 }
 
 
 /* called by PIT interrupt handler */
 void proc_tick(){
+    //TODO REMOVE
     //report OK to PIT so it can send the next one.
     outportb(PIC1_COMMAND, PIC_EOI);
 
@@ -199,7 +209,7 @@ void proc_tick(){
 
     sleep_tick();
 
-    total_tick++;
+    total_ticks++;
 
     //Preemption
     if(++cur_tick_count>= TIME_SLICE){
@@ -213,9 +223,7 @@ void proc_tick(){
 void proc_reschedule(PCB_t *p){
     //appending to ready processes if not idle process
     if(p!=idle_proc){
-        list_elem *elem = shr_malloc(sizeof(list_elem));
-        elem->data=p;
-        append_elem(ready_procs,elem);
+        append_shared(ready_procs,p);
     }
     
     p->status=P_READY;
@@ -304,7 +312,7 @@ PCB_t* get_next_process(){
     if(is_empty(ready_procs)){
         return idle_proc;
     }
-    PCB_t* p = (PCB_t*)(pop_elem(ready_procs)->data);
+    PCB_t* p = (PCB_t*)(pop_shared(ready_procs));
     return p;
 }
 
@@ -360,22 +368,18 @@ void proc_kill(PCB_t* p){
     println("KILLING PROCESS: ");
     print(itoa(p->pid,str,BASE_DEC));
     
+    remove_shared(all_procs,p);
+
+    remove_shared(ready_procs,p);
+
     //TODO FIX THIS
     return;
-    list_elem *elem;
-    elem=remove_elem(all_procs,p);
-    shr_free(elem);
-
-    elem=remove_elem(ready_procs,p);
-    shr_free(elem);
-
 
     //TODO Free PID 
     
     //TODO update free all related memory
     free_virt_page(p->page_directory,1);
     
-
     free_virt_page(p,1);
 }
 
@@ -384,6 +388,8 @@ void proc_kill(PCB_t* p){
  * Will kill the process when function returns */
 void run(proc_func* function, void* aux){
     ASSERT(function!=NULL,"Cannot run NULL function");
+    
+
 
     int_enable();
 
@@ -407,10 +413,13 @@ void sleep_tick(){
         s->tick_remaining--;
         if(s->tick_remaining==0){
             int level= int_disable();
-            remove(sleeper_procs,s);
+
+
+            remove_shared(sleeper_procs,s);
+            
             proc_unblock(s->waiting);
 
-            free(s);
+            shr_free(s);
             
             int_set(level);
         }
@@ -427,7 +436,7 @@ void sleep_tick(){
 void proc_sleep(uint32_t time, uint8_t format){
     if(time==0) return;
 
-    sleeper* s= malloc(sizeof(sleeper));
+    sleeper* s= shr_malloc(sizeof(sleeper));
     s->waiting=current_proc();
     
     if(format&UNIT_TICK){
@@ -442,7 +451,7 @@ void proc_sleep(uint32_t time, uint8_t format){
 
     int level=int_disable();
 
-    append(sleeper_procs,s);
+    append_shared(sleeper_procs,s);
 
     proc_block();
 
@@ -463,10 +472,22 @@ void proc_echo(){
 
 /* Test Function */
 void proc_test_A(){
-    proc_sleep(3,UNIT_SEC);
+    proc_sleep(1,UNIT_SEC);
     while(1){
-        println("proc A");
+        // println("proc "); print(current_proc()->name);
         proc_sleep(1,UNIT_SEC);
+    }
+}
+
+/* Test Function */
+void proc_heap_display(){
+    while(1){
+        proc_sleep(2,UNIT_SEC);
+        // print_to(itoa(get_shared_heap_usage(),str,BASE_HEX),BOTTOM_RIGHT);
+        get_shared_heap_usage();
+        
+        print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_LEFT);
+        print_to("\%",BOTTOM_LEFT+2);
     }
 }
 
@@ -474,6 +495,8 @@ void proc_test_A(){
 //-----------------------HELPERS--------------------------------
 
 
+/* Used to push data to a pcb stack.
+ * ONLY use when initialising the process. */
 void* push_stack(PCB_t* p, uint32_t size){
     if(!is_proc(p)) PANIC("pushing stack to non-process");
     p->stack-=size;

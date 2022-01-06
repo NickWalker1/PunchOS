@@ -25,12 +25,12 @@ page_directory_entry_t *base_pd;
 /* To page pool with only 128 available pages.
  * The actual available memory space is far larger than this. */
 
-pool_t phys_page_pool;
+phys_pool_t phys_page_pool;
 
 /* Virtual page pool for kernel. Each process will need one of these also
  * As each process needs to know which virtual addresses
  * it has already assgigned so to not override them. */
-pool_t K_virt_pool;
+virt_pool_t K_virt_pool;
 
 
 void *base_PCB_block;
@@ -110,15 +110,15 @@ void paging_init(){
     //Allocate 8 pages as a shared heap space for all processes.
     //Must request and allocate manually as cannot use palloc_kern yet due to processes
     //not being initialised yet.
-	void *heap_addr=Kptov(get_next_free_phys_page(1,F_ASSERT));
-    perform_map(Kvtop(heap_addr),heap_addr,base_pd,F_ASSERT);
-    for(i=1;i<8;i++){
-        void* addr=get_next_free_phys_page(1,F_ASSERT);
-        perform_map(addr,Kptov(addr),base_pd,F_ASSERT);
+	void *heap_addr=Kptov(get_next_free_phys_page(SHR_HEAP_SIZE,F_ASSERT));
+    addr=heap_addr;
+    for(i=0;i<SHR_HEAP_SIZE;i++){
+        perform_map(Kvtop(addr),addr,base_pd,F_ASSERT);
+        addr+=PGSIZE;
     }
 
-    //palloc_kern(8,F_ASSERT);
-	shared_first_seg = intialise_heap(heap_addr,heap_addr+(HEAP_SIZE*PGSIZE));
+
+	shared_first_seg = intialise_heap(heap_addr,heap_addr+(SHR_HEAP_SIZE*PGSIZE));
 
     //by default before processes
     first_segment=shared_first_seg;
@@ -129,12 +129,11 @@ void paging_init(){
 
 
 /* Initialises a virtual pool from 0xb0000000 and sets all pages to free */
-void init_vpool(pool_t *pool){
-    
+void init_vpool(virt_pool_t *pool){
     uint32_t addr = 0xb0000000;
     pool->first_free_idx=0;
     int i;
-    for(i=0;i<PG_COUNT;i++){
+    for(i=0;i<PROC_VPOOL_SIZE;i++){
         pool->pages[i].base_addr=(void*)addr;
         pool->pages[i].type=M_FREE;
         addr+=0x1000;
@@ -189,7 +188,7 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
  * Will PANIC if no more pages are available and F_ASSERT flag present,
  * returns NULL otherwise. */
 void *get_next_free_phys_page(size_t n, uint8_t flags){
-    pool_t* pool = &phys_page_pool;
+    phys_pool_t* pool = &phys_page_pool;
     if(pool->first_free_idx==-1){
         if(flags & F_ASSERT)
             PANIC("NO PHYS PAGES AVAILABLE");
@@ -253,17 +252,13 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
     return base_addr;
 }
 
-
-/* Returns the base address of the next n free contiguous virtual pages 
- * Flag options:
- *  - F_ASSERT will PANIC if not possible
- */ 
-void *get_next_free_virt_page(size_t n,uint8_t flags){
-    //TODO retrtieve associated virtual page pool for the process.
-    //currently implemented.
-    pool_t *pool = &K_virt_pool;
-
-    if(pool->first_free_idx==-1) PANIC("NO VIRT PAGES AVAILABLE");
+/* TODO COmmnets */
+void *get_virt_from_pool(size_t n, virt_pool_t *pool, uint8_t flags){
+    if(pool->first_free_idx==-1){
+        if(flags &F_ASSERT)
+            PANIC("NO VIRT PAGES AVAILABLE");
+        return NULL;
+    };
 
     int idx=pool->first_free_idx;
 
@@ -279,7 +274,7 @@ void *get_next_free_virt_page(size_t n,uint8_t flags){
             i=1;
             while(pool->pages[idx].type!=M_FREE){
                 idx++;
-                if(idx==PG_COUNT){
+                if(idx==PROC_VPOOL_SIZE){
                     pool->first_free_idx=-1;
                     if(flags & F_ASSERT)
                         PANIC("INSUFFICIENT VIRTUAL PAGES AVAILABLE");
@@ -295,7 +290,7 @@ void *get_next_free_virt_page(size_t n,uint8_t flags){
     //update next free pointer->
     while(pool->pages[idx].type!=M_FREE){
         idx++;
-        if(idx==PG_COUNT){
+        if(idx==PROC_VPOOL_SIZE){
             pool->first_free_idx=-1;
             return base_addr;
         }
@@ -305,6 +300,17 @@ void *get_next_free_virt_page(size_t n,uint8_t flags){
     return base_addr;
 }
 
+
+/* Returns the base address of the next n free contiguous virtual pages 
+ * Flag options:
+ *  - F_ASSERT will PANIC if not possible
+ */ 
+void *get_next_free_virt_page(size_t n,uint8_t flags){
+    //TODO retrtieve associated virtual page pool for the process.
+    //currently implemented.
+    virt_pool_t *pool = &current_proc()->virt_pool;
+    return get_virt_from_pool(n,pool,flags);
+}
 
 
 /* Unmaps the physical page associated with the given
@@ -358,13 +364,13 @@ void *lookup_phys(void* vaddr){
 }
 
 
-/* Frees the physical page from the general page pool */
+/* Free n the physical pages from the physical page pool */
 bool free_phys_page(void* paddr, size_t n){
     if(n<=0) return false;
     if((uint32_t)paddr%4096) PANIC("Cannot free unaligned paddr");
 
     //TODO update pool from PCB
-    pool_t *pool=&phys_page_pool;
+    phys_pool_t *pool=&phys_page_pool;
 
     //Highly inefficient approach
     int i,j;
@@ -391,11 +397,12 @@ bool free_virt_page(void* vaddr, size_t n){
     if(n==0) return false;
     if((uint32_t)vaddr%4096) PANIC("Cannot free unaligned vaddr");
 
-    //TODO update pool from PCB
-    pool_t *pool=current_proc()->virt_pool;
+
+    virt_pool_t *pool=&current_proc()->virt_pool;
+
     //Highly inefficient approach
     int i;
-    for(i=0;i<PG_COUNT;i++){
+    for(i=0;i<PROC_VPOOL_SIZE;i++){
         if(pool->pages[i].base_addr==vaddr){
             //found the page
             pool->pages[i].type=M_FREE;
@@ -428,6 +435,27 @@ bool free_virt_phys_page(void* vaddr){
     return true;
 }
 
+
+/* Returns virtual address pointer to the start of an n-page free
+ * address in process' personal virtual address space. */
+void *palloc(size_t n, uint8_t flags){
+    void *paddr= get_next_free_phys_page(n,flags);
+    if(!paddr) return NULL;
+
+    void *vaddr=get_next_free_virt_page(n,flags);
+    if(!vaddr){
+        free_phys_page(paddr,n);
+        return NULL;
+    }
+
+    for(size_t i=0;i<n;i++){
+        map_page(paddr+i*PGSIZE,vaddr+i*PGSIZE,F_ASSERT);
+    }
+
+    return vaddr;
+}
+
+
 /* Returns pointer to a free page in the  MAX_PROCS*PGSIZE sized Kernel PCB Block of memory. */
 void *palloc_pcb(int pid){
     //needs process ID to index the block
@@ -437,16 +465,14 @@ void *palloc_pcb(int pid){
 }
 
 
-/* Returns virtual address pointer to the start of an n-page free
- * address in kernel address space 
- * TODO check this function. Not sure it makes sense anymore. */
+/* Allocates n pages and maps them to kern addres space in the given pd */
 void *palloc_kern(size_t n, page_directory_entry_t *pd, uint8_t flags){
-    void *paddr= get_next_free_phys_page(n,flags);
+    void *paddr=get_next_free_phys_page(n,flags);
     if(!paddr) return NULL;
 
-    //TODO surely should use processes own vpool???
-    for(size_t i=0;i<n;i++){
-        perform_map(paddr+i*PGSIZE,Kptov(paddr+i*PGSIZE),pd,F_ASSERT);
+    int i;
+    for(i=0;i<n;i++){
+        perform_map(paddr+i*PGSIZE,Kptov(paddr+i*PGSIZE),pd,flags);
     }
 
     return Kptov(paddr);
@@ -468,6 +494,7 @@ void *virt_addr_space_duplication(page_directory_entry_t *pd){
 
     page_directory_entry_t pde;
     void *pt_addr;
+
     /* Iterate through the pd and create new PT's as required */
     int i;
     for(i=0;i<1024;i++){
