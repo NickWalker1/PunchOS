@@ -1,4 +1,4 @@
-#include "panic.h"
+#include "debug.h"
 
 void PANIC(char* msg){
     draw_panic_screen();

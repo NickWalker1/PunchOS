@@ -13,7 +13,7 @@ INPUT
     src/lib/int.o
     src/lib/screen.o
     src/lib/string.o
-    src/lib/panic.o
+    src/lib/debug.o
     src/lib/math.o
 )
 OUTPUT
