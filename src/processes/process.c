@@ -22,7 +22,7 @@ static list* ready_procs;
 static list* sleeper_procs;
 
 // True at index i-1 if a process is using pid i.
-static bool PCB_PID_TRACKER[MAX_PROCS];
+static PCB_t *proc_tracker[MAX_PROCS];
 
 static int total_ticks;
 
@@ -96,9 +96,10 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
 
     p_id pid = get_new_pid();
     if(pid==-1) return NULL;
-    PCB_t *new= (PCB_t*) palloc_pcb(pid);
+    PCB_t *new= (PCB_t*) palloc_kern(1,F_ASSERT);
     if(!new) return NULL;
 
+    proc_tracker[pid-1]=new;
     /* Update pid and ppid */
     new->pid=pid;
     if(flags & PC_INIT){
@@ -524,11 +525,10 @@ void* get_pd(){
  * Returns -1 on failure. */
 p_id get_new_pid(){
     int i=1;
-    while(PCB_PID_TRACKER[i-1] && i<=MAX_PROCS) i++;
+    while(proc_tracker[i-1]!=NULL && i<=MAX_PROCS) i++;
 
     if(i==MAX_PROCS) return -1;
 
-    PCB_PID_TRACKER[i-1]=true;
     return i;
 }
 
