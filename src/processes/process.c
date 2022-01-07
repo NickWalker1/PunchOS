@@ -9,7 +9,7 @@
 #include "../paging/paging.h"
 
 extern void main();
-
+extern page_directory_entry_t *base_pd;
 
 
 static PCB_t* idle_proc; /* Just spins */
@@ -66,7 +66,7 @@ void processes_init(){
     dummy_proc->magic=PROC_MAGIC;
     dummy_proc->pid=get_new_pid(); //TODO check this??
     dummy_proc->status=P_DYING;
-  
+    dummy_proc->page_directory=base_pd;
 
     lock_init(&shared_heap_lock);
 
@@ -116,9 +116,17 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     new->magic=PROC_MAGIC;
     
     strcpy(new->name,name); 
-    
-    new->page_directory=Kptov(get_pd()); //TODO update
-    
+
+    // new->page_directory=Kptov(get_pd());
+    if(flags&PC_ADDR_DUP){
+        new->page_directory=virt_addr_space_duplication(current_proc()->page_directory);
+    }
+    else{
+        new->page_directory=virt_addr_space_duplication(base_pd);
+    }
+
+
+
     /* Initialses the processes individual virtual page pool */
     init_vpool(&new->virt_pool); 
 
@@ -127,9 +135,6 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
-
-    /* Initialising heap */
-    new->first_segment=proc_heap_init(new);
 
 
     /*
@@ -163,9 +168,7 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
 
     
     /* Add to all procs list */
-    list_elem *elem = shr_malloc(sizeof(list_elem));
-    elem->data=new;
-    append_elem(all_procs,elem);
+    append_shared(all_procs,new);
 
 
     int_set(int_level);
@@ -174,19 +177,22 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     /* add to ready queue */
     proc_unblock(new);
 
+    
     return new;
 }
 
-/* Initialses the processes inidivual heap space */
-MemorySegmentHeader_t *proc_heap_init(PCB_t *pcb){
+/* Initialses the current processes' inidivual heap space.
+ * NOTE: Can only be called from inside the process */
+MemorySegmentHeader_t *proc_heap_init(){
     void *phys = get_next_free_phys_page(HEAP_SIZE,F_ASSERT);
 
 
-    void *base = get_virt_from_pool(HEAP_SIZE,&pcb->virt_pool,F_ASSERT);
+    void *base = get_next_free_virt_page(HEAP_SIZE,F_ASSERT);
+
 
     int i;
     for(i=0;i<HEAP_SIZE;i++){
-        perform_map(phys+i*PGSIZE,base+i*PGSIZE,pcb->page_directory,F_ASSERT);
+        map_page(phys+i*PGSIZE,base+i*PGSIZE,F_ASSERT);
     }
 
     return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
@@ -257,7 +263,8 @@ void switch_complete(PCB_t* prev){
 
     cur_tick_count=0;
 
-    //TODO update cr3 if required.
+    //Update cr3 if required.
+    update_pd(Kvtop(curr->page_directory));
 
     //update base heap pointer
     first_segment=curr->first_segment;
@@ -389,6 +396,8 @@ void proc_kill(PCB_t* p){
 void run(proc_func* function, void* aux){
     ASSERT(function!=NULL,"Cannot run NULL function");
     
+    PCB_t* p= current_proc();
+    p->first_segment=proc_heap_init();
 
 
     int_enable();
@@ -396,7 +405,6 @@ void run(proc_func* function, void* aux){
     //do the work
     function(aux);
     
-    PCB_t* p= current_proc();
     p->status=P_DYING;
 
     int_disable();

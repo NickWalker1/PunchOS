@@ -58,7 +58,7 @@ void paging_init(){
     /* Physical memory location where kernel finished loading */
     uint32_t kernel_end = (uint32_t)&_KERNEL_END;
     //Align to next 4k boundary (4096 = 0x1000)
-    kernel_end= (uint32_t)Kvtop((void*)(kernel_end-kernel_end%0x1000 + 0x1000));
+    kernel_end= (uint32_t)Kvtop((void*)(kernel_end-kernel_end%PGSIZE + PGSIZE));
 
 
     void *end_addr =(void*)kernel_end;
@@ -79,32 +79,29 @@ void paging_init(){
     }
 
     //Initialise default pool for the first process
-    init_vpool(&K_virt_pool);
+    init_vpool(&K_virt_pool); //TODO REMOVE THIS
 
-
-    //Create new kernel page directory.
-    // kernel_pd=Kptov(get_next_free_phys_page(1,F_ZERO | F_ASSERT));
     
-    //acquire another page for the base pd for new processes.
+    //acquire another page for the base pd template for each new processes.
     base_pd = Kptov(get_next_free_phys_page(1,F_ASSERT));
 
-    //Map the kernel and base pd //TODO don't ever use kernel_pd
-    // perform_map(Kvtop(kernel_pd),(void*)kernel_pd,kernel_pd ,F_ASSERT);
-    perform_map(Kvtop(base_pd),(void*)base_pd,base_pd,F_ASSERT);
+    //Map the kernel and base pd 
+    // perform_map(Kvtop(base_pd),(void*)base_pd,base_pd,F_ASSERT);
 
-    //Map kernel code pages.
-    int kernel_pages_count = kernel_end/PGSIZE; //Includes all pages beneath kernel also
+    //Map kernel code and data pages.
+    int kernel_space_pages = 1024; //Identity map the first 4MiB of memory to kernel space
 
-    for(i=0;i<kernel_pages_count;i++){
-        perform_map((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),base_pd,F_ASSERT);
+    for(i=0;i<kernel_space_pages;i++){
+        perform_map((i*PGSIZE),Kptov((i*PGSIZE)),base_pd,F_ASSERT);
     }
 
     //add PCB block mappings to the 64 page space saved earlier.
-    void *addr = base_PCB_block;
-    for(i=0;i<MAX_PROCS;i++){
-        perform_map(Kvtop(addr),addr,base_pd,F_ASSERT);
-        addr+=PGSIZE;
-    }
+    void *addr = base_PCB_block; 
+    //TODO remove
+    // for(i=0;i<MAX_PROCS;i++){
+    //     perform_map(Kvtop(addr),addr,base_pd,F_ASSERT);
+    //     addr+=PGSIZE;
+    // }
 
     
     //Allocate 8 pages as a shared heap space for all processes.
@@ -112,15 +109,15 @@ void paging_init(){
     //not being initialised yet.
 	void *heap_addr=Kptov(get_next_free_phys_page(SHR_HEAP_SIZE,F_ASSERT));
     addr=heap_addr;
-    for(i=0;i<SHR_HEAP_SIZE;i++){
-        perform_map(Kvtop(addr),addr,base_pd,F_ASSERT);
-        addr+=PGSIZE;
-    }
+    // for(i=0;i<SHR_HEAP_SIZE;i++){
+    //     perform_map(Kvtop(addr),addr,base_pd,F_ASSERT);
+    //     addr+=PGSIZE;
+    // }
 
 
 	shared_first_seg = intialise_heap(heap_addr,heap_addr+(SHR_HEAP_SIZE*PGSIZE));
 
-    //by default before processes
+    //by default before multiprocessing. 
     first_segment=shared_first_seg;
 
     //switch to using kernel_pd rather than temporary setup one.
@@ -158,7 +155,7 @@ void perform_map(void *paddr, void *vaddr, page_directory_entry_t* pd, uint8_t f
         pd[pd_idx].page_table_base_addr=((uint32_t)pt_addr >> PGBITS); //Only most significant 20bits
         pd[pd_idx].present=1;
         pd[pd_idx].read_write=1;
-        perform_map(pt_addr,Kptov(pt_addr),pd,flags); /* so that you can write to this address in kernel address space */
+        // perform_map(pt_addr,Kptov(pt_addr),pd,flags); /* so that you can write to this address in kernel address space */
     }
     pt=(page_table_entry_t*) Kptov((void*)(pd[pd_idx].page_table_base_addr<<PGBITS)); //Push back to correct address
     pt[pt_idx].page_base_addr=(uint32_t) paddr>>PGBITS; //Only 20 most significant bits
@@ -248,7 +245,7 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
     }
 
     pool->first_free_idx=idx;
-    
+    helper_variable=base_addr;
     return base_addr;
 }
 
@@ -469,8 +466,8 @@ void *palloc_pcb(int pid){
 void *palloc_kern(size_t n, page_directory_entry_t *pd, uint8_t flags){
     void *paddr=get_next_free_phys_page(n,flags);
     if(!paddr) return NULL;
-
-    int i;
+    // TODO REMOVE MAPS???
+    size_t i;
     for(i=0;i<n;i++){
         perform_map(paddr+i*PGSIZE,Kptov(paddr+i*PGSIZE),pd,flags);
     }
@@ -484,14 +481,20 @@ void *palloc_kern(size_t n, page_directory_entry_t *pd, uint8_t flags){
  * NOTE: pd arg must be current process pd or base pd otherwise will cause pgfault */
 void *virt_addr_space_duplication(page_directory_entry_t *pd){
     ASSERT(pd==base_pd || pd==current_proc()->page_directory ,"Cannot duplicate inaccessible address space.");
+
     void* new_pd =get_next_free_phys_page(1,F_ASSERT);
 
-    //temporary map
+    helper_variable=new_pd;
+
+    //temporary map in current process' virt address space also way for it to map itself cheekily
     map_page(new_pd,Kptov(new_pd),F_ASSERT);
 
+    
     //map itself 
-    perform_map(new_pd,Kptov(new_pd),Kptov(new_pd),F_ASSERT);
+    //perform_map(new_pd,Kptov(new_pd),Kptov(new_pd),F_ASSERT);
 
+
+    page_directory_entry_t *new_pde=Kptov(new_pd);
     page_directory_entry_t pde;
     void *pt_addr;
 
@@ -501,19 +504,30 @@ void *virt_addr_space_duplication(page_directory_entry_t *pd){
         pde=pd[i];
         if(pde.present){
             pt_addr=get_next_free_phys_page(1,F_ASSERT);
+
             /* Map page temporarily so we can write to it. */
             map_page(pt_addr,Kptov(pt_addr),F_ASSERT);
 
+            helper_variable=pt_addr;
             /* Copy the page table over into the new pt */
             memcpy(Kptov(pt_addr),Kptov((void*)(pde.page_table_base_addr<<PTSHIFT)),PGSIZE);
 
+
+
+            /* Add the mapping in the new pd */
+            new_pde[i].present=1;
+            new_pde[i].read_write=1;
+            new_pde[i].user_supervisor=1;
+            new_pde[i].page_table_base_addr=(uint32_t)pt_addr>>PTSHIFT;
+
             /* Unmap again */
             unmap_page(Kptov(pt_addr),F_ASSERT);
-
-            //TODO add the new mapping into new_pd
         }
     }
+
+    /* Unmap page from current processes virtual address space */
+    unmap_page(Kptov(new_pd),0);
     
 
-    return pd;
+    return Kptov(new_pd);
 }

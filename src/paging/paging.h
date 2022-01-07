@@ -7,7 +7,7 @@
 
 #define KERN_BASE           0xC0000000
 #define PROC_VPOOL_SIZE     32
-#define HEAP_SIZE           2
+#define HEAP_SIZE           8
 
 #define F_VERBOSE 1<<1 /* 1 for print, 0 for not */
 #define F_ZERO 1<<2 /* 1 for set all bytes to 0, 0 don't bother */
@@ -49,7 +49,7 @@ void *palloc_kern(size_t n, page_directory_entry_t *pd, uint8_t flags);
 void *palloc_pcb(int pid);
 void *new_pd();
 
-
+void *virt_addr_space_duplication(page_directory_entry_t *pd);
 
 extern void update_pd(uint32_t* pd); /* Note cr3 register takes physical address of pd */
 extern void tlb_flush(); /* Flushes TLB cache */ 

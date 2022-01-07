@@ -26,10 +26,12 @@ void kernel_entry(uint32_t magic, uint32_t addr){
 
 /* Main function run by init process */
 void main(){
+
+	
 	//Sleep to display bootscreen.
 	proc_sleep(1,UNIT_SEC);
 
-
+	
 	//Splash screen
 	clear_screen();
 

@@ -1,5 +1,6 @@
 #include "string.h"
 
+extern uint32_t helper_variable;
 /* sets n bytes at str to c */
 void *memset(void* str, int c, size_t n){
     uint32_t* ptr = (uint32_t*)str;
@@ -11,10 +12,13 @@ void *memset(void* str, int c, size_t n){
     return str;
 }
 
-/* copies n bytes from src to dest. */
-void *memcpy(void* dest, void* src, size_t n){
+/* Copies n bytes from src to dest. */
+void *memcpy(void* dest, void* src, size_t n){ 
+    char *d=dest;
+    char *s=src;
+    //TODO improve performance with using larger blocks than char eg long if allignment matches
     for(size_t i=0;i<n;i++){
-        *(uint32_t*)(dest+i)=*(uint32_t*)(src+i);
+        d[i]=s[i];
     }
     return dest;
 }
