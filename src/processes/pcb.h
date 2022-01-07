@@ -60,22 +60,28 @@ struct  PCB{
     p_id ppid; /* Parent process ID */
     char name[16]; 
 
-    proc_status status;
+    proc_status status; 
 
     bool dummy; /* Dummy value to know if it was the intial boot process before processing initialised */
 
     page_directory_entry_t* page_directory; /* NOTE: is virtual address not physical */
-    virt_pool_t virt_pool;
-
     int priority; /* 1 is highest priority, 5 is lowest NOT CURRENTLY USED WITH ROUND ROBIN AND SUBJECT TO CHANGE */
 
-    uint32_t cpu_usage;
-
-    //uint32_t sleep_deadline;
-
-    //Each process has it's own heap, this points to the start of it.
+    /* Each process has it's own heap, this points to the start of it. */
     MemorySegmentHeader_t *first_segment;    
 
+    /* Timing information */
+    uint32_t running_ticks; /* Count of ticks when has been running process */
+    uint32_t wait_ticks; /* Current wait time before rescheduling */
+    uint32_t average_latency; /* Average number of ticks between being scheduled and being run */
+    uint32_t scheduled_count; /* Number of times this process has been scheduled */
+
+
+    /* Virtual pool to store virtual page tracking info */
+    virt_pool_t virt_pool;
+
+
+    /* Magic value to check for stack growth induced corruption and process validation */
     uint32_t magic;
 };
 

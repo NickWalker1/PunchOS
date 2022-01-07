@@ -27,6 +27,8 @@ INPUT
     src/processes/pcb.o
     src/processes/process.o
     src/processes/pswap.o
+    src/shell/functions/ps.o
+    src/shell/shell.o
 )
 OUTPUT
 (

@@ -8,6 +8,8 @@
 #define VIDEO_ADDRESS 0xc00b8000
 #define TOP_RIGHT 158
 #define TOP_LEFT 0
+#define LINE_OFF 160
+#define CHAR_OFF 2
 #define BOTTOM_LEFT (0+80*24)*2
 #define BOTTOM_RIGHT (79+80*24)*2
 #define MAX_ROWS 25
@@ -23,6 +25,7 @@
 #define REG_SCREEN_CTRL 0x3D4
 #define REG_SCREEN_DATA 0x3D5
 
+#define LINE(l) (l)*LINE_OFF
 
 extern char str[128];
 
@@ -49,6 +52,7 @@ void print_attempt(char* message);
 void print_ok();
 void print_fail();
 void clear_screen();
+void clear_line(int line);
 void push_row();
 int pop_row();
 void test_colours();

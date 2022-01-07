@@ -47,7 +47,10 @@ void main(){
                       
 	create_proc("A",proc_test_A,NULL,PC_NFLAG);
 	create_proc("B",proc_test_A,NULL,PC_NFLAG);
-	create_proc("Status",proc_heap_display,NULL,PC_NFLAG);
+	create_proc("Hard",proc_test_hardwork,NULL,PC_NFLAG);
+
+	proc_sleep(2,UNIT_SEC);
+	create_proc("PS",ps,NULL,PC_NFLAG);
 
 	spin(TOP_RIGHT);
 

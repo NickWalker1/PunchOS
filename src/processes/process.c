@@ -22,9 +22,9 @@ static list* ready_procs;
 static list* sleeper_procs;
 
 // True at index i-1 if a process is using pid i.
-static PCB_t *proc_tracker[MAX_PROCS];
+PCB_t *proc_tracker[MAX_PROCS];
 
-static int total_ticks;
+int total_ticks;
 
 static int cur_tick_count;
 
@@ -36,6 +36,8 @@ void multi_proc_start(){
 
     //Allow PIT interrupts
     block_PIT=0;
+
+    total_ticks=0;
 
     int_disable();
     
@@ -77,8 +79,8 @@ void processes_init(){
 
 
 
-    idle_proc=create_proc("idle",idle,NULL,PC_IDLE);
     create_proc("init", main,NULL, PC_INIT); 
+    idle_proc=create_proc("idle",idle,NULL,PC_IDLE);
 
     int_enable();
 
@@ -136,6 +138,10 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
+    new->running_ticks=0;
+    new->wait_ticks=0;
+    new->average_latency=0;
+    new->scheduled_count=0;
 
 
     /*
@@ -210,9 +216,18 @@ void proc_tick(){
     //add to each proc in the ready queue their current latency
     //when actualy being scheduled add that latency to the total wait
     //and update average latency using a "num times scheduled count" avg_latency=(avg_latency*n-1 + latency)/n
+    PCB_t *proc = current_proc();
+    proc->running_ticks++;
 
-
-    // timer_tick(); //Simple 1 second tick counter
+    int i=0;
+    while(proc_tracker[i]!=NULL){
+        if(proc_tracker[i]==proc){
+            i++;
+            continue;
+        }
+        proc_tracker[i]->wait_ticks++;
+        i++;
+    }
 
     sleep_tick();
 
@@ -228,7 +243,10 @@ void proc_tick(){
  *  to the appropriate queue.
  * Must be called with interrupts disabled.*/
 void proc_reschedule(PCB_t *p){
-    //appending to ready processes if not idle process
+    /* Reset waiting ticks counter to 0 */
+    p->wait_ticks=0;
+
+    /* Appending to ready processes if not idle process. */
     if(p!=idle_proc){
         append_shared(ready_procs,p);
     }
@@ -289,7 +307,10 @@ void schedule(){
     // print(" next: ");
     // print(itoa(next->pid,str,BASE_DEC));
 
-
+    /* Update statistics */
+    next->average_latency=((next->average_latency*next->scheduled_count)+next->wait_ticks)/(next->scheduled_count+1);
+    next->scheduled_count++;
+    
     if(curr!=next){
         if(0){
             println("switching from: ");
@@ -488,6 +509,14 @@ void proc_test_A(){
     }
 }
 
+void proc_test_hardwork(){
+    int a=0;
+    while(1){
+        for(int i=0;i<1000000;i++)a++;
+        print_from(itoa(a,str,BASE_HEX),BOTTOM_LEFT);
+    }
+}
+
 /* Test Function */
 void proc_heap_display(){
     while(1){
@@ -495,8 +524,8 @@ void proc_heap_display(){
         // print_to(itoa(get_shared_heap_usage(),str,BASE_HEX),BOTTOM_RIGHT);
         get_shared_heap_usage();
         
-        print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_LEFT);
-        print_to("\%",BOTTOM_LEFT+2);
+        print_from(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_LEFT);
+        print_from("\%",BOTTOM_LEFT+2);
     }
 }
 

@@ -86,5 +86,6 @@ typedef struct sleeper{
 } sleeper;
 
 void proc_test_A();
+void proc_test_hardwork();
 void proc_heap_display();
 

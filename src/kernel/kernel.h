@@ -9,6 +9,7 @@
 #include "../interrupt/idt.h"
 #include "../paging/paging.h"
 #include "../processes/process.h"
+#include "../shell/shell.h"
 
 
 void kernel_entry(uint32_t, uint32_t addr);

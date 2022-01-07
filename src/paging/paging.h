@@ -46,7 +46,6 @@ bool free_phys_page(void *paddr, size_t n);
 bool free_virt_phys_page(void *vaddr);
 void *palloc(size_t n, uint8_t flags);
 void *palloc_kern(size_t n, uint8_t flags);
-// void *palloc_pcb(int pid);
 void *new_pd();
 
 void *virt_addr_space_duplication(page_directory_entry_t *pd);

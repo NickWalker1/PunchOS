@@ -35,6 +35,7 @@ PCB_t* current_proc(){
 }
 
 
+
 /* Gets the contents of the current process and prints it */
 void process_dump(PCB_t* p){
     if(!is_proc(p)) PANIC("Cannot p-dump non-process");

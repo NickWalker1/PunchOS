@@ -76,23 +76,19 @@ void paging_init(){
     int kernel_space_pages = 1024; //Identity map the first 4MiB of memory to kernel space
 
     for(i=0;i<kernel_space_pages;i++){
-        perform_map((i*PGSIZE),Kptov((i*PGSIZE)),base_pd,F_ASSERT);
+        perform_map((void*)(i*PGSIZE),Kptov((void*)(i*PGSIZE)),base_pd,F_ASSERT);
     }
-
-    //add PCB block mappings to the 64 page space saved earlier.
-    void *addr = base_PCB_block; 
 
     
     //Allocate 8 pages as a shared heap space for all processes.
     //Must request and allocate manually as cannot use palloc_kern yet due to processes
     //not being initialised yet.
 	void *heap_addr=Kptov(get_next_free_phys_page(SHR_HEAP_SIZE,F_ASSERT));
-    addr=heap_addr;
 
 
 	shared_first_seg = intialise_heap(heap_addr,heap_addr+(SHR_HEAP_SIZE*PGSIZE));
 
-    //by default before multiprocessing. 
+    //by default before multiprocessing start
     first_segment=shared_first_seg;
 
     //switch to using kernel_pd rather than temporary setup one.
@@ -220,7 +216,6 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
     }
 
     pool->first_free_idx=idx;
-    helper_variable=base_addr;
     return base_addr;
 }
 
@@ -456,7 +451,6 @@ void *virt_addr_space_duplication(page_directory_entry_t *pd){
 
     void* new_pd =get_next_free_phys_page(1,F_ASSERT);
 
-    helper_variable=new_pd;
 
     //temporary map in current process' virt address space also way for it to map itself cheekily
     // map_page(new_pd,Kptov(new_pd),F_ASSERT);
@@ -477,7 +471,6 @@ void *virt_addr_space_duplication(page_directory_entry_t *pd){
             /* Map page temporarily so we can write to it. */
             // map_page(pt_addr,Kptov(pt_addr),F_ASSERT);
 
-            helper_variable=pt_addr;
             /* Copy the page table over into the new pt */
             memcpy(Kptov(pt_addr),Kptov((void*)(pde.page_table_base_addr<<PTSHIFT)),PGSIZE);
 

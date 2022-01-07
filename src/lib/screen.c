@@ -199,6 +199,16 @@ void print_fail(){
     print_char_loc('L',4,row,RED_ON_BLACK);
 
 }
+
+
+void clear_line(int line){
+    if(line<0 || line>24) return;
+    int c;
+    for(c=0;c<MAX_COLS;c++){
+        print_char_loc(' ',c,line,WHITE_ON_BLACK);
+    }
+}
+
 /* Used to clear the screen */
 void clear_screen(){
     int row;
