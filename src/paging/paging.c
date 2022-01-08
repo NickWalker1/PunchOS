@@ -48,9 +48,9 @@ void paging_init(){
     
     /* Physical memory location where kernel finished loading */
     uint32_t kernel_end = (uint32_t)&_KERNEL_END;
-    //Align to next 4k boundary (4096 = 0x1000)
-    kernel_end= (uint32_t)Kvtop((void*)(kernel_end-kernel_end%PGSIZE + PGSIZE));
 
+    /*Align to next 4k boundary (4096 = 0x1000) and convert to physical address */
+    kernel_end= (uint32_t)Kvtop((void*)(kernel_end-kernel_end%PGSIZE + PGSIZE));
 
     void *end_addr =(void*)kernel_end;
     base_PCB_block=Kptov(end_addr);

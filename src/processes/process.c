@@ -22,7 +22,7 @@ static list* ready_procs;
 static list* sleeper_procs;
 
 // True at index i-1 if a process is using pid i.
-PCB_t *proc_tracker[MAX_PROCS];
+proc_diagnostics_t proc_tracker[MAX_PROCS];
 
 int total_ticks;
 
@@ -38,6 +38,7 @@ void multi_proc_start(){
     block_PIT=0;
 
     total_ticks=0;
+
 
     int_disable();
     
@@ -72,7 +73,8 @@ void processes_init(){
 
     lock_init(&shared_heap_lock);
 
-    
+    memset(proc_tracker,0,sizeof(proc_tracker));
+
     all_procs=list_init_shared();
     ready_procs=list_init_shared();
     sleeper_procs=list_init_shared();
@@ -101,7 +103,7 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     PCB_t *new= (PCB_t*) palloc_kern(1,F_ASSERT);
     if(!new) return NULL;
 
-    proc_tracker[pid-1]=new;
+
     /* Update pid and ppid */
     new->pid=pid;
     if(flags & PC_INIT){
@@ -138,10 +140,15 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
-    new->running_ticks=0;
-    new->wait_ticks=0;
-    new->average_latency=0;
-    new->scheduled_count=0;
+
+
+    /* Initialise process diagnostics struct */
+    proc_tracker[pid-1].present=true;
+    proc_tracker[pid-1].process=new;
+    proc_tracker[pid-1].running_ticks=0;
+    proc_tracker[pid-1].wait_ticks=0;
+    proc_tracker[pid-1].average_latency=0;
+    proc_tracker[pid-1].scheduled_count=0;
 
 
     /*
@@ -196,12 +203,11 @@ MemorySegmentHeader_t *proc_heap_init(){
 
     void *base = get_next_free_virt_page(HEAP_SIZE,F_ASSERT);
 
-
     int i;
     for(i=0;i<HEAP_SIZE;i++){
         map_page(phys+i*PGSIZE,base+i*PGSIZE,F_ASSERT);
     }
-
+    
     return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
 }
 
@@ -217,15 +223,15 @@ void proc_tick(){
     //when actualy being scheduled add that latency to the total wait
     //and update average latency using a "num times scheduled count" avg_latency=(avg_latency*n-1 + latency)/n
     PCB_t *proc = current_proc();
-    proc->running_ticks++;
+    proc_tracker[proc->pid-1].running_ticks++;
 
     int i=0;
-    while(proc_tracker[i]!=NULL){
-        if(proc_tracker[i]==proc){
+    while(proc_tracker[i].present){
+        if(proc_tracker[i].process==proc){
             i++;
             continue;
         }
-        proc_tracker[i]->wait_ticks++;
+        proc_tracker[i].wait_ticks++;
         i++;
     }
 
@@ -244,7 +250,7 @@ void proc_tick(){
  * Must be called with interrupts disabled.*/
 void proc_reschedule(PCB_t *p){
     /* Reset waiting ticks counter to 0 */
-    p->wait_ticks=0;
+    proc_tracker[p->pid-1].wait_ticks=0;
 
     /* Appending to ready processes if not idle process. */
     if(p!=idle_proc){
@@ -261,7 +267,9 @@ void proc_yield(){
     PCB_t* p = current_proc();
 
     int int_level=int_disable();
-    
+
+    //Update diagnostics TODO
+    proc_tracker[p->pid-1].mem_usage=heap_usage(p->first_segment);
 
     proc_reschedule(p);
 
@@ -308,8 +316,9 @@ void schedule(){
     // print(itoa(next->pid,str,BASE_DEC));
 
     /* Update statistics */
-    next->average_latency=((next->average_latency*next->scheduled_count)+next->wait_ticks)/(next->scheduled_count+1);
-    next->scheduled_count++;
+    proc_diagnostics_t *proc_d = &proc_tracker[next->pid-1];
+    proc_d->average_latency=((proc_d->average_latency*proc_d->scheduled_count)+proc_d->wait_ticks)/(proc_d->scheduled_count+1);
+    proc_d->scheduled_count++;
     
     if(curr!=next){
         if(0){
@@ -366,7 +375,10 @@ void idle(){
 void proc_block(){
     if(int_get_level()) PANIC("Cannot block without interrupts off");
 
-    current_proc()->status=P_BLOCKED; 
+    PCB_t *p=current_proc();
+    p->status=P_BLOCKED; 
+
+    proc_tracker[p->pid-1].mem_usage=heap_usage(p->first_segment);
 
     //Force an early context switch
     schedule();
@@ -375,9 +387,8 @@ void proc_block(){
 
 /* Unblocks the current process and adds it to the ready queue. */
 void proc_unblock(PCB_t* p){
-    helper_variable=0;
-    if(!is_proc(p)) PANIC("NOT THREAD");
-    if(p->status!=P_BLOCKED) PANIC("UNBLOCKING NON-BLOCKED Thread");
+    if(!is_proc(p)) PANIC("Cannot unblock non-process");
+    if(p->status!=P_BLOCKED) PANIC("Cannot unblock non-blocked process");
 
     int level=int_disable();
     proc_reschedule(p);
@@ -396,6 +407,8 @@ void proc_kill(PCB_t* p){
 
     println("KILLING PROCESS: ");
     print(itoa(p->pid,str,BASE_DEC));
+
+    proc_tracker[p->pid-1].present=false;
     
     remove_shared(all_procs,p);
 
@@ -420,6 +433,7 @@ void run(proc_func* function, void* aux){
     
     PCB_t* p= current_proc();
     p->first_segment=proc_heap_init();
+    first_segment=p->first_segment;
 
 
     int_enable();
@@ -506,6 +520,9 @@ void proc_test_A(){
     while(1){
         // println("proc "); print(current_proc()->name);
         proc_sleep(1,UNIT_SEC);
+        int x=malloc(250);
+        print_from(itoa(heap_usage(first_segment),str,BASE_DEC),BOTTOM_LEFT+20);
+        
     }
 }
 
@@ -554,10 +571,11 @@ void* get_pd(){
  * Returns -1 on failure. */
 p_id get_new_pid(){
     int i=1;
-    while(proc_tracker[i-1]!=NULL && i<=MAX_PROCS) i++;
+    while(proc_tracker[i-1].present && i<=MAX_PROCS) i++;
 
     if(i==MAX_PROCS) return -1;
 
+    proc_tracker[i-1].present=true;
     return i;
 }
 

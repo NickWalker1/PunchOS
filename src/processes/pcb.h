@@ -70,11 +70,6 @@ struct  PCB{
     /* Each process has it's own heap, this points to the start of it. */
     MemorySegmentHeader_t *first_segment;    
 
-    /* Timing information */
-    uint32_t running_ticks; /* Count of ticks when has been running process */
-    uint32_t wait_ticks; /* Current wait time before rescheduling */
-    uint32_t average_latency; /* Average number of ticks between being scheduled and being run */
-    uint32_t scheduled_count; /* Number of times this process has been scheduled */
 
 
     /* Virtual pool to store virtual page tracking info */
@@ -84,6 +79,23 @@ struct  PCB{
     /* Magic value to check for stack growth induced corruption and process validation */
     uint32_t magic;
 };
+
+
+typedef struct proc_diagnostics{
+    bool present;
+
+    PCB_t *process;
+    
+    uint32_t mem_usage; /* % Local Memory usage calculated using heap_usage() yield or block. */
+
+    /* Timing information */
+    uint32_t running_ticks; /* Count of ticks when has been running process */
+    uint32_t wait_ticks; /* Current wait time before rescheduling */
+    uint32_t average_latency; /* Average number of ticks between being scheduled and being run */
+    uint32_t scheduled_count; /* Number of times this process has been scheduled */
+
+} proc_diagnostics_t;
+
 
 uint32_t* get_base_page(uint32_t *addr);
 void *get_esp();

@@ -76,7 +76,6 @@ void *alloc(uint32_t size){
     uint32_t init_size =currSeg->size;
     currSeg->size=size;
     currSeg->free=false;
-    
 
     //first check if there isn't a next segment, or the next segment is not free
     if(!currSeg->next || !currSeg->next->free){
@@ -202,7 +201,8 @@ void shr_free(void *addr){
 uint32_t heap_usage(MemorySegmentHeader_t *s){
     uint32_t used,all,size;
  
-    used=all=0;
+    used=0;
+    all=0;
     while(s!=NULL){
         size=s->size+sizeof(MemorySegmentHeader_t);//TODO think about this
         all+=size;
@@ -211,6 +211,7 @@ uint32_t heap_usage(MemorySegmentHeader_t *s){
         
         s=s->next;
     }
+
     return used*100/all;
 }
 

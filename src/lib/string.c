@@ -3,7 +3,7 @@
 extern uint32_t helper_variable;
 /* sets n bytes at str to c */
 void *memset(void* str, int c, size_t n){
-    uint32_t* ptr = (uint32_t*)str;
+    char *ptr = (char*)str;
     size_t i;
     for(i=0;i<n;i++){
         *ptr=c;

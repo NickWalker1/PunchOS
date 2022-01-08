@@ -214,11 +214,13 @@ void clear_screen(){
     int row;
     int col;
 
+    
     for(row=0; row<MAX_ROWS;row++){
         for(col=0;col<MAX_COLS;col++){
             print_char_loc(' ',col,row,WHITE_ON_BLACK);
         }
     }
+    
     set_cursor(get_screen_offset(0,0));
 }
 
