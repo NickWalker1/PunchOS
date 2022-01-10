@@ -7,7 +7,7 @@
 #include "../lib/screen.h"
 #include "../lib/debug.h"
 #include "../interrupt/idt.h"
-#include "../paging/paging.h"
+#include "../memory/paging.h"
 #include "../processes/process.h"
 #include "../shell/shell.h"
 

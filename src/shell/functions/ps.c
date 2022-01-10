@@ -1,7 +1,7 @@
 #include "ps.h"
 
 #include "../../processes/process.h"
-#include "../../paging/heap.h"
+#include "../../memory/heap.h"
 
 extern proc_diagnostics_t proc_tracker[MAX_PROCS];
 extern uint32_t total_ticks;
@@ -25,8 +25,10 @@ void ps(){
     print_from("LAT",offset);
 
     int i;
+    int c;
     while(1){
         i=0;
+        c=0;
         while(proc_tracker[i].present){
             clear_line(i+2);
 

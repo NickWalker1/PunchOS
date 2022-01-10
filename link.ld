@@ -20,9 +20,9 @@ INPUT
     src/interrupt/handlers.o
     src/interrupt/idt.o
     src/interrupt/interrupt.o
-    src/paging/paging.o
-    src/paging/heap.o
-    src/paging/pd_swp.o
+    src/memory/paging.o
+    src/memory/heap.o
+    src/memory/pd_swp.o
     src/sync/sync.o
     src/processes/pcb.o
     src/processes/process.o

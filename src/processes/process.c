@@ -5,8 +5,8 @@
 
 #include "../sync/sync.h"
 
-#include "../paging/heap.h"
-#include "../paging/paging.h"
+#include "../memory/heap.h"
+#include "../memory/paging.h"
 
 extern void main();
 extern page_directory_entry_t *base_pd;
@@ -92,6 +92,7 @@ void processes_init(){
     // the process by changing the state and adding it to the ready queue
 }
 
+
 /* Allocates a page in kernel space for the PCB and sets
  * some basic info in PCB_t struct and returns pointer to it.
  */
@@ -143,12 +144,7 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
 
 
     /* Initialise process diagnostics struct */
-    proc_tracker[pid-1].present=true;
-    proc_tracker[pid-1].process=new;
-    proc_tracker[pid-1].running_ticks=0;
-    proc_tracker[pid-1].wait_ticks=0;
-    proc_tracker[pid-1].average_latency=0;
-    proc_tracker[pid-1].scheduled_count=0;
+    proc_diagnostics_init(pid,new);
 
 
     /*
@@ -211,6 +207,17 @@ MemorySegmentHeader_t *proc_heap_init(){
     return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
 }
 
+
+/* Intialise process diagnostics struct */
+void proc_diagnostics_init(int pid, PCB_t *p){
+    proc_tracker[pid-1].present=true;
+    proc_tracker[pid-1].process=p;
+    proc_tracker[pid-1].running_ticks=0;
+    proc_tracker[pid-1].wait_ticks=0;
+    proc_tracker[pid-1].average_latency=0;
+    proc_tracker[pid-1].scheduled_count=0;
+
+}
 
 /* called by PIT interrupt handler */
 void proc_tick(){

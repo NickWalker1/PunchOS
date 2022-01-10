@@ -35,11 +35,33 @@ char *strcpy(char *dest, char *src){
     return dest;
 }
 
-/* Returns the length of the string up to STR_MAX_LEN */
+/* Returns the length of the string up to STR_MAX_LEN. len = num chars + 1*/
 int strlen(char* str){
     size_t i=0;
     while(str[i]!=0 && i<STR_MAX_LEN){
         i++;
     }
     return i;
+}
+
+/* Returns 0 on equal strings */
+int strcmp(char *a, char *b){
+    int i=0;
+    while(a[i]==b[i]){
+        if(a[i]==0 && b[i]==0) return 0;
+        i++;
+    }
+    
+    return a[i]-b[i];
+}
+
+/* Returns 0 on equal strings n chars in */
+int strncmp(char *a, char *b, size_t n){
+    int i=0;
+    while(a[i]==b[i]){
+        if(i==n || ( a[i]==0 && b[i]==0 )) return 0;
+        i++;
+    }
+    
+    return a[i]-b[i];
 }

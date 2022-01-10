@@ -24,7 +24,7 @@ void first_switch();
 
 
 
-#include "../paging/paging.h"
+#include "../memory/paging.h"
 
 extern phys_pool_t K_virt_pool;
 
@@ -54,6 +54,7 @@ typedef struct switch_entry_stack{
 
 void processes_init();
 MemorySegmentHeader_t *proc_heap_init();
+void proc_diagnostics_init(int pid, PCB_t *p);
 PCB_t *create_proc(char* name, proc_func* func, void* aux,uint8_t flags);
 void proc_tick();
 void proc_yield();
@@ -88,4 +89,3 @@ typedef struct sleeper{
 void proc_test_A();
 void proc_test_hardwork();
 void proc_heap_display();
-

@@ -1,7 +1,7 @@
 #include "list.h"
 
 
-#include "../paging/heap.h"
+#include "../memory/heap.h"
 #include "../lib/debug.h"
 
 
@@ -229,4 +229,13 @@ void* list_get(list* l, uint32_t idx){
 
 int get_size(list *l){
     return l->size;
+}
+
+list_elem *list_contains(list *l, void *data){
+    list_elem *elem=l->head;
+    while(elem!=NULL){
+        if(elem->data==data) return elem;
+        elem=elem->next;
+    }
+    return NULL;
 }

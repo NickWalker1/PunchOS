@@ -126,7 +126,6 @@ void perform_map(void *paddr, void *vaddr, page_directory_entry_t* pd, uint8_t f
         pd[pd_idx].page_table_base_addr=((uint32_t)pt_addr >> PGBITS); //Only most significant 20bits
         pd[pd_idx].present=1;
         pd[pd_idx].read_write=1;
-        // perform_map(pt_addr,Kptov(pt_addr),pd,flags); /* so that you can write to this address in kernel address space */
     }
     pt=(page_table_entry_t*) Kptov((void*)(pd[pd_idx].page_table_base_addr<<PGBITS)); //Push back to correct address
     pt[pt_idx].page_base_addr=(uint32_t) paddr>>PGBITS; //Only 20 most significant bits

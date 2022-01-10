@@ -8,8 +8,8 @@ typedef int32_t p_id;
 typedef struct PCB PCB_t;
 
 #include "../lib/debug.h"
-#include "../paging/paging.h"
-#include "../paging/heap.h"
+#include "../memory/paging.h"
+#include "../memory/heap.h"
 
 
 #define PROC_MAGIC 0x12345678
