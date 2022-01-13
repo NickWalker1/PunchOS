@@ -1,5 +1,6 @@
 #include "debug.h"
 
+uint32_t helper_variable;
 
 /* If cond fails, will PANIC with msg */
 void ASSERT(bool cond, char *msg){

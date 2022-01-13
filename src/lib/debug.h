@@ -5,7 +5,7 @@
 #include "../interrupt/cpu_state.h"
 #include "../interrupt/handlers.h"
 
-uint32_t helper_variable;
+extern uint32_t helper_variable;
 
 
 void ASSERT(bool cond, char *msg);
