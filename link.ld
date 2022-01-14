@@ -29,6 +29,7 @@ INPUT
     src/processes/pswap.o
     src/shell/functions/ps.o
     src/shell/shell.o
+    src/processes/shm.o
 )
 OUTPUT
 (
