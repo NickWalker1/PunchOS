@@ -57,7 +57,7 @@ int strcmp(char *a, char *b){
 
 /* Returns 0 on equal strings n chars in */
 int strncmp(char *a, char *b, size_t n){
-    int i=0;
+    size_t i=0;
     while(a[i]==b[i]){
         if(i==n || ( a[i]==0 && b[i]==0 )) return 0;
         i++;

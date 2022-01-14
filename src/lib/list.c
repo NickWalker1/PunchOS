@@ -174,8 +174,10 @@ bool remove_shared(list *l, void *data){
 /* Removes the first element from the list with the given data,
  * and returns that element */
 list_elem *remove_elem(list *l, void *data){
+    if(is_empty(l)) return NULL;
+    
     list_elem* elem=l->head;
-    helper_variable=1;
+
     while(elem->data!=data && elem->next!=NULL){
         elem=elem->next;
     }

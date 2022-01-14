@@ -31,7 +31,7 @@ shared_desc_t *shm_contains(char *name){
 }
 
 shared_desc_t *shm_open(char *name, uint8_t flags){
-    if(flags & O_CREATE){
+    if(flags & O_CREAT){
         if(shm_contains(name)!=NULL) return NULL;
 
         void *paddr = get_next_free_phys_page(1,0);
@@ -49,6 +49,8 @@ shared_desc_t *shm_open(char *name, uint8_t flags){
     if(flags & O_OPEN){
         return shm_contains(name);
     }
+
+    return NULL;
 }
 
 
@@ -61,14 +63,11 @@ void *mmap(shared_desc_t *desc){
 }
 
 
-/* Not Implemented */
-void shm_unlink(char *name){}
-
 
 /* Test Function A */
 void shm_A(){
     shm_init();
-    shared_desc_t *desc = shm_open(BLOCKA,O_CREATE);
+    shared_desc_t *desc = shm_open(BLOCKA,O_CREAT);
 
     if(!desc) PANIC("shm create failed");
     void *ptr= mmap(desc);
@@ -76,7 +75,6 @@ void shm_A(){
     write(ptr,testa,strlen(testa)+1);
 
 
-    while(1);
 }
 
 /* Test Function B */
@@ -93,8 +91,6 @@ void shm_B(){
     if(strcmp(ptr,testa)==0){
         println("WOOP WOOP!");
     }
-
-    while(1);
 
 }
 

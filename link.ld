@@ -30,6 +30,7 @@ INPUT
     src/shell/functions/ps.o
     src/shell/shell.o
     src/processes/shm.o
+    src/processes/msg.o
 )
 OUTPUT
 (

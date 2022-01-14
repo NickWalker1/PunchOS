@@ -414,10 +414,12 @@ void proc_kill(PCB_t* p){
 
     println("KILLING PROCESS: ");
     print(itoa(p->pid,str,BASE_DEC));
+    
 
     proc_tracker[p->pid-1].present=false;
     
     remove_shared(all_procs,p);
+
 
     remove_shared(ready_procs,p);
 
@@ -527,8 +529,7 @@ void proc_test_A(){
     while(1){
         // println("proc "); print(current_proc()->name);
         proc_sleep(1,UNIT_SEC);
-        int x=malloc(250);
-        print_from(itoa(heap_usage(first_segment),str,BASE_DEC),BOTTOM_LEFT+20);
+        malloc(250);
         
     }
 }

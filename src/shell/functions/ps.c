@@ -25,10 +25,8 @@ void ps(){
     print_from("LAT",offset);
 
     int i;
-    int c;
     while(1){
         i=0;
-        c=0;
         while(proc_tracker[i].present){
             clear_line(i+2);
 
