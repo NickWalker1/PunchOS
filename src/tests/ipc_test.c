@@ -7,15 +7,19 @@
 #include "../lib/screen.h"
 #include "../lib/math.h"
 
+
 lock test_lock;
 condition test_cond;
+
 
 uint8_t shm_mark = 0;
 uint8_t  mq_mark = 0;
 
+
 char *blocka = "blocka";
 char *blockb = "blockb";
 char *blockc = "blockc";
+
 
 /* Primary function for IPC test process */
 void IPC_test(){
@@ -30,6 +34,7 @@ void IPC_test(){
 
     test_report();
 }
+
 
 /* Producer process */
 void producer(){
@@ -58,15 +63,18 @@ void producer(){
     lock_release(&test_lock);
 }
 
+
 /* Consumer process */
 void consumer(){
     lock_acquire(&test_lock);
+
+	/* Shared Memory Tests */
 
     shared_desc_t *desc_a = shm_open(blocka,O_OPEN);
     shared_desc_t *desc_b = shm_open(blockb,O_OPEN);
     shared_desc_t *desc_c = shm_open(blockc,O_OPEN);
 
-	/* Test 1 to open descriptors */
+	/* Test 1: Open descriptors */
 	if(!desc_a || !desc_b || !desc_c){
 		mq_mark = shm_mark=0;
 		cond_signal(&test_cond,&test_lock);
@@ -84,10 +92,20 @@ void consumer(){
 	if(strcmp(buffer,blocka)==0) shm_mark = shm_mark | 1<<1;
 
 
+	
+
+	/* Message Queue Tests */
+
+	/* Test 1: Creation */
+
+	/* Test 2: Basic Send */ 
+
+	/* Test 3: Test buffer wrap around */
 
     cond_signal(&test_cond,&test_lock);
     lock_release(&test_lock);
 }
+
 
 /* Calls performTest() and displays results */
 void test_report(){
