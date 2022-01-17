@@ -7,3 +7,4 @@ int pow(int base,int exp){
     for(int i=0;i<exp;i++)
         result*=base;
     return result;
+}

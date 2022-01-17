@@ -24,6 +24,8 @@ void IPC_test(){
     create_proc("PROD",producer,NULL,PC_NFLAG);
     create_proc("CONS",consumer,NULL,PC_NFLAG);
 
+
+	/* Wait for consumer to finish testing */
     cond_wait(&test_cond,&test_lock);
 
     test_report();
@@ -59,6 +61,28 @@ void producer(){
 /* Consumer process */
 void consumer(){
     lock_acquire(&test_lock);
+
+    shared_desc_t *desc_a = shm_open(blocka,O_OPEN);
+    shared_desc_t *desc_b = shm_open(blockb,O_OPEN);
+    shared_desc_t *desc_c = shm_open(blockc,O_OPEN);
+
+	/* Test 1 to open descriptors */
+	if(!desc_a || !desc_b || !desc_c){
+		mq_mark = shm_mark=0;
+		cond_signal(&test_cond,&test_lock);
+		lock_release(&test_lock);
+		return;
+	}
+	shm_mark=shm_mark | 1<<0;
+
+	void *buffer = malloc(256);
+
+	/* Test 2: Can Read from 1 descriptor */
+
+	void *ptr_a = mmap(desc_a);
+	read(buffer,ptr_a,7);
+	if(strcmp(buffer,blocka)==0) shm_mark = shm_mark | 1<<1;
+
 
 
     cond_signal(&test_cond,&test_lock);

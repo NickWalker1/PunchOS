@@ -19,8 +19,8 @@ void *mmap(shared_desc_t *desc);
 void shm_unlink(char *name); /* Not implemented */
 
 
-void *write(void *,void*,size_t);
-void *read(void *,void*,size_t);
+void *write(void *dest ,void *src,size_t n);
+void *read(void *dest,void *src,size_t n);
 
 void shm_A();
 void shm_B();
