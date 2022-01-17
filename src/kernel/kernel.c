@@ -54,8 +54,11 @@ void main(){
 	
 	// create_proc("PS",ps,NULL,PC_NFLAG);
 
-	create_proc("SHMA",shm_A,NULL,PC_NFLAG);
-	create_proc("SHMB",shm_B,NULL,PC_NFLAG);
+	// create_proc("SHMA",shm_A,NULL,PC_NFLAG);
+	// create_proc("SHMB",shm_B,NULL,PC_NFLAG);
+
+	create_proc("MQA",mq_A,NULL,PC_NFLAG);
+	create_proc("MQB",mq_B,NULL,PC_NFLAG);
 
 	spin(TOP_RIGHT);
 

@@ -12,6 +12,7 @@ INPUT
     src/gdt/gdt_flush.o
     src/drivers/low_level.o
     src/lib/int.o
+    src/lib/math.o
     src/lib/debug.o
     src/lib/screen.o 
     src/lib/string.o
@@ -29,8 +30,7 @@ INPUT
     src/processes/pswap.o
     src/shell/functions/ps.o
     src/shell/shell.o
-    src/processes/shm.o
-    src/processes/msg.o
+    src/processes/ipc.o
 )
 OUTPUT
 (

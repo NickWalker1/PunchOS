@@ -10,7 +10,7 @@
 #include "../memory/paging.h"
 #include "../processes/process.h"
 #include "../shell/shell.h"
-#include "../processes/shm.h"
+#include "../processes/ipc.h"
 
 
 void kernel_entry(uint32_t, uint32_t addr);
