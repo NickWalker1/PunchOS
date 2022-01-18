@@ -138,6 +138,7 @@ void mq_init(){
 }
 
 
+/* Attr must be allocated in shared space if not NULL */
 mqd_t *mq_open(char *name, mq_attr_t *attr, uint8_t flags){
     if(strlen(name)>12) return NULL;
 
@@ -148,7 +149,7 @@ mqd_t *mq_open(char *name, mq_attr_t *attr, uint8_t flags){
             attr = shr_malloc(sizeof(mq_attr_t));
             memcpy(attr,default_mq_attr,sizeof(mq_attr_t));
         }
-
+        if(attr->mq_maxmsg*attr->mq_msgsize>PGSIZE) return NULL;
         mqd_t *mqdes = shr_malloc(sizeof(mqd_t));
         strcpy(mqdes->name,name);
         mqdes->attr=attr;
@@ -173,7 +174,7 @@ mqd_t *mq_open(char *name, mq_attr_t *attr, uint8_t flags){
 
 
 size_t mq_close(mqd_t *mqdes){
-
+    return 0;
 }
 
 size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size){

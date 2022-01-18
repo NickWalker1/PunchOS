@@ -2,6 +2,11 @@
 
 uint32_t helper_variable;
 
+/* Character buffer for warnings  */
+char WARN[WARN_CHAR_MAX*WARN_LINE_MAX];
+
+int WARN_LINE =0;
+
 /* If cond fails, will PANIC with msg */
 void ASSERT(bool cond, char *msg){
     if(!cond) PANIC(msg);
@@ -37,7 +42,36 @@ void PANIC_EXC(char* msg, exception_state* state){
     print(itoa(helper_variable,str,BASE_HEX));
     exception_state_dump(state);
 
+    WARN_DUMP();
+
     halt();
+}
+
+/* Prints the warning data to the PANIC screen */
+void WARN_DUMP(){
+    int line_off =LINE_OFF;
+    print_from("| Kernel Warnings:",WARN_BASE_OFF);
+    int l =0;
+    while(WARN[l*WARN_CHAR_MAX]!=0 && l<WARN_LINE_MAX){
+        print_from("| ",WARN_BASE_OFF+line_off);
+        print_from(&WARN[l*WARN_CHAR_MAX],WARN_BASE_OFF+line_off+4);
+        line_off+=LINE_OFF;
+        l++;
+    }
+
+}
+
+
+/* Kernel Warning function for debugging help. */
+void KERN_WARN(char *msg){
+    if(WARN_LINE==WARN_LINE_MAX){
+        int i;
+        for(i=1;i<WARN_LINE_MAX;i++){
+            strcpy(&WARN[(i-1)*WARN_CHAR_MAX],&WARN[i*WARN_CHAR_MAX]);
+        }
+    }
+    strcpy(&WARN[WARN_LINE*WARN_CHAR_MAX],msg);
+    WARN_LINE=WARN_LINE+(strlen(msg)/WARN_LINE_MAX) + 1;
 }
 
 

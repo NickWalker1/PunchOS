@@ -15,6 +15,7 @@ void kernel_entry(uint32_t magic, uint32_t addr){
 	print_ok();
 
 
+
 	/* Final job of setup is to start multiprocesing.
 	Must be final as this function will not return */
 	multi_proc_start();
@@ -45,21 +46,18 @@ void main(){
 	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
 	println("");
                       
-	// create_proc("A",proc_test_A,NULL,PC_NFLAG);
-	// create_proc("B",proc_test_A,NULL,PC_NFLAG);
-	// create_proc("Hard1",proc_test_hardwork,NULL,PC_NFLAG);
-	// create_proc("Hard2",proc_test_hardwork,NULL,PC_NFLAG);
+	create_proc("A",proc_test_A,NULL,PC_NFLAG);
+	create_proc("B",proc_test_A,NULL,PC_NFLAG);
+	create_proc("Hard1",proc_test_hardwork,NULL,PC_NFLAG);
+	create_proc("Hard2",proc_test_hardwork,NULL,PC_NFLAG);
 
-	// proc_sleep(2,UNIT_SEC);
-	
-	// create_proc("PS",ps,NULL,PC_NFLAG);
+	// create_proc("MQA",mq_A,NULL,PC_NFLAG);
+	// create_proc("MQB",mq_B,NULL,PC_NFLAG);
 
-	// create_proc("SHMA",shm_A,NULL,PC_NFLAG);
-	// create_proc("SHMB",shm_B,NULL,PC_NFLAG);
 
-	create_proc("MQA",mq_A,NULL,PC_NFLAG);
-	create_proc("MQB",mq_B,NULL,PC_NFLAG);
+	proc_sleep(2,UNIT_SEC);
 
+	create_proc("PS",ps,NULL,PC_NFLAG);
 	spin(TOP_RIGHT);
 
 }

@@ -6,12 +6,14 @@
 #include "typedefs.h"
 
 #define VIDEO_ADDRESS 0xc00b8000
+
 #define TOP_RIGHT 158
 #define TOP_LEFT 0
-#define LINE_OFF 160
-#define CHAR_OFF 2
 #define BOTTOM_LEFT (0+80*24)*2
 #define BOTTOM_RIGHT (79+80*24)*2
+
+#define LINE_OFF 160
+#define CHAR_OFF 2
 #define MAX_ROWS 25
 #define MAX_COLS 80
 
@@ -19,6 +21,8 @@
 #define WHITE_ON_BLUE  0x1f
 #define GREEN_ON_BLACK 0x0a
 #define RED_ON_BLACK   0x0c
+
+#define WARN_BASE_OFF  (39+80*2)*2
 
 
 //Screen device IO ports
