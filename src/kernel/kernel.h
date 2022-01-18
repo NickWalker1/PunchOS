@@ -11,6 +11,7 @@
 #include "../processes/process.h"
 #include "../shell/shell.h"
 #include "../processes/ipc.h"
+#include "../tests/ipc_test.h"
 
 
 void kernel_entry(uint32_t, uint32_t addr);

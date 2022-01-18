@@ -423,7 +423,7 @@ void proc_kill(PCB_t* p){
 
     remove_shared(ready_procs,p);
 
-    //TODO FIX THIS
+    //TODO clear all memory stuff not just return...
     return;
 
     //TODO Free PID 

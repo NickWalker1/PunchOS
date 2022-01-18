@@ -12,8 +12,8 @@ lock test_lock;
 condition test_cond;
 
 
-uint8_t shm_mark = 0;
-uint8_t  mq_mark = 0;
+size_t shm_mark = 0;
+size_t mq_mark = 0;
 
 
 char *blocka = "blocka";
@@ -21,11 +21,13 @@ char *blockb = "blockb";
 char *blockc = "blockc";
 
 
-/* Primary function for IPC test process */
+/* Primary function for IPC test process.
+ * WARNING: Tests are not exhaustive */
 void IPC_test(){
     lock_init(&test_lock);
     cond_init(&test_cond);
 
+	lock_acquire(&test_lock);
 
     create_proc("PROD",producer,NULL,PC_NFLAG);
     create_proc("CONS",consumer,NULL,PC_NFLAG);
@@ -45,30 +47,49 @@ void producer(){
     shm_init();
     mq_init();
 
+
 	void *buffer=malloc(256);
 
+	/*-------- Shared Memory Tests --------*/
     shared_desc_t *desc_a = shm_open(blocka,O_CREAT);
     shared_desc_t *desc_b = shm_open(blockb,O_CREAT);
     shared_desc_t *desc_c = shm_open(blockc,O_CREAT);
+
+	/* Test 1: Basic Creation */
+
+	if(desc_a && desc_b && desc_c) shm_mark = shm_mark | 1<<0;
+
+
 
     void *ptr_a = mmap(desc_a);
     void *ptr_b = mmap(desc_b);
     void *ptr_c = mmap(desc_c);
 
+	/* Test 2: Basic Write */	
     write(ptr_a,blocka,7);
+
+	/* Test 3: Consecutive Write */
 
     write(ptr_b,blockb,7);
     ptr_b+=7;
     write(ptr_b,blockb,7);
 
-	/* Message Queue Tests */
+	write(ptr_c, blockc,7);
+
+
+
+
+	/*--------- Message Queue Tests --------*/
+
+
 
 	/* Test 1: Creation */
 
 	/* Test default attributes */
 	mqd_t *mqdes_1 = mq_open("MQ1",NULL,O_CREAT);
-	if(!mqdes_1) return;
+	if(mqdes_1) mq_mark=mq_mark | 1<<0;
 
+	/* Test 2 using attributes */
 
 	mq_attr_t *attr= shr_malloc(sizeof(mq_attr_t));
 	attr->mq_curmsgs=0;;
@@ -76,48 +97,55 @@ void producer(){
 	attr->mq_maxmsg=8;
 	attr->mq_flags=0;
 
-	/* Test using attributes */
 	mqd_t *mqdes_2 = mq_open("MQ2",attr,O_CREAT);
-	mqdes_2->attr->mq_msgsize=128;
+	if(mqdes_2->attr->mq_msgsize==128) mq_mark= mq_mark | 1<<1;
 
-	/* Test failure */
+	/* Test 3: Generic Failure Cases */
 
-	mqd_t *mqdes_3 = mq_open("MQ2",NULL, O_CREAT);
-	if(mqdes_1 && mqdes_2 && !mqdes_3) mq_mark = mq_mark | 1<<0;
-
-
-	/* Test 2: Basic Send/Recieve */ 
-
-	mq_send(mqdes_2,blocka,7);
+	if(!mq_open("MQ1",NULL, O_CREAT) && !mq_open("A",NULL,0)) mq_mark = mq_mark | 1<<2;
 
 
+	/* Test 4: Basic Send/Recieve */ 
 
-	/* Test 3: Repeated send */
+	if(mq_send(mqdes_2,blockb,7)==7) mq_mark = mq_mark | 1<<3;
 
-	mq_send(mqdes_3,blocka,7);
-	mq_send(mqdes_3,blockb,7);
-	mq_send(mqdes_3,blockc,7);
 
-	/* Test 4: Buffer wrap around */
 
-	mq_recieve(mqdes_3,buffer,7);
-	mq_recieve(mqdes_3,buffer,7);
+	/* Test 5: Repeated Send */
 
-	int status =1;
-	for(int i=0;i<7;i++){
-		status = status & mq_send(mqdes_3,blocka,7);
-	}
+	mqd_t *mqdes_3 = mq_open("MQ3",attr,O_CREAT);
+
+	int status=1;
+
+	status = status & (mq_send(mqdes_3,blockc,7)==7);
+	status = status & (mq_send(mqdes_3,blockb,7)==7);
+	status = status & (mq_send(mqdes_3,blocka,7)==7);
+	if(status) mq_mark = mq_mark | 1<<4;
+
+
+	/* Test 6: Buffer wrap around */
+
+	mqd_t *mqdes_4 = mq_open("MQ4",attr,O_CREAT);
+	mq_send(mqdes_4,blocka,7);
+	mq_send(mqdes_4,blocka,7);
+	mq_send(mqdes_4,blocka,7);
+
+	mq_recieve(mqdes_4,buffer,256);
+	mq_recieve(mqdes_4,buffer,256);
+
+	if(mqdes_4->write_hdr==3 && mqdes_4->read_hdr==2) mq_mark = mq_mark | 1<<5;
+
+
 	
-	/* Test 5: Test Full */
+	/* Test 7: Test Full Queue*/
+	status=1;
+	for(int i=3;i<8;i++)status=status & mq_send(mqdes_3,blocka,7);
+	if(status && !mq_send(mqdes_3,blockb,7)) mq_mark = mq_mark | 1<<6;
 
-	mq_send(mqdes_2,blockb,7);
-	mq_send(mqdes_2,blockb,7);
-    
-    write(ptr_c,blockc,7);
-
-	/* Test failure on size */
+	/* Test 8: Failure on message size */
 	status = mq_send(mqdes_3,blockc,2000000);
-	if(!status) mq_mark = mq_mark | 1<<2;
+	if(!status) mq_mark = mq_mark | 1<<7;
+
 
     lock_release(&test_lock);
 }
@@ -136,50 +164,54 @@ void consumer(){
     shared_desc_t *desc_b = shm_open(blockb,O_OPEN);
     shared_desc_t *desc_c = shm_open(blockc,O_OPEN);
 
-	/* Test 1: Open descriptors */
-	if(!desc_a || !desc_b || !desc_c){
-		mq_mark = shm_mark=0;
-		cond_signal(&test_cond,&test_lock);
-		lock_release(&test_lock);
-		return;
-	}
-	shm_mark=shm_mark | 1<<0;
+	/* Test 4: Open descriptors */
+	if(desc_a && desc_b && desc_c) shm_mark=shm_mark | 1<<3;
 
 
-	/* Test 2: Can Read from 1 descriptor */
+	/* Test 5: Can Read from 1 descriptor 
+			   Also checks Test 2 validity.*/
 
 	void *ptr_a = mmap(desc_a);
 	read(buffer,ptr_a,7);
-	if(strcmp(buffer,blocka)==0) shm_mark = shm_mark | 1<<1;
+	if(strcmp(buffer,blocka)==0) shm_mark = shm_mark | 1<<4 | 1<<1;
 
 
-	/* Test 3: Ensure virtual address space independence */
+	/* Test 6: Ensure independence.
+			   Also checks Test 3 validity. */
+
 	void *ptr_b = mmap(desc_b);
 	void *ptr_c = mmap(desc_c);
 
 	read(buffer,ptr_b,7);
-	read(buffer,ptr_c,7);
+	read(buffer2,ptr_c,7);
 
-	if(strcmp(buffer,buffer2)==0) shm_mark = shm_mark | 1<<2;
+	if(strcmp(buffer,blockb)==0 && strcmp(buffer2,blockc)==0) shm_mark = shm_mark | 1<<5 | 1<<2;
 
 
 
 
 	/*-------- Message Queue Tests --------*/
 
-	/* Test 2: Basic Send/Recieve */
+	/* Test 9: Basic Send/Recieve (Based on test 4 send)*/
+	mqd_t *mqdes_2 = mq_open("MQ2",NULL,O_OPEN);
+
+	mq_recieve(mqdes_2,buffer,256);
+	if(strcmp(buffer,blockb)==0) mq_mark = mq_mark | 1<<8;
 
 
-	/* Test 3: Repeated send */
-	mqd_t *mqdes_3 = mq_open("MQ2",NULL,O_OPEN);
+	/* Test 10: Repeated Recieve (Based on test 5 send) */
 
-	int status = mq_recieve(mqdes_3,buffer,7);
-	if(strcmp(buffer,blockc)==0) mq_mark = mq_mark | 1<<1;
+	mqd_t *mqdes_3 = mq_open("MQ3",NULL,O_OPEN);
 
-
-	/* Test 4: Buffer wrap around */
-
-	/* Test 5: Test Full */
+	int status=1;
+	int check=1;
+	status = status & mq_recieve(mqdes_3,buffer,256);
+	check  = check  & (strcmp(buffer,blockc)==0);
+	status = status & mq_recieve(mqdes_3,buffer,256);
+	check  = check  & (strcmp(buffer,blockb)==0);
+	status = status & mq_recieve(mqdes_3,buffer,256);
+	check  = check  & (strcmp(buffer,blocka)==0);
+	if(check) mq_mark = mq_mark | 1<< 9;
 
 
 

@@ -7,7 +7,8 @@
 
 list *list_init_shared(){
     list *new_list=(list*) shr_malloc(sizeof(list));
-    if(!new_list) return NULL;
+    if(!new_list)
+        return NULL;
 
     return list_setup(new_list,true);
 }
@@ -31,7 +32,7 @@ list *list_setup(list *l, bool is_shared){
 
 
 void *pop_shared(list *l){
-    ASSERT(l->is_shared,"List shared type mismatch");
+    ASSERT(l->is_shared,"List shared type mismatch on pop_shared");
     list_elem *elem=pop_elem(l);
     if(elem){
         void *data=elem->data;
@@ -44,7 +45,7 @@ void *pop_shared(list *l){
 
 /* Pops an element from the list,frees it and returns the data pointer */
 void* pop(list* l){
-    ASSERT(!l->is_shared,"List shared type mismatch");
+    ASSERT(!l->is_shared,"List shared type mismatch on pop");
     list_elem *elem = pop_elem(l);
     if(elem){
         void *data=elem->data;
@@ -72,7 +73,7 @@ list_elem *pop_elem(list *l){
 
 /* Allocates list element and pushes it to the front of the list */
 bool push(list *l, void *data){
-    ASSERT(!l->is_shared,"List shared type mismatch");
+    ASSERT(!l->is_shared,"List shared type mismatch on push");
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
     if(!elem) return false;
     elem->data=data;
@@ -83,7 +84,7 @@ bool push(list *l, void *data){
 }
 
 bool push_shared(list *l, void *data){
-    ASSERT(l->is_shared, "List shared type mismatch");
+    ASSERT(l->is_shared, "List shared type mismatch on push_shared");
     list_elem* elem = (list_elem*) shr_malloc(sizeof(list_elem));
     if(!elem) return false;
     elem->data=data;
@@ -104,7 +105,7 @@ void push_elem(list *l, list_elem *elem){
 
 /* Appends data to list. */
 bool append(list *l, void *data){
-    ASSERT(!l->is_shared,"List shared type mismatch");
+    ASSERT(!l->is_shared,"List shared type mismatch on append");
     list_elem* elem = (list_elem*) malloc(sizeof(list_elem));
     if(!elem) return false;
     elem->data=data;
@@ -114,10 +115,9 @@ bool append(list *l, void *data){
 }
 
 bool append_shared(list *l, void *data){
-    ASSERT(l->is_shared,"List shared tpye mismatch");
+    ASSERT(l->is_shared,"List shared tpye mismatch on append_shared");
     list_elem* elem = (list_elem*) shr_malloc(sizeof(list_elem));
     if(!elem) return false;
-    // println("appending:"); print(itoa(elem,str,BASE_HEX));
     elem->data=data;
     elem->next=NULL;
     append_elem(l,elem);
@@ -151,7 +151,7 @@ bool is_empty(list* l){
 /* Removes the first element with the given data from the list and frees it.
  * Returns true on success */
 bool remove(list *l, void *data){
-    ASSERT(!l->is_shared,"List shared type mismatch");
+    ASSERT(!l->is_shared,"List shared type mismatch on remove");
     list_elem *elem = remove_elem(l,data);
     if(elem){
         free(elem);
@@ -161,7 +161,7 @@ bool remove(list *l, void *data){
 }
 
 bool remove_shared(list *l, void *data){
-    ASSERT(l->is_shared,"List shared type mismatch");
+    ASSERT(l->is_shared,"List shared type mismatch on remove_shared");
     list_elem *elem = remove_elem(l,data);
     if(elem){
         // println("removing");print(itoa(elem,str,BASE_HEX));

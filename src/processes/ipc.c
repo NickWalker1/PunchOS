@@ -63,37 +63,6 @@ void *mmap(shared_desc_t *desc){
 }
 
 
-
-/* Test Function A */
-void shm_A(){
-    shm_init();
-    shared_desc_t *desc = shm_open(BLOCKA,O_CREAT);
-
-    if(!desc) PANIC("shm create failed");
-    void *ptr= mmap(desc);
-
-    write(ptr,testa,strlen(testa)+1);
-
-
-}
-
-/* Test Function B */
-void shm_B(){
-    proc_sleep(1,UNIT_SEC);
-
-    shared_desc_t *desc = shm_open(BLOCKA,O_OPEN);
-    void *dest = malloc(50);
-
-    void *ptr = mmap(desc);
-
-    read(dest,ptr,strlen(testa)+1);
-
-    if(strcmp(ptr,testa)==0){
-        println("WOOP WOOP!");
-    }
-
-}
-
 /* Basic write function */
 void *write(void *dest, void *src, size_t n){
     return memcpy(dest,src,n);
@@ -138,29 +107,39 @@ void mq_init(){
 }
 
 
-/* Attr must be allocated in shared space if not NULL */
-mqd_t *mq_open(char *name, mq_attr_t *attr, uint8_t flags){
+/* Returns pointer to mqd_t struct allocated in shared space.
+ * Will create the struct if given O_CREAT and a unique name.
+ *    Can provide custom attributes using the given_attr arugment.
+ *    On NULL defaults will be provided.
+ * Will return an existing struct with O_OPEN and a valid name. */
+mqd_t *mq_open(char *name, mq_attr_t *given_attr, uint8_t flags){
     if(strlen(name)>12) return NULL;
 
     if(flags & O_CREAT){
         if(mq_list_contains(name)!=NULL) return NULL;
 
-        if(!attr){
-            attr = shr_malloc(sizeof(mq_attr_t));
+        mq_attr_t *attr = shr_malloc(sizeof(mq_attr_t));
+        if(!given_attr){
             memcpy(attr,default_mq_attr,sizeof(mq_attr_t));
         }
-        if(attr->mq_maxmsg*attr->mq_msgsize>PGSIZE) return NULL;
+        else{
+            memcpy(attr, given_attr,sizeof(mq_attr_t));
+        }
+
+        if(attr->mq_maxmsg*attr->mq_msgsize>PGSIZE){
+            shr_free(attr);
+            return NULL;
+        } 
+
         mqd_t *mqdes = shr_malloc(sizeof(mqd_t));
         strcpy(mqdes->name,name);
         mqdes->attr=attr;
         mqdes->read_hdr=0;
         mqdes->write_hdr=0;
         mqdes->base=palloc_kern(1,F_ASSERT);
-        
         lock_init(&mqdes->mq_lock);
 
         append_shared(mq_list, mqdes);
-
         return mqdes;
     }
 
@@ -174,6 +153,7 @@ mqd_t *mq_open(char *name, mq_attr_t *attr, uint8_t flags){
 
 
 size_t mq_close(mqd_t *mqdes){
+    /* TODO */
     return 0;
 }
 
@@ -189,10 +169,12 @@ size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size){
 
 
     if(attr->mq_curmsgs==attr->mq_maxmsg){
-        //if not non blocking return 0
+        //TODO update with cond_wait() based on mqdes flags
 
+        lock_release(&mqdes->mq_lock);
+	
         return 0;
-        // if blocking block
+
     }
 
     /* Write memory */
@@ -214,15 +196,25 @@ size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size){
     
 }
 
+
+/* Given a message queue descripter and a buffer of size msg_len.
+ * If a message is in the queue it will be written to the buffer if the buffer is big enough. */
 size_t mq_recieve(mqd_t *mqdes, char *msg_pointer, size_t msg_len){
     mq_attr_t *attr = mqdes->attr;
 
     //Check return buffer is big enough
-    if(msg_len < attr->mq_msgsize) return 0;
+    if(msg_len < attr->mq_msgsize){
+        KERN_WARN("MQ recieve buffer too small");
+        return 0;
+    } 
 
     lock_acquire(&mqdes->mq_lock);
 
-    if(attr->mq_curmsgs==0) return 0;
+    if(attr->mq_curmsgs==0) {
+        lock_release(&mqdes->mq_lock);
+        return 0;
+    }
+
     /* Read from location of read_hdr */
     void *read_addr= mqdes->base + mqdes->read_hdr * attr->mq_msgsize;
     
@@ -236,29 +228,63 @@ size_t mq_recieve(mqd_t *mqdes, char *msg_pointer, size_t msg_len){
     return msg_len;
 }
 
-char *WAA ="WAAAA";
 
-void mq_A(){
-    mq_init();
-    
-    mqd_t *mqdes = mq_open("MQ1",NULL,O_CREAT);
 
-    int status = mq_send(mqdes,WAA,strlen(WAA));
-    mq_send(mqdes,"WOO",4);
-    mq_send(mqdes,"YEET",5);
+/*      ANSWERS BELOW!!!        */
 
-    println(itoa(status, str, BASE_DEC));
-    println(WAA);
-}
 
-void mq_B(){
-    proc_sleep(1,UNIT_SEC);
 
-    mqd_t *mqdes = mq_open("MQ1",NULL,O_OPEN);
 
-    char *ret = malloc(2046);
-    
-    while(mq_recieve(mqdes,ret,2046)){
-        println(ret);
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+mqd_t *mq_open(char *name, mq_attr_t *given_attr, uint8_t flags){
+    if(strlen(name)>12) return NULL;
+
+    if(flags & O_CREAT){
+        if(mq_list_contains(name)!=NULL) return NULL;
+
+        mq_attr_t *attr = shr_malloc(sizeof(mq_attr_t));
+        if(!given_attr){
+            memcpy(attr,default_mq_attr,sizeof(mq_attr_t));
+        }
+        else{
+            memcpy(attr, given_attr,sizeof(mq_attr_t));
+        }
+
+        if(attr->mq_maxmsg*attr->mq_msgsize>PGSIZE){
+            shr_free(attr);
+            return NULL;
+        } 
+
+        mqd_t *mqdes = shr_malloc(sizeof(mqd_t));
+        strcpy(mqdes->name,name);
+        mqdes->attr=attr;
+        mqdes->read_hdr=0;
+        mqdes->write_hdr=0;
+        mqdes->base=palloc_kern(1,F_ASSERT);
+        lock_init(&mqdes->mq_lock);
+
+        append_shared(mq_list, mqdes);
+        return mqdes;
     }
+
+    if(flags & O_OPEN){
+        return mq_list_contains(name);
+    }
+
+    return NULL;
+
 }
+*/

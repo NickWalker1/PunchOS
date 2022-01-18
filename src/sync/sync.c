@@ -103,7 +103,7 @@ void lock_release(lock* l){
 void cond_init(condition* cond){
     if(cond==NULL) PANIC("NULL cond in init");
 
-    list_init_shared(&cond->waiters);
+    cond->waiters=list_init_shared();
 }
 
 
@@ -111,6 +111,7 @@ void cond_init(condition* cond){
  * will reaquire lock on wakeup so may block
  */
 void cond_wait(condition* c, lock* l){
+
     if(c==NULL) PANIC("NULL cond in wait");
     if(l==NULL) PANIC("NULL lock in wait");
     // ASSERT(!in_external_int(),"In external interrupt");
@@ -124,15 +125,16 @@ void cond_wait(condition* c, lock* l){
     semaphore s;; 
 
     sema_init(&s,0);
-
+    
     //Add to list of waiters on the condition
-    append_shared(&(c->waiters),&s);
+    append_shared(c->waiters,&s);
 
     //Release lock
     lock_release(l);
 
     //Wait for s to become positive when signalled
     sema_down(&s);
+
 
     //require lock and return
     lock_acquire(l);
@@ -148,8 +150,8 @@ void cond_signal(condition* c, lock* l){
     ASSERT(l->holder==current_proc(),"Lock not held by current thread in signal.");
 
     //wakeup the first waiter on cond c
-    if(get_size(&c->waiters))
-        sema_up((semaphore*) pop_shared(&c->waiters));
+    if(get_size(c->waiters))
+        sema_up((semaphore*) pop_shared(c->waiters));
 }
 
 
@@ -158,7 +160,7 @@ void cond_broadcast(condition* c, lock* l){
     ASSERT(c!=NULL, "Null cond in broadcast");
     ASSERT(l!=NULL, "Null lock in broadcast");
 
-    while(get_size(&c->waiters)){
+    while(get_size(c->waiters)){
         cond_signal(c,l);
     }
 }

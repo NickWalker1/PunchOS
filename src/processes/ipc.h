@@ -22,8 +22,6 @@ void shm_unlink(char *name); /* Not implemented */
 void *write(void *dest ,void *src,size_t n);
 void *read(void *dest,void *src,size_t n);
 
-void shm_A();
-void shm_B();
 
 
 //--------------Message Passing------------------
@@ -53,6 +51,3 @@ mqd_t *mq_open(char *name, mq_attr_t *attr, uint8_t flags);
 size_t mq_close(mqd_t *mqdes);
 size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size);
 size_t mq_recieve(mqd_t *mqdes, char *msg_pointer, size_t msg_len);
-
-void mq_A();
-void mq_B();

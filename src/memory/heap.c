@@ -29,8 +29,9 @@ MemorySegmentHeader_t *intialise_heap(void *base, void *limit){
 /* Returns pointer to the start of size many bytes in process' dynamic memory space, returns NULL on failure */
 void *malloc(uint32_t size){
     ASSERT(multi_processing_enabled,"Must enable multiprocesing before using malloc");
-    
-    return alloc(size);
+    void *addr=alloc(size);
+    if(!addr) KERN_WARN("malloc failed");
+    return addr;
 }
 
 
@@ -57,6 +58,8 @@ void *shr_malloc(uint32_t size){
     first_segment=current_proc()->first_segment;
 
     lock_release(&shared_heap_lock);
+
+    if(!addr) KERN_WARN("shr_malloc failed");
 
     return addr;
 }

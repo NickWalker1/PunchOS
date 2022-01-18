@@ -22,6 +22,8 @@ void PANIC(char* msg){
     println("helper: ");
     print(itoa(helper_variable,str,BASE_HEX));
 
+    WARN_DUMP();
+
     halt();
 }
 
@@ -72,6 +74,9 @@ void KERN_WARN(char *msg){
     }
     strcpy(&WARN[WARN_LINE*WARN_CHAR_MAX],msg);
     WARN_LINE=WARN_LINE+(strlen(msg)/WARN_LINE_MAX) + 1;
+
+    println("KERN WARN: ");
+    print(msg);
 }
 
 

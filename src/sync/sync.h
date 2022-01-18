@@ -28,7 +28,7 @@ typedef struct condition condition;
 
 /* Condition variable. */
 struct condition {
-    list waiters;        /* List of waiting processes. */
+    list* waiters;        /* List of waiting processes. */
 };
 
 void cond_init(condition* c);

@@ -7,7 +7,7 @@ ASM_OBJ =${ASM_SOURCES:.asm=.o}
 OBJ=${C_SOURCES:.c=.o}
 
 
-GCC_FLAGS= -m32 -std=gnu99 -ffreestanding -O2 -nostdlib -Wall -Wextra 
+GCC_FLAGS= -m32 -std=gnu99 -ffreestanding -O0 -nostdlib -Wall -Wextra 
 LD_FLAGS = -melf_i386
 
 all: os.iso
