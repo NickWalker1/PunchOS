@@ -42,7 +42,7 @@ typedef struct mqd{
     void *base; /* Base vaddr of the mq block */
     size_t write_hdr; /* offset of write header */
     size_t read_hdr; /* Offset of read header */
-    lock mq_lock; /* Lock */
+    lock mq_lock; /* Synchronisation lock */
 }mqd_t;
 
 
@@ -50,4 +50,4 @@ void mq_init();
 mqd_t *mq_open(char *name, mq_attr_t *attr, uint8_t flags);
 size_t mq_close(mqd_t *mqdes);
 size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size);
-size_t mq_recieve(mqd_t *mqdes, char *msg_pointer, size_t msg_len);
+size_t mq_recieve(mqd_t *mqdes, char *buffer , size_t buff_len);

@@ -480,6 +480,14 @@ void sleep_tick(){
 }
 
 
+/* Process will block for exactly the given time and will preempt
+ * the running process to be rescheduled instead.
+ * If used poorly can cause process starvation. */
+void proc_alarm(uint32_t time, uint8_t format){
+    /* To be implemented */
+}
+
+
 /* Will sleep the current process.
  * Format var either UNIT_TICK or UNIT_SEC.
  * 18 ticks per second by default. 

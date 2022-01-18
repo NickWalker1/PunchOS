@@ -30,6 +30,8 @@ shared_desc_t *shm_contains(char *name){
     return NULL;
 }
 
+
+/* Open or create a new shared memory block */
 shared_desc_t *shm_open(char *name, uint8_t flags){
     if(flags & O_CREAT){
         if(shm_contains(name)!=NULL) return NULL;
@@ -95,6 +97,7 @@ mqd_t *mq_list_contains(char *name){
 }
 
 
+/* Initialise default values for message queue system */
 void mq_init(){
     mq_list=list_init_shared();
 
@@ -132,6 +135,8 @@ mqd_t *mq_open(char *name, mq_attr_t *given_attr, uint8_t flags){
         } 
 
         mqd_t *mqdes = shr_malloc(sizeof(mqd_t));
+
+        /* Fill out struct details */
         strcpy(mqdes->name,name);
         mqdes->attr=attr;
         mqdes->read_hdr=0;
@@ -157,53 +162,21 @@ size_t mq_close(mqd_t *mqdes){
     return 0;
 }
 
+
+/* Send the contents of msg_pointer to the message queue mqdes */
 size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size){
-    ASSERT(mqdes!=NULL,"NULL mqdes in send");
-    mq_attr_t *attr = mqdes->attr;
-    
-    if(msg_size>attr->mq_msgsize) return 0;
-
-    
-    /* Acquire lock */
-    lock_acquire(&mqdes->mq_lock);
-
-
-    if(attr->mq_curmsgs==attr->mq_maxmsg){
-        //TODO update with cond_wait() based on mqdes flags
-
-        lock_release(&mqdes->mq_lock);
-	
-        return 0;
-
-    }
-
-    /* Write memory */
-    
-    mqdes->write_hdr=mqdes->write_hdr%attr->mq_maxmsg;
-    // Calculate write header virtual address
-    void *write_addr=mqdes->base + (mqdes->write_hdr * attr->mq_msgsize);
-
-    //Copy the memory
-    memcpy(write_addr,msg_pointer,msg_size);
-
-    attr->mq_curmsgs++;
-    mqdes->write_hdr++;
-
-    /* Release lock */
-    lock_release(&mqdes->mq_lock);
-
-    return msg_size;
+    /* TO be implmeneted */
     
 }
 
 
 /* Given a message queue descripter and a buffer of size msg_len.
  * If a message is in the queue it will be written to the buffer if the buffer is big enough. */
-size_t mq_recieve(mqd_t *mqdes, char *msg_pointer, size_t msg_len){
+size_t mq_recieve(mqd_t *mqdes, char *buffer, size_t buff_len){
     mq_attr_t *attr = mqdes->attr;
 
     //Check return buffer is big enough
-    if(msg_len < attr->mq_msgsize){
+    if(buff_len < attr->mq_msgsize){
         KERN_WARN("MQ recieve buffer too small");
         return 0;
     } 
@@ -218,14 +191,14 @@ size_t mq_recieve(mqd_t *mqdes, char *msg_pointer, size_t msg_len){
     /* Read from location of read_hdr */
     void *read_addr= mqdes->base + mqdes->read_hdr * attr->mq_msgsize;
     
-    memcpy(msg_pointer,read_addr,msg_len);
+    memcpy(buffer,read_addr,buff_len);
 
     mqdes->read_hdr++;
     attr->mq_curmsgs--;
 
     lock_release(&mqdes->mq_lock);
 
-    return msg_len;
+    return buff_len;
 }
 
 
@@ -242,10 +215,44 @@ size_t mq_recieve(mqd_t *mqdes, char *msg_pointer, size_t msg_len){
 
 
 
+/* ---------- MQ send  ---------
+ASSERT(mqdes!=NULL,"NULL mqdes in send");
+    mq_attr_t *attr = mqdes->attr;
+    
+    if(msg_size>attr->mq_msgsize) return 0;
+
+    
+    // Acquire lock 
+    lock_acquire(&mqdes->mq_lock);
 
 
+    if(attr->mq_curmsgs==attr->mq_maxmsg){
+
+        lock_release(&mqdes->mq_lock);
+	
+        return 0;
+
+    }
+
+    // Write 
+    
+    mqdes->write_hdr=mqdes->write_hdr%attr->mq_maxmsg;
+    // Calculate write header virtual address
+    void *write_addr=mqdes->base + (mqdes->write_hdr * attr->mq_msgsize);
+
+    //Copy the memory
+    memcpy(write_addr,msg_pointer,msg_size);
+
+    attr->mq_curmsgs++;
+    mqdes->write_hdr++;
+
+    // Release lock 
+    lock_release(&mqdes->mq_lock);
+
+    return msg_size;
 
 
+*/
 
 
 /*

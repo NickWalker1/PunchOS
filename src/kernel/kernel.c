@@ -51,14 +51,15 @@ void main(){
 	// create_proc("Hard1",proc_test_hardwork,NULL,PC_NFLAG);
 	// create_proc("Hard2",proc_test_hardwork,NULL,PC_NFLAG);
 
-	// create_proc("MQA",mq_A,NULL,PC_NFLAG);
-	// create_proc("MQB",mq_B,NULL,PC_NFLAG);
 
-	create_proc("IPCTest",IPC_test,NULL,PC_NFLAG);
 
 	// proc_sleep(2,UNIT_SEC);
 
+
 	// create_proc("PS",ps,NULL,PC_NFLAG);
+
+
+	// create_proc("IPCTest",IPC_test,NULL,PC_NFLAG);
 	spin(TOP_RIGHT);
 
 }

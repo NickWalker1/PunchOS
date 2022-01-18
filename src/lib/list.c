@@ -60,7 +60,10 @@ void* pop(list* l){
 /* Pops the first element from the list and returns it.
  * Returns NULL if the list is empty */
 list_elem *pop_elem(list *l){
-    if(is_empty(l)) return NULL;
+    if(is_empty(l)) {
+        KERN_WARN("Attempted pop from empty");
+        return NULL;
+    }
     list_elem* elem = l->head;
     l->head=elem->next;
     l->size--;
@@ -174,7 +177,10 @@ bool remove_shared(list *l, void *data){
 /* Removes the first element from the list with the given data,
  * and returns that element */
 list_elem *remove_elem(list *l, void *data){
-    if(is_empty(l)) return NULL;
+    if(is_empty(l)){
+        KERN_WARN("Attempted remove from empty");
+        return NULL;
+    } 
     
     list_elem* elem=l->head;
 
