@@ -1,7 +1,7 @@
 # Config
 
 #Update LOCALQM for where PunchOS is stored.
-LOCALQM=$HOME/PunchOS
+LOCALQM=$HOME/tmp/PunchOS
 LOCALQM_ISO=$LOCALQM/os.iso
 LOCALQM_LOCK=$LOCALQM/os.lock
 LOCALQM_MONITOR=$LOCALQM/monitor_d11
