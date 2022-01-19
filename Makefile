@@ -16,13 +16,13 @@ GCC=gcc
 LD =ld
 
 #Local
-QEMU=qemu-system-i386
-GRUB=grub-mkrescue
+#QEMU=qemu-system-i386
+#GRUB=grub-mkrescue
 
 
 #DCS
-#QEMU=/usr/libexec/qemu-kvm
-#GRUB=/usr/bin/grub2-mkrescue
+QEMU=/usr/libexec/qemu-kvm
+GRUB=/usr/bin/grub2-mkrescue
 
 
 
@@ -30,8 +30,9 @@ GRUB=grub-mkrescue
 
 
 #Uncomment run when running not at DCS
-run: all
-	$(QEMU) -cdrom os.iso -D ./log.txt -d cpu_reset
+#run: all
+#	#$(QEMU) -cdrom os.iso -D ./log.txt -d cpu_reset
+#
 
 os.iso: os.bin
 	cp $< isodir/boot/os.bin
