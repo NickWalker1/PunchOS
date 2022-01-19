@@ -165,8 +165,8 @@ size_t mq_close(mqd_t *mqdes){
 
 /* Send the contents of msg_pointer to the message queue mqdes */
 size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size){
-    /* TO be implmeneted */
-    
+    /* To be implmeneted */
+    return 0;
 }
 
 

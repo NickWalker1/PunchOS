@@ -56,10 +56,12 @@ void main(){
 	// proc_sleep(2,UNIT_SEC);
 
 
-	// create_proc("PS",ps,NULL,PC_NFLAG);
+	create_proc("PS",ps,NULL,PC_NFLAG);
 
 
-	// create_proc("IPCTest",IPC_test,NULL,PC_NFLAG);
+	/* Uncomment the following line to perform IPC tests */
+	// IPC_test();
+
 	spin(TOP_RIGHT);
 
 }
