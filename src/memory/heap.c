@@ -3,9 +3,6 @@
 #include "../lib/screen.h"
 #include "../processes/pcb.h"
 
-/* pointer to the first head of the linked-list */
-MemorySegmentHeader_t *first_segment;
-
 MemorySegmentHeader_t *shared_first_seg;
 
 lock shared_heap_lock;
@@ -29,7 +26,7 @@ MemorySegmentHeader_t *intialise_heap(void *base, void *limit){
 /* Returns pointer to the start of size many bytes in process' dynamic memory space, returns NULL on failure */
 void *malloc(uint32_t size){
     ASSERT(multi_processing_enabled,"Must enable multiprocesing before using malloc");
-    void *addr=alloc(size);
+    void *addr=alloc(size,current_proc()->heap_start_segment);
     if(!addr) KERN_WARN("malloc failed");
     return addr;
 }
@@ -38,36 +35,24 @@ void *malloc(uint32_t size){
 /* Returns pointer to the start of size many bytes in shared kernel dynamic memory space, returns NULL on failure.
  * May block so must not be called inside interrupt handler. */
 void *shr_malloc(uint32_t size){
-    if(!multi_processing_enabled){ /* Highly insecure but works for now */
-        MemorySegmentHeader_t *before = first_segment;
-        first_segment=shared_first_seg;
-        void *addr=alloc(size);
-        first_segment=before;
-        return addr;
-    }
 
-    //Must acquire lock to work with shared memory.
-    lock_acquire(&shared_heap_lock);
+    int level= int_disable();
 
-    //Wrapper to update segment pointer to shared kernel memory
-    first_segment=shared_first_seg;
+    void* addr=alloc(size,shared_first_seg);
+
+    if(!addr)
+        KERN_WARN("shr_malloc failed");
     
 
-    void* addr=alloc(size);
-
-    first_segment=current_proc()->first_segment;
-
-    lock_release(&shared_heap_lock);
-
-    if(!addr) KERN_WARN("shr_malloc failed");
-
+    int_set(level);
+    
     return addr;
 }
 
 
 /* Should not be called by the programmer. Use malloc or shr_malloc instead */
-void *alloc(uint32_t size){
-    MemorySegmentHeader_t *currSeg=first_segment;
+void *alloc(uint32_t size, MemorySegmentHeader_t *start_seg){
+    MemorySegmentHeader_t *currSeg=start_seg;
 
     //traverse linked list to find one that meets conditions
     //if at end return NULL
@@ -88,6 +73,7 @@ void *alloc(uint32_t size){
         if(init_size>sizeof(MemorySegmentHeader_t)+64){
             MemorySegmentHeader_t* newSegment = (MemorySegmentHeader_t*) ((uint32_t)currSeg + size+ sizeof(MemorySegmentHeader_t));
             newSegment->free=true;
+            newSegment->magic=segment_magic;
             newSegment->previous=currSeg;
             newSegment->next=currSeg->next;
             newSegment->size=init_size-sizeof(MemorySegmentHeader_t);
@@ -111,6 +97,7 @@ void *alloc(uint32_t size){
         return ++currSeg;
     }
 
+    PANIC("FUCKED IT");
 
     //next segment must therefore be free
     
@@ -120,6 +107,7 @@ void *alloc(uint32_t size){
     MemorySegmentHeader_t *newNextSeg = (MemorySegmentHeader_t*) (uint32_t)currSeg+ size+sizeof(MemorySegmentHeader_t);
     newNextSeg->size=nextSeg->size + init_size; //Do not need to adjust for sizeof(MSH) as is only moved
     newNextSeg->free=true;
+    newNextSeg->magic=segment_magic;
 
     //copy pointers over as these are still valid.
     newNextSeg->next=nextSeg->next;
@@ -130,6 +118,7 @@ void *alloc(uint32_t size){
     nextSeg->next=0;
     nextSeg->previous=0;
     nextSeg->size=0;
+    nextSeg->magic=0;
 
     //Make sure to return the start of the free memory space, not the space containing
     //the header information.
@@ -143,8 +132,12 @@ void free(void* addr){
     //Assumption made that addr is base of the free space
     MemorySegmentHeader_t *currSeg = (MemorySegmentHeader_t*) (addr - sizeof(MemorySegmentHeader_t));
     
-    //sanity check
+    if(currSeg->magic!=segment_magic){
+        KERN_WARN("Tried to free non-base address");
+        return;
+    }
 
+    //sanity check
     if(currSeg->free) return;
 
 
@@ -163,7 +156,8 @@ void free(void* addr){
 
         //update pointers to remove currSeg from linked list.
         prevSeg->next=currSeg->next;
-        currSeg->next->previous=prevSeg;
+        if(currSeg->next)
+            currSeg->next->previous=prevSeg;
 
         //for the second if
         currSeg=prevSeg;
@@ -194,9 +188,9 @@ void free(void* addr){
 /* Frees memory from shared kernel space.
  * May block so must not be called inside interrupt handler */ 
 void shr_free(void *addr){
-    lock_acquire(&shared_heap_lock);
+    int level = int_disable(); 
     free(addr);
-    lock_release(&shared_heap_lock);
+    int_set(level);
 }
 
 
@@ -218,12 +212,41 @@ uint32_t heap_usage(MemorySegmentHeader_t *s){
     return used*100/all;
 }
 
+/* Returns the % usage of the shared heap space */
 uint32_t get_shared_heap_usage(){
-    return  heap_usage(shared_first_seg);
+    lock_acquire(&shared_heap_lock);
+    uint32_t usage=heap_usage(shared_first_seg);
+    lock_release(&shared_heap_lock);
+    return usage;
 }
 
 
 /* Self explanatory */
 void clear_heap(void* base_heap, int pg_count){
     memset(base_heap,0,PGSIZE*pg_count);
+}
+
+
+/* Prints current cursor contents of heap + summary at end */
+void shared_heap_dump(){
+    MemorySegmentHeader_t *cur_seg=shared_first_seg;
+    int used, total,count;
+    used=total=count=0;
+    while(cur_seg!=NULL){
+        count++;
+        println("|");
+        print(itoa(cur_seg->size,str,BASE_DEC));
+        print("|");
+        if(!cur_seg->free) used+=cur_seg->size;
+        total+=cur_seg->size;
+        cur_seg=cur_seg->next;
+    }
+    println("Count: ");
+    print(itoa(count,str,BASE_DEC));
+    println("Used: ");
+    print(itoa(used,str,BASE_DEC));
+    println("Available: ");
+    print(itoa(total-used,str,BASE_DEC));
+    println("Total: ");
+    print(itoa(total,str,BASE_DEC));
 }

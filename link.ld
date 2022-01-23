@@ -31,7 +31,7 @@ INPUT
     src/shell/functions/ps.o
     src/shell/shell.o
     src/processes/ipc.o
-    src/tests/ipc_test.o
+    src/tests/mq_test.o
 )
 OUTPUT
 (

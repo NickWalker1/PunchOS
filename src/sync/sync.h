@@ -23,6 +23,7 @@ void lock_init(lock* l);
 void lock_acquire(lock* l);
 bool lock_try_acquire(lock* l);
 void lock_release(lock* l);
+void lock_weak_release(lock *l);
 
 typedef struct condition condition;
 
@@ -45,3 +46,6 @@ struct lock {
     PCB_t *holder;      /* Process holding lock(for debugging). */
     semaphore semaphore; /* Binary semaphore controlling access. */
 };
+
+int block_lock(lock *l);
+void unblock_release(lock *l, int level);

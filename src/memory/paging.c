@@ -11,7 +11,6 @@ extern uint32_t helper_variable;
 extern uint32_t _KERNEL_END;
 
 extern MemorySegmentHeader_t *shared_first_seg;
-extern MemorySegmentHeader_t *first_segment;
 
 
 /* Kernel virtual address of a page from which to copy the base required mappings for new proceses */
@@ -87,9 +86,6 @@ void paging_init(){
 
 
 	shared_first_seg = intialise_heap(heap_addr,heap_addr+(SHR_HEAP_SIZE*PGSIZE));
-
-    //by default before multiprocessing start
-    first_segment=shared_first_seg;
 
     //switch to using kernel_pd rather than temporary setup one.
     update_pd(Kvtop(base_pd));

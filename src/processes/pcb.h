@@ -68,7 +68,8 @@ struct  PCB{
     int priority; /* 1 is highest priority, 5 is lowest NOT CURRENTLY USED WITH ROUND ROBIN AND SUBJECT TO CHANGE */
 
     /* Each process has it's own heap, this points to the start of it. */
-    MemorySegmentHeader_t *first_segment;    
+    MemorySegmentHeader_t *heap_start_segment;
+    // lock heap_lock; /* To lock the heap between mutlithreaded processes */
 
 
 

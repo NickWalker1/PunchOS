@@ -82,6 +82,16 @@ void lock_acquire(lock* l){
     l->holder=current_proc();
 }
 
+/* Will release the lock if it has it, otherwise does nothing */
+void lock_weak_release(lock *l){
+    if(l==NULL) PANIC("NULL lock in weak release");
+    
+    if(l->holder==current_proc()){
+        lock_release(l);
+    }
+
+}
+
 
 /* Releases lock using sema_up
  * and sets holder to NULL
@@ -144,8 +154,8 @@ void cond_wait(condition* c, lock* l){
 /* Signals to wakeup a thread waiting on c
  * Process must have ownership of lock l */
 void cond_signal(condition* c, lock* l){
-    ASSERT(c!=NULL, "Null cond in signal.");
-    ASSERT(l!=NULL, "Null lock in signal.");
+    ASSERT(c!=NULL, "NULL cond in signal.");
+    ASSERT(l!=NULL, "NULL lock in signal.");
     // ASSERT(!in_external_int(),"In external interrupt");
     ASSERT(l->holder==current_proc(),"Lock not held by current thread in signal.");
 
@@ -157,10 +167,21 @@ void cond_signal(condition* c, lock* l){
 
 /* Signals all processes waiting on cond c to wakeup */
 void cond_broadcast(condition* c, lock* l){
-    ASSERT(c!=NULL, "Null cond in broadcast");
-    ASSERT(l!=NULL, "Null lock in broadcast");
+    ASSERT(c!=NULL, "NULL cond in broadcast");
+    ASSERT(l!=NULL, "NULL lock in broadcast");
 
     while(get_size(c->waiters)){
         cond_signal(c,l);
     }
+}
+
+int block_lock(lock *l){
+    int level = int_disable();
+    lock_acquire(l);
+    return level;
+}
+
+void unblock_release(lock *l, int level){
+    lock_release(l);
+    int_set(level);
 }

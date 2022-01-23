@@ -141,6 +141,7 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=P_BLOCKED;
+    // lock_init(&new->heap_lock);
 
 
     /* Initialise process diagnostics struct */
@@ -276,7 +277,7 @@ void proc_yield(){
     int int_level=int_disable();
 
     //Update diagnostics TODO
-    proc_tracker[p->pid-1].mem_usage=heap_usage(p->first_segment);
+    proc_tracker[p->pid-1].mem_usage=heap_usage(p->heap_start_segment);
 
     proc_reschedule(p);
 
@@ -299,9 +300,6 @@ void switch_complete(PCB_t* prev){
 
     //Update cr3 if required.
     update_pd(Kvtop(curr->page_directory));
-
-    //update base heap pointer
-    first_segment=curr->first_segment;
 
     if(prev->status==P_DYING) proc_kill(prev);
 }
@@ -385,7 +383,7 @@ void proc_block(){
     PCB_t *p=current_proc();
     p->status=P_BLOCKED; 
 
-    proc_tracker[p->pid-1].mem_usage=heap_usage(p->first_segment);
+    proc_tracker[p->pid-1].mem_usage=heap_usage(p->heap_start_segment);
 
     //Force an early context switch
     schedule();
@@ -412,8 +410,8 @@ void proc_kill(PCB_t* p){
     if(p->dummy) return; /* Nothing to do if dummy process */
 
 
-    println("KILLING PROCESS: ");
-    print(itoa(p->pid,str,BASE_DEC));
+    // println("KILLING PROCESS: ");
+    // print(itoa(p->pid,str,BASE_DEC));
     
 
     proc_tracker[p->pid-1].present=false;
@@ -442,8 +440,7 @@ void run(proc_func* function, void* aux){
     ASSERT(function!=NULL,"Cannot run NULL function");
     
     PCB_t* p= current_proc();
-    p->first_segment=proc_heap_init();
-    first_segment=p->first_segment;
+    p->heap_start_segment=proc_heap_init();
 
 
     int_enable();
@@ -499,6 +496,8 @@ void proc_sleep(uint32_t time, uint8_t format){
     if(time==0) return;
 
     sleeper* s= shr_malloc(sizeof(sleeper));
+    if(!s) PANIC("sleeper alloc failed");
+
     s->waiting=current_proc();
     
     if(format&UNIT_TICK){
@@ -513,7 +512,8 @@ void proc_sleep(uint32_t time, uint8_t format){
 
     int level=int_disable();
 
-    append_shared(sleeper_procs,s);
+    if(!append_shared(sleeper_procs,s))
+        PANIC("Reschedule fail.");
 
     proc_block();
 
@@ -547,7 +547,6 @@ void proc_test_hardwork(){
     int a=0;
     while(1){
         for(int i=0;i<1000000;i++)a++;
-        print_from(itoa(a,str,BASE_HEX),BOTTOM_LEFT);
     }
 }
 
@@ -555,11 +554,9 @@ void proc_test_hardwork(){
 void proc_heap_display(){
     while(1){
         proc_sleep(2,UNIT_SEC);
-        // print_to(itoa(get_shared_heap_usage(),str,BASE_HEX),BOTTOM_RIGHT);
-        get_shared_heap_usage();
         
-        print_from(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_LEFT);
-        print_from("\%",BOTTOM_LEFT+2);
+        print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
+        print_to("%",BOTTOM_RIGHT-2);
     }
 }
 

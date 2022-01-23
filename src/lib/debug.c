@@ -2,6 +2,8 @@
 
 uint32_t helper_variable;
 
+#include "../processes/pcb.h"
+
 /* Character buffer for warnings  */
 char WARN[WARN_CHAR_MAX*WARN_LINE_MAX];
 
@@ -23,6 +25,11 @@ void PANIC(char* msg){
     print(itoa(helper_variable,str,BASE_HEX));
 
     WARN_DUMP();
+
+    print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
+    print_to("%",BOTTOM_RIGHT-2);
+
+    shared_heap_dump();
 
     halt();
 }
@@ -46,6 +53,9 @@ void PANIC_EXC(char* msg, exception_state* state){
 
     WARN_DUMP();
 
+    print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-6);
+    print_to("\%",BOTTOM_RIGHT-2);
+
     halt();
 }
 
@@ -66,16 +76,21 @@ void WARN_DUMP(){
 
 /* Kernel Warning function for debugging help. */
 void KERN_WARN(char *msg){
+    /* Handle buffer overflow */
     if(WARN_LINE==WARN_LINE_MAX){
         int i;
         for(i=1;i<WARN_LINE_MAX;i++){
             strcpy(&WARN[(i-1)*WARN_CHAR_MAX],&WARN[i*WARN_CHAR_MAX]);
         }
     }
+    /* Copy warning message in */
     strcpy(&WARN[WARN_LINE*WARN_CHAR_MAX],msg);
     WARN_LINE=WARN_LINE+(strlen(msg)/WARN_LINE_MAX) + 1;
 
-    println("KERN WARN: ");
+    println("Proc: ");
+    print(current_proc()->name);
+    print(" KERN WARN: ");
+
     print(msg);
 }
 
