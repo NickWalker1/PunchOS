@@ -57,12 +57,15 @@ void main(){
 
 
 
-	// create_proc("PS",ps,NULL,PC_NFLAG);
 
 
 
 	/* Uncomment the following line to perform IPC tests */
 	MQ_test();
+
+	proc_sleep(3,UNIT_SEC);
+
+	create_proc("PS",ps,NULL,PC_NFLAG);
 
 	spin(TOP_RIGHT);
 

@@ -76,7 +76,7 @@ void *alloc(uint32_t size, MemorySegmentHeader_t *start_seg){
             newSegment->magic=segment_magic;
             newSegment->previous=currSeg;
             newSegment->next=currSeg->next;
-            newSegment->size=init_size-sizeof(MemorySegmentHeader_t);
+            newSegment->size=init_size-sizeof(MemorySegmentHeader_t)-size;
 
             if(currSeg->next) currSeg->next->previous=newSegment;
             currSeg->next=newSegment;
@@ -232,13 +232,20 @@ void shared_heap_dump(){
     MemorySegmentHeader_t *cur_seg=shared_first_seg;
     int used, total,count;
     used=total=count=0;
+    println("----------\n");
     while(cur_seg!=NULL){
         count++;
-        println("|");
-        print(itoa(cur_seg->size,str,BASE_DEC));
         print("|");
-        if(!cur_seg->free) used+=cur_seg->size;
-        total+=cur_seg->size;
+        print(itoa(cur_seg->size,str,BASE_DEC));
+        if(!cur_seg->free){
+            print(" U");
+            used+=cur_seg->size;
+        } 
+        else{
+            print(" F");
+        }
+        print("|");
+        total+=cur_seg->size+sizeof(MemorySegmentHeader_t);
         cur_seg=cur_seg->next;
     }
     println("Count: ");

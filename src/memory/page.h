@@ -2,7 +2,7 @@
 
 #include "../lib/typedefs.h"
 
-#define PG_COUNT            128 /* Maximum number of physical pages that can be allocated from */
+#define PG_COUNT            256 /* Maximum number of physical pages that can be allocated from */
 #define PGBITS              12
 #define PDBITS              10
 #define	PTSHIFT             PGBITS/* First page table bit. */

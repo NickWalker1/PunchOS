@@ -188,7 +188,6 @@ PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
     /* add to ready queue */
     proc_unblock(new);
 
-    
     return new;
 }
 
@@ -204,6 +203,7 @@ MemorySegmentHeader_t *proc_heap_init(){
     for(i=0;i<HEAP_SIZE;i++){
         map_page(phys+i*PGSIZE,base+i*PGSIZE,F_ASSERT);
     }
+
     
     return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
 }
@@ -410,8 +410,8 @@ void proc_kill(PCB_t* p){
     if(p->dummy) return; /* Nothing to do if dummy process */
 
 
-    // println("KILLING PROCESS: ");
-    // print(itoa(p->pid,str,BASE_DEC));
+    println("KILLING PROCESS: ");
+    print(itoa(p->pid,str,BASE_DEC));
     
 
     proc_tracker[p->pid-1].present=false;
@@ -538,7 +538,7 @@ void proc_test_A(){
     while(1){
         // println("proc "); print(current_proc()->name);
         proc_sleep(1,UNIT_SEC);
-        malloc(250);
+        malloc(256);
         
     }
 }

@@ -151,10 +151,12 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
  * Will PANIC if no more pages are available and F_ASSERT flag present,
  * returns NULL otherwise. */
 void *get_next_free_phys_page(size_t n, uint8_t flags){
+    helper_variable+=n;
     phys_pool_t* pool = &phys_page_pool;
     if(pool->first_free_idx==-1){
         if(flags & F_ASSERT)
             PANIC("NO PHYS PAGES AVAILABLE");
+        KERN_WARN("phys page allocation failed");
         return NULL;
     }
     void* base_addr= pool->pages[pool->first_free_idx].base_addr;
@@ -173,6 +175,8 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
                 if(idx==PG_COUNT){
                     if(flags & F_ASSERT)
                         PANIC("INSUFFICIENT PHYSICAL PAGES AVAILABLE");
+                    
+                    KERN_WARN("phys page allocation failed");
                     return NULL;
                 }
             }
@@ -219,6 +223,7 @@ void *get_virt_from_pool(size_t n, virt_pool_t *pool, uint8_t flags){
     if(pool->first_free_idx==-1){
         if(flags &F_ASSERT)
             PANIC("NO VIRT PAGES AVAILABLE");
+        KERN_WARN("virt page allocation failed.");
         return NULL;
     };
 
@@ -240,6 +245,7 @@ void *get_virt_from_pool(size_t n, virt_pool_t *pool, uint8_t flags){
                     pool->first_free_idx=-1;
                     if(flags & F_ASSERT)
                         PANIC("INSUFFICIENT VIRTUAL PAGES AVAILABLE");
+                    KERN_WARN("virt page allocation failed");
                     return NULL;
                 }
             }
