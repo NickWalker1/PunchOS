@@ -481,7 +481,7 @@ void sleep_tick(){
 /* Process will block for exactly the given time and will preempt
  * the running process to be rescheduled instead.
  * If used poorly can cause process starvation. */
-void proc_alarm(uint32_t time, uint8_t format){
+void proc_alarm(UNUSED uint32_t time,UNUSED uint8_t format){
     /* To be implemented */
 }
 
