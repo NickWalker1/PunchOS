@@ -30,7 +30,7 @@ INPUT
     src/processes/pswap.o
     src/shell/functions/ps.o
     src/shell/shell.o
-    src/processes/ipc.o
+    src/processes/mq.o
     src/tests/mq_test.o
 )
 OUTPUT

@@ -410,8 +410,8 @@ void proc_kill(PCB_t* p){
     if(p->dummy) return; /* Nothing to do if dummy process */
 
 
-    println("KILLING PROCESS: ");
-    print(itoa(p->pid,str,BASE_DEC));
+    // println("KILLING PROCESS: ");
+    // print(itoa(p->pid,str,BASE_DEC));
     
 
     proc_tracker[p->pid-1].present=false;

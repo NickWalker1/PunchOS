@@ -1,7 +1,7 @@
 #include "mq_test.h"
 
 #include "../processes/process.h"
-#include "../processes/ipc.h"
+#include "../processes/mq.h"
 
 
 #include "../lib/screen.h"
@@ -175,7 +175,7 @@ void consumer(){
 /* Displays results of tests. */
 void test_report(){
 
-	if(mq_mark==pow(2,MQ_NUM_TESTS)-1){
+	if(mq_mark==(size_t)pow(2,MQ_NUM_TESTS)-1){
 		print_ok();
 	}
 	else{

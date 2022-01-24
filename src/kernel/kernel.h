@@ -10,7 +10,7 @@
 #include "../memory/paging.h"
 #include "../processes/process.h"
 #include "../shell/shell.h"
-#include "../processes/ipc.h"
+#include "../processes/mq.h"
 #include "../tests/mq_test.h"
 
 

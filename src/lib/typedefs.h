@@ -11,6 +11,8 @@ typedef unsigned long long uint64_t;
 typedef enum {false, true} bool;
 typedef unsigned long size_t;
 
+#define UNUSED __attribute((unused))
+
 #define BASE_BIN 2
 #define BASE_DEC 10
 #define BASE_HEX 16

@@ -1,4 +1,4 @@
-#include "ipc.h"
+#include "mq.h"
 #include "process.h"
 
 
@@ -53,11 +53,10 @@ void mq_init(){
  *    Can provide custom attributes using the given_attr arugment.
  *    On NULL defaults will be provided.
  * Will return an existing struct with O_OPEN and a valid name. */
-mqd_t *mq_open(char *name, mq_attr_t *given_attr, uint8_t flags){
+mqd_t *mq_open(UNUSED char *name,UNUSED  mq_attr_t *given_attr,uint8_t flags){
     /* To be implemented */
 
     if(flags & O_CREAT){
-        
         return NULL;
     }
 
@@ -70,23 +69,69 @@ mqd_t *mq_open(char *name, mq_attr_t *given_attr, uint8_t flags){
 }
 
 
-size_t mq_close(mqd_t *mqdes){
+/* Will free all memory associated with mqdes and remove it from the list of message queues. */
+size_t mq_close(UNUSED mqd_t *mqdes){
     /* To be implemented */
+
     return 0;
 }
 
 
-/* Send the contents of msg_pointer to the message queue mqdes */
-size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size){
+/* Send the contents of msg_pointer to the message queue mqdes. */
+size_t mq_send(UNUSED mqd_t *mqdes,UNUSED char *msg_pointer,UNUSED size_t msg_size){
     /* To be implmeneted */
+
     return 0;
 }
 
 
 /* Given a message queue descripter and a buffer of size msg_len.
  * If a message is in the queue it will be written to the buffer if the buffer is big enough. */
-size_t mq_receive(mqd_t *mqdes, char *buffer, size_t buff_len){
-    mq_attr_t *attr = mqdes->attr;
+size_t mq_receive(UNUSED mqd_t *mqdes,UNUSED char *buffer,UNUSED size_t buff_len){
+    /* To be implemented */
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*      ANSWERS BELOW!!!        */
+
+
+
+
+
+/* MQ recieve:
+mq_attr_t *attr = mqdes->attr;
 
     //Check return buffer is big enough
     if(buff_len < attr->mq_msgsize){
@@ -101,7 +146,7 @@ size_t mq_receive(mqd_t *mqdes, char *buffer, size_t buff_len){
         return 0;
     }
 
-    /* Read from location of read_idx */
+    // Read from location of read_idx 
     void *read_addr= mqdes->base + mqdes->read_idx * attr->mq_msgsize;
     
     memcpy(buffer,read_addr,buff_len);
@@ -112,17 +157,7 @@ size_t mq_receive(mqd_t *mqdes, char *buffer, size_t buff_len){
     lock_release(&mqdes->mq_lock);
 
     return buff_len;
-}
-
-
-
-/*      ANSWERS BELOW!!!        */
-
-
-
-
-
-
+    */
 
 /* MQ open: 
 mqd_t *mq_open(char *name, mq_attr_t *given_attr, uint8_t flags){

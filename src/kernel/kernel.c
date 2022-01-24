@@ -63,9 +63,9 @@ void main(){
 	/* Uncomment the following line to perform IPC tests */
 	MQ_test();
 
-	proc_sleep(3,UNIT_SEC);
+	// proc_sleep(3,UNIT_SEC);
 
-	create_proc("PS",ps,NULL,PC_NFLAG);
+	// create_proc("PS",ps,NULL,PC_NFLAG);
 
 	spin(TOP_RIGHT);
 
