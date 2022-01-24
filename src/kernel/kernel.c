@@ -96,9 +96,11 @@ int performTest(){
 
 	clear_heap(KHEAP_ADDR);
 	intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+	heap_dump();
 
 	test1 = (uint32_t) malloc(0x50);
 	if(test1!=(uint32_t)KHEAP_ADDR+MSH) return 0; //fail all tests by default
+	heap_dump();
 
 
 
@@ -110,7 +112,7 @@ int performTest(){
 	test1 = (uint32_t) malloc(0x50);
 	test2 = (uint32_t) malloc(0x70);
 	if(test2!=(test1+0x50+MSH)) mark=mark ^ 1<<1;
-
+	heap_dump();
 
 
 	//TEST 3: Failure on size

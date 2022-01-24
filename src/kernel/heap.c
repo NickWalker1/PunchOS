@@ -39,7 +39,7 @@ void *malloc(uint32_t size){
             newSegment->magic=segment_magic;
             newSegment->previous=currSeg;
             newSegment->next=currSeg->next;
-            newSegment->size=init_size-sizeof(MemorySegmentHeader_t);
+            newSegment->size=init_size-sizeof(MemorySegmentHeader_t)-size;
 
             if(currSeg->next) currSeg->next->previous=newSegment;
             currSeg->next=newSegment;
@@ -149,7 +149,7 @@ void heap_dump(){
     MemorySegmentHeader_t *cur_seg=firstSegment;
     int used, total,count;
     used=total=count=0;
-    println("");
+    println("---------------\n");
     while(cur_seg!=NULL){
         count++;
         print("|");
@@ -162,7 +162,7 @@ void heap_dump(){
             print(" F");
         }
         print("|");
-        total+=cur_seg->size;
+        total+=cur_seg->size+sizeof(MemorySegmentHeader_t);
         cur_seg=cur_seg->next;
     }
     println("Count: ");
