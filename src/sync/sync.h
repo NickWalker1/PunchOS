@@ -39,11 +39,11 @@ void cond_broadcast(condition* c, lock* l);
 bool int_context();
 
 
-#include "../processes/pcb.h"
+#include "../threads/tcb.h"
 
 /* Lock. */
 struct lock {
-    PCB_t *holder;      /* Process holding lock(for debugging). */
+    TCB_t *holder;      /* Process holding lock(for debugging). */
     semaphore semaphore; /* Binary semaphore controlling access. */
 };
 

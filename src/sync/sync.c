@@ -1,6 +1,6 @@
 #include "sync.h"
 
-#include "../processes/process.h"
+#include "../threads/thread.h"
 
 
 /* NOTE:
@@ -28,8 +28,8 @@ void sema_down(semaphore* s){
     //to ensure no raceconditions as cannot context switch
     itr_level=int_disable();
     while(s->value==0){
-        append_shared(s->waiters,current_proc());
-        proc_block();
+        append_shared(s->waiters,current_thread());
+        thread_block();
     }
     s->value--;
     int_set(itr_level);
@@ -49,7 +49,7 @@ void sema_up(semaphore* s){
     itr_level=int_disable();
     
     if(!is_empty(s->waiters)){
-        proc_unblock(pop_shared(s->waiters));
+        thread_unblock(pop_shared(s->waiters));
     }
     s->value++;
     int_set(itr_level);
@@ -76,17 +76,17 @@ void lock_init(lock* l){
 void lock_acquire(lock* l){
     if(l==NULL) PANIC("NULL lock in acquire");
 
-    if(l->holder==current_proc()) PANIC("Lock already held by this thread");
+    if(l->holder==current_thread()) PANIC("Lock already held by this thread");
 
     sema_down(&l->semaphore);
-    l->holder=current_proc();
+    l->holder=current_thread();
 }
 
 /* Will release the lock if it has it, otherwise does nothing */
 void lock_weak_release(lock *l){
     if(l==NULL) PANIC("NULL lock in weak release");
     
-    if(l->holder==current_proc()){
+    if(l->holder==current_thread()){
         lock_release(l);
     }
 
@@ -98,7 +98,7 @@ void lock_weak_release(lock *l){
  */
 void lock_release(lock* l){
     if(l==NULL) PANIC("NULL lock in release");
-    if(l->holder!=current_proc()) PANIC("Attempted release of lock not held by current thread");
+    if(l->holder!=current_thread()) PANIC("Attempted release of lock not held by current thread");
 
     l->holder=NULL;
     sema_up(&l->semaphore);
@@ -117,7 +117,7 @@ void cond_init(condition* cond){
 }
 
 
-/* Releases lock then waits until has been signaled by another process to wake up.
+/* Releases lock then waits until has been signaled by another threadess to wake up.
  * will reaquire lock on wakeup so may block
  */
 void cond_wait(condition* c, lock* l){
@@ -126,8 +126,8 @@ void cond_wait(condition* c, lock* l){
     if(l==NULL) PANIC("NULL lock in wait");
     // ASSERT(!in_external_int(),"In external interrupt");
 
-    PCB_t *p = current_proc();
-    ASSERT(l->holder ==p,"Lock not held by current thread in cond wait.");
+    TCB_t *t = current_thread();
+    ASSERT(l->holder ==t,"Lock not held by current thread in cond wait.");
 
     //Reason using a semaphore here instead of just a pointer to the PCB
     // because incase the cond is waiting on multiple conditions, we do not
@@ -157,7 +157,7 @@ void cond_signal(condition* c, lock* l){
     ASSERT(c!=NULL, "NULL cond in signal.");
     ASSERT(l!=NULL, "NULL lock in signal.");
     // ASSERT(!in_external_int(),"In external interrupt");
-    ASSERT(l->holder==current_proc(),"Lock not held by current thread in signal.");
+    ASSERT(l->holder==current_thread(),"Lock not held by current thread in signal.");
 
     //wakeup the first waiter on cond c
     if(get_size(c->waiters))
@@ -165,7 +165,7 @@ void cond_signal(condition* c, lock* l){
 }
 
 
-/* Signals all processes waiting on cond c to wakeup */
+/* Signals all threadesses waiting on cond c to wakeup */
 void cond_broadcast(condition* c, lock* l){
     ASSERT(c!=NULL, "NULL cond in broadcast");
     ASSERT(l!=NULL, "NULL lock in broadcast");

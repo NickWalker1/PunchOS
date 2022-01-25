@@ -30,7 +30,7 @@ void main(){
 
 	
 	//Sleep to display bootscreen.
-	proc_sleep(1,UNIT_SEC);
+	thread_sleep(1,UNIT_SEC);
 
 	
 	//Splash screen
@@ -57,13 +57,7 @@ void main(){
 
 
 
-
-
-
-	/* Uncomment the following line to perform IPC tests */
-	MQ_test();
-
-	proc_sleep(3,UNIT_SEC);
+	thread_sleep(3,UNIT_SEC);
 
 	create_proc("PS",ps,NULL);
 
@@ -80,7 +74,7 @@ void spin(int offset){
 	uint8_t i=0;
 	while(1){
 		print_char_offset(spinBars[i++%4],WHITE_ON_BLACK,offset);
-		proc_sleep(4,UNIT_TICK);
+		thread_sleep(4,UNIT_TICK);
 	}
 		
 }

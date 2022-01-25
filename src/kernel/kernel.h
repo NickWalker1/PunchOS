@@ -10,8 +10,7 @@
 #include "../memory/paging.h"
 #include "../processes/process.h"
 #include "../shell/shell.h"
-#include "../processes/mq.h"
-#include "../tests/mq_test.h"
+#include "../threads/thread.h"
 
 
 void kernel_entry(uint32_t, uint32_t addr);

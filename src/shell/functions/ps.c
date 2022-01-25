@@ -1,6 +1,7 @@
 #include "ps.h"
 
 #include "../../processes/process.h"
+#include "../../threads/thread.h"
 #include "../../memory/heap.h"
 
 extern proc_diagnostics_t proc_tracker[MAX_PROCS];
@@ -60,7 +61,7 @@ void ps(){
             i++;
             set_cursor(LINE(i+5));
         }
-        proc_sleep(1,UNIT_SEC);
+        thread_sleep(1,UNIT_SEC);
     }
 
 
