@@ -15,6 +15,13 @@ extern TCB_t *idle_thread;
 
 #include "thread.h"
 
+bool scheduling_init(){
+    ready_threads=list_init();
+
+}
+
+
+
 /* Reschedules a threadess by adding it
  *  to the appropriate queue.
  * Must be called with interrupts disabled.*/

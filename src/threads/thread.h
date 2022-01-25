@@ -58,3 +58,13 @@ void thread_tick();
 void thread_yield();
 void schedule();
 void thread_block();
+void thread_unblock(TCB_t *t);
+void thread_kill(TCB_t *t);
+void run(thread_func *function, void *aux);
+void sleep_tick();
+void thread_sleep(uint32_t time, uint8_t format);
+
+
+/* Helpers */
+
+void *push_stack(TCB_t *t, uint32_t size);

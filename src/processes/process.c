@@ -8,6 +8,9 @@
 #include "../memory/heap.h"
 #include "../memory/paging.h"
 
+
+#include "../threads/thread.h"
+
 extern void main();
 extern page_directory_entry_t *base_pd;
 
@@ -54,8 +57,6 @@ void processes_init(){
     int_disable(); //Sanity check
     
     
-    //counts total number of ticks for performance reports
-    total_ticks=0;
 
     /*Create a dummy process so it can be scheduled out of and killed.
     It must exist long enough to finish the setup process however, then the final section
@@ -233,57 +234,6 @@ void proc_kill(PCB_t* p){
 }
 
 
-
-
-
-
-
-
-/* Process will block for exactly the given time and will preempt
- * the running process to be rescheduled instead.
- * If used poorly can cause process starvation. */
-void proc_alarm(UNUSED uint32_t time,UNUSED uint8_t format){
-    /* To be implemented */
-}
-
-
-/* Will sleep the current process.
- * Format var either UNIT_TICK or UNIT_SEC.
- * 18 ticks per second by default. 
- * NOTE: When woken up, it will be rescheduled
- * rather than switched to hence delay not exact.
- * For exact timings implement proc_alarm instead.*/
-void proc_sleep(uint32_t time, uint8_t format){
-    if(time==0) return;
-
-    sleeper* s= shr_malloc(sizeof(sleeper));
-    if(!s) PANIC("sleeper alloc failed");
-
-    s->waiting=current_proc();
-    
-    if(format&UNIT_TICK){
-        s->tick_remaining=time;
-    }
-    else if(format&UNIT_SEC){
-        s->tick_remaining=time*18; //TODO do proper checks for bit overflow
-    }
-    else{//default to tick
-        s->tick_remaining=time;
-    }
-
-    int level=int_disable();
-
-    if(!append_shared(sleeper_procs,s))
-        PANIC("Reschedule fail.");
-
-    proc_block();
-
-    //process now awake
-    //resets interrupt state to before it slept.
-    int_set(level);
-}
-
-
 /* Test Function */
 void proc_echo(){
     while(1){
@@ -325,13 +275,7 @@ void proc_heap_display(){
 //-----------------------HELPERS--------------------------------
 
 
-/* Used to push data to a pcb stack.
- * ONLY use when initialising the process. */
-void* push_stack(PCB_t* p, uint32_t size){
-    if(!is_proc(p)) PANIC("pushing stack to non-process");
-    p->stack-=size;
-    return p->stack;
-}
+
 
 
 /* Returns address stored in cr3 register */
@@ -352,9 +296,4 @@ p_id get_new_pid(){
 
     proc_tracker[i-1].present=true;
     return i;
-}
-
-
-void ready_dump(){
-    list_dump(ready_procs);
 }

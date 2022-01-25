@@ -20,6 +20,15 @@ static int cur_tick_count;
 
 
 bool multi_threading_init(){
+    if(!scheduling_init()) return false;
+
+    sleeper_threads=list_init();
+    if(!sleeper_threads) return false;
+
+    //counts total number of ticks for performance reports
+    total_ticks=0;
+    cur_tick_count=0;
+
 
 }
 
@@ -259,7 +268,7 @@ void thread_kill(TCB_t *t){
 
 /* Wrapper function for threads running the given function.
  * Will kill the thread when function returns */
-void run(thread_func* function, void* aux){
+void run(thread_func *function, void *aux){
     ASSERT(function!=NULL,"Cannot run NULL function");
     
 
@@ -296,3 +305,52 @@ void sleep_tick(){
         }
     }
 }
+
+
+/* Will sleep the current thread.
+ * Format var either UNIT_TICK or UNIT_SEC.
+ * 18 ticks per second by default. 
+ * NOTE: When woken up, it will be rescheduled
+ * rather than switched to hence delay not exact.
+ * For exact timings implement proc_alarm instead.*/
+void thread_sleep(uint32_t time, uint8_t format){
+    if(time==0) return;
+
+    sleeper* s= shr_malloc(sizeof(sleeper));
+    if(!s) PANIC("sleeper alloc failed");
+
+    s->waiting=current_proc();
+    
+    if(format&UNIT_TICK){
+        s->tick_remaining=time;
+    }
+    else if(format&UNIT_SEC){
+        s->tick_remaining=time*18; //TODO do proper checks for bit overflow
+    }
+    else{//default to tick
+        s->tick_remaining=time;
+    }
+
+    int level=int_disable();
+
+    if(!append_shared(sleeper_threads,s))
+        PANIC("Reschedule fail.");
+
+    proc_block();
+
+    //thread now awake
+    //resets interrupt state to before it slept.
+    int_set(level);
+}
+
+
+//----------------Helpers-------------
+
+/* Used to push data to a pcb stack.
+ * ONLY use when initialising the process. */
+void* push_stack(TCB_t* t, uint32_t size){
+    if(!is_thread(t)) PANIC("pushing stack to non-process");
+    t->stack-=size;
+    return t->stack;
+}
+
