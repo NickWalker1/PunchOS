@@ -32,6 +32,8 @@ INPUT
     src/shell/shell.o
     src/processes/mq.o
     src/tests/mq_test.o
+    src/threads/tcb.o
+    src/threads/thread.o
 )
 OUTPUT
 (

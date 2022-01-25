@@ -12,32 +12,30 @@ extern void main();
 extern page_directory_entry_t *base_pd;
 
 
-static PCB_t* idle_proc; /* Just spins */
+// static PCB_t* idle_proc; /* Just spins */
 
 bool multi_processing_enabled = false;
 
 //Declare some useful data structures 
 static list*   all_procs;
-static list* ready_procs;
-static list* sleeper_procs;
+// static list* ready_procs;
+// static list* sleeper_procs;
+extern list *ready_threads;
+extern TCB_t *idle_thread;
 
-// True at index i-1 if a process is using pid i.
-proc_diagnostics_t proc_tracker[MAX_PROCS];
+// True at index i-1 if a process is using pid i. Is declared in pcb.c.
+extern proc_diagnostics_t proc_tracker[MAX_PROCS];
 
-int total_ticks;
-
-static int cur_tick_count;
 
 
 /* Begins mutliprocessing. THIS FUNCTION SHOULD NEVER RETURN */
 void multi_proc_start(){
-    ASSERT(is_proc(idle_proc),"idle process not created on multiproc start");
-    ASSERT(!is_empty(ready_procs),"ready queue empty on mutliproc start");
+
+    //TODO instead call external mutli-threading go function?
+    ASSERT(multi_threading_init(),"Multi-threading init fail");
 
     //Allow PIT interrupts
     block_PIT=0;
-
-    total_ticks=0;
 
 
     int_disable();
@@ -76,13 +74,10 @@ void processes_init(){
     memset(proc_tracker,0,sizeof(proc_tracker));
 
     all_procs=list_init_shared();
-    ready_procs=list_init_shared();
-    sleeper_procs=list_init_shared();
 
 
 
     proc_create("init", main,NULL, PC_INIT); 
-    idle_proc=proc_create("idle",idle,NULL,PC_IDLE);
 
     int_enable();
 
@@ -129,6 +124,10 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
     
     strcpy(new->name,name); 
 
+    //TODO create the heap now can actually do that by modifying heap init function.
+
+    //TODO do the bit that actually creates the new thread.
+
     // new->page_directory=Kptov(get_pd());
     if(flags&PC_ADDR_DUP){
         new->page_directory=virt_addr_space_duplication(current_proc()->page_directory);
@@ -144,9 +143,7 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
 
 
     /* Default setup values */
-    new->priority=1;
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
-    new->status=P_BLOCKED;
     // lock_init(&new->heap_lock);
 
 
@@ -154,34 +151,7 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
     proc_diagnostics_init(pid,new);
 
 
-    /*
 
-        Context for these next few stack pushes:
-    On each function call a few things are pushed to the stack.
-    Firstly: the address of the line to return to when the ret instruction
-    is called, this is how nested calls work.
-    Thus each stack struct starts with the eip value of the function of which
-    to 'return' to, but infact it has never been there before. Ha sneaky.
-    Secondly: each of the function arguments
-    Finally: Some default values to pretend it has just come from an interrupt
-
-    */
-
-    //run stack frame
-    runframe* run_stack=(runframe*) push_stack(new,sizeof(runframe));/*sizeof(runframe)=24*/
-    run_stack->eip=NULL;
-    run_stack->function=func;
-    run_stack->aux=aux;
-
-    //stack for first_switch function. All it does is push the eip of run to the stack so that when ret is
-    //called at the end of first_switch it will jump to the start of the run function.
-    switch_entry_stack* switch_stack=(switch_entry_stack*) push_stack(new,sizeof(switch_entry_stack));/*sizeof(switch_entry_stack)=8*/
-    switch_stack->eip=(void (*) (void)) run;
-
-    //stack contents for context_switch function
-    context_switch_stack* context_stack=(context_switch_stack*) push_stack(new,sizeof(context_switch_stack));/*sizeof(context_switch_stack)=40*/
-    context_stack->eip = first_switch;
-    context_stack->ebp = 0;
 
     
     /* Add to all procs list */
@@ -226,187 +196,9 @@ void proc_diagnostics_init(int pid, PCB_t *p){
 
 }
 
-/* called by PIT interrupt handler */
-void proc_tick(){
-    //TODO REMOVE
-    //report OK to PIT so it can send the next one.
-    outportb(PIC1_COMMAND, PIC_EOI);
-
-    //TODO get proc to do some analytics n shit
-    //add to each proc in the ready queue their current latency
-    //when actualy being scheduled add that latency to the total wait
-    //and update average latency using a "num times scheduled count" avg_latency=(avg_latency*n-1 + latency)/n
-    PCB_t *proc = current_proc();
-    proc_tracker[proc->pid-1].running_ticks++;
-
-    int i=0;
-    while(proc_tracker[i].present){
-        if(proc_tracker[i].process==proc){
-            i++;
-            continue;
-        }
-        proc_tracker[i].wait_ticks++;
-        i++;
-    }
-
-    sleep_tick();
-
-    total_ticks++;
-
-    //Preemption
-    if(++cur_tick_count>= TIME_SLICE){
-        proc_yield();
-    }
-}
-
-/* Reschedules a process by adding it
- *  to the appropriate queue.
- * Must be called with interrupts disabled.*/
-void proc_reschedule(PCB_t *p){
-    /* Reset waiting ticks counter to 0 */
-    proc_tracker[p->pid-1].wait_ticks=0;
-
-    /* Appending to ready processes if not idle process. */
-    if(p!=idle_proc){
-        append_shared(ready_procs,p);
-    }
-    
-    p->status=P_READY;
-}
-
-
-/* Yeilds current proces by updating status, adding to ready processes
- * and scheduling a new one */
-void proc_yield(){
-    PCB_t* p = current_proc();
-
-    int int_level=int_disable();
-
-    //Update diagnostics TODO
-    proc_tracker[p->pid-1].mem_usage=heap_usage(p->heap_start_segment);
-
-    proc_reschedule(p);
-
-    schedule();
-
-    //renable intterupts to previous level
-    int_set(int_level);
-}
-
-
-/* Final stage of context switch.
- * Updates current processes status.
- * Kills previous process if it's dying.
- */
-void switch_complete(PCB_t* prev){
-    PCB_t* curr = current_proc();
-    curr->status=P_RUNNING;
-
-    cur_tick_count=0;
-
-    //Update cr3 if required.
-    update_pd(Kvtop(curr->page_directory));
-
-    if(prev->status==P_DYING) proc_kill(prev);
-}
 
 
 
-/* Primary context switching function
- * Must be called with interrupts off */
-void schedule(){
-    PCB_t* curr = current_proc();
-    PCB_t* next = get_next_process();
-    PCB_t* prev = curr; //in case of no switch
-    if(int_get_level()) PANIC("SCHEDULING WITH INTERUPTS ENABLED");
-    if(curr->status==P_RUNNING) PANIC("Current process is still running...");
-
-    // println("curr:");
-    // print(itoa(curr->pid,str,BASE_DEC));
-    // print(" next: ");
-    // print(itoa(next->pid,str,BASE_DEC));
-
-    /* Update statistics */
-    proc_diagnostics_t *proc_d = &proc_tracker[next->pid-1];
-    proc_d->average_latency=((proc_d->average_latency*proc_d->scheduled_count)+proc_d->wait_ticks)/(proc_d->scheduled_count+1);
-    proc_d->scheduled_count++;
-    
-    if(curr!=next){
-        if(0){
-            println("switching from: ");
-            // print(itoa((uint32_t)curr,str,BASE_HEX));
-            print(curr->name);
-            print(" to ");
-            // print(itoa((uint32_t)next,str,BASE_HEX));
-            print(next->name);
-        }
-
-        //perform the context switch function from pswap.asm
-        prev=context_switch(curr,next);
-        
-    }
-
-    //schedule the old proc backinto ready queue
-    //and update the new proc details 
-    switch_complete(prev);
-
-}
-
-
-/* Returns the next process to be scheduled.
- * Currently round robin approach */
-PCB_t* get_next_process(){
-
-    //round robin approach
-    if(is_empty(ready_procs)){
-        return idle_proc;
-    }
-    PCB_t* p = (PCB_t*)(pop_shared(ready_procs));
-    return p;
-}
-
-
-/* function run by idle process*/
-void idle(){
-    // idle_proc=current_proc();
-    // sema_up(idle_started);
-    for(;;){
-        /* Let someone else run. */
-        int_disable ();
-        proc_block ();
-
-        //Re-enable interrupts and wait for the next one 
-        asm volatile ("sti; hlt");
-    }
-}
-
-
-/* Blocks the current process and schedules a new one
- * Must be called with interrupts disabled */
-void proc_block(){
-    if(int_get_level()) PANIC("Cannot block without interrupts off");
-
-    PCB_t *p=current_proc();
-    p->status=P_BLOCKED; 
-
-    proc_tracker[p->pid-1].mem_usage=heap_usage(p->heap_start_segment);
-
-    //Force an early context switch
-    schedule();
-}
-
-
-/* Unblocks the current process and adds it to the ready queue. */
-void proc_unblock(PCB_t* p){
-    if(!is_proc(p)) PANIC("Cannot unblock non-process");
-    if(p->status!=P_BLOCKED) PANIC("Cannot unblock non-blocked process");
-
-    int level=int_disable();
-    proc_reschedule(p);
-
-    int_set(level);
-
-}
 
 /* Kills the given process and frees all associated memory*/
 void proc_kill(PCB_t* p){
@@ -419,6 +211,7 @@ void proc_kill(PCB_t* p){
     // println("KILLING PROCESS: ");
     // print(itoa(p->pid,str,BASE_DEC));
     
+    //TODO kill all threads too
 
     proc_tracker[p->pid-1].present=false;
     
@@ -429,7 +222,7 @@ void proc_kill(PCB_t* p){
     //TODO clear all memory stuff not just return...
     return;
 
-    remove_shared(ready_procs,p);
+    // remove_shared(ready_procs,p);
 
     //TODO Free PID 
     
@@ -440,48 +233,10 @@ void proc_kill(PCB_t* p){
 }
 
 
-/* Wrapper function for processes running the given function.
- * Will kill the process when function returns */
-void run(proc_func* function, void* aux){
-    ASSERT(function!=NULL,"Cannot run NULL function");
-    
-    PCB_t* p= current_proc();
-    p->heap_start_segment=proc_heap_init();
 
 
-    int_enable();
-
-    //do the work
-    function(aux);
-    
-    p->status=P_DYING;
-
-    int_disable();
-    schedule();
-}
 
 
-/* On each tick, decrements process wait counters.
- * If counter now 0, wakeup that process */
-void sleep_tick(){
-    uint32_t i;
-    for(i=0;i<sleeper_procs->size;i++){
-        sleeper* s=list_get(sleeper_procs,i);
-        s->tick_remaining--;
-        if(s->tick_remaining==0){
-            int level= int_disable();
-
-
-            remove_shared(sleeper_procs,s);
-            
-            proc_unblock(s->waiting);
-
-            shr_free(s);
-            
-            int_set(level);
-        }
-    }
-}
 
 
 /* Process will block for exactly the given time and will preempt

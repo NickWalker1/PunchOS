@@ -15,6 +15,8 @@ typedef struct PCB PCB_t;
 #define PROC_MAGIC 0x12345678
 
 
+#include "../threads/tcb.h"
+
 typedef enum proc_status
 {
     P_READY,
@@ -24,31 +26,6 @@ typedef enum proc_status
     P_DYING
 } proc_status;
 
-/* Process Control Block 
-        4 kB +---------------------------------+
-             |          kernel stack           |
-             |                |                |
-             |                |                |
-             |                V                |
-             |         grows downward          |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             +---------------------------------+
-             |              magic              |
-             |                :                |
-             |                :                |
-             |               name              |
-             |              status             |
-             |              stack*             |
-        0 kB +---------------------------------+
-
-*/
 
 
 /* Process Control Block Struct */
@@ -60,16 +37,21 @@ struct  PCB{
     p_id ppid; /* Parent process ID */
     char name[16]; 
 
-    proc_status status; 
+    proc_status status; //TODO check if required?
 
     bool dummy; /* Dummy value to know if it was the intial boot process before processing initialised */
 
+    uint32_t thread_count;
+    //list *threads
+    TCB_t *threads[8];
+
     page_directory_entry_t* page_directory; /* NOTE: is virtual address not physical */
-    int priority; /* 1 is highest priority, 5 is lowest NOT CURRENTLY USED WITH ROUND ROBIN AND SUBJECT TO CHANGE */
 
     /* Each process has it's own heap, this points to the start of it. */
     MemorySegmentHeader_t *heap_start_segment;
-    // lock heap_lock; /* To lock the heap between mutlithreaded processes */
+
+    //TODO implement heap_lock
+    //lock heap_lock; /* To lock the heap between mutlithreaded processes */
 
 
 
@@ -77,7 +59,7 @@ struct  PCB{
     virt_pool_t virt_pool;
 
 
-    /* Magic value to check for stack growth induced corruption and process validation */
+    /* Magic value for validity check */
     uint32_t magic;
 };
 
@@ -98,8 +80,7 @@ typedef struct proc_diagnostics{
 } proc_diagnostics_t;
 
 
-uint32_t* get_base_page(uint32_t *addr);
-void *get_esp();
 bool is_proc(PCB_t *p);
+PCB_t *get_proc(p_id pid);
 PCB_t *current_proc();
 void process_dump(PCB_t *p);

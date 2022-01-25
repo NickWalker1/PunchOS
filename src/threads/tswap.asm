@@ -4,7 +4,7 @@ next_offset equ 24
 
 
 global context_switch
-; PCB_t *context_switch(PCB_t *cur, PCB_t *next);
+; TCB_t *context_switch(TCB_t *cur, TCB_t *next);
 context_switch:
     ; Save old callee-preserved registers
     ; No need to store eax-edx as they are handled 
@@ -15,7 +15,7 @@ context_switch:
     push  edi
 
 
-    ; Store the current stack pointer in the PCB struct    
+    ; Store the current stack pointer in the TCB struct    
     mov edx, 0 ; currently just have stack* at offset 0 in struct but this can change
     mov eax, [curr_offset+esp]
     mov [eax+edx*1],esp

@@ -26,31 +26,6 @@ void first_switch();
 
 #include "../memory/paging.h"
 
-extern phys_pool_t K_virt_pool;
-
-
-typedef struct runframe
-{
-    void* eip;              //Return addr
-    proc_func* function;  //Function to run
-    void* aux;              //function arguments
-} __attribute__((packed, aligned(4))) runframe;
-
-typedef struct context_switch_stack{
-    uint32_t edi;               /*  0: Saved edi. */
-    uint32_t esi;               /*  4: Saved esi. */
-    uint32_t ebp;               /*  8: Saved ebp. */
-    uint32_t ebx;               /* 12: Saved ebx. */
-    void (*eip) (void);         /* 16: Return address. */
-    PCB_t *cur;         /* 20: context_switch()'s CUR argument. */
-    PCB_t *next;        /* 24: context_switch()'s NEXT argument. */
-} __attribute__((packed, aligned(4))) context_switch_stack;
-
-
-/* Stack frame for switch_entry(). */
-typedef struct switch_entry_stack{
-    void (*eip) (void);
-}__attribute__((packed, aligned(4))) switch_entry_stack;
 
 
 PCB_t *create_proc(char *name, proc_func *func, void *aux);
@@ -59,16 +34,6 @@ void processes_init();
 MemorySegmentHeader_t *proc_heap_init();
 void proc_diagnostics_init(int pid, PCB_t *p);
 PCB_t *proc_create(char *name, proc_func *func, void *aux,uint8_t flags);
-void proc_tick();
-void proc_yield();
-void proc_reschedule(PCB_t *p);
-void switch_complete(PCB_t *prev);
-void schedule();
-PCB_t *get_next_process();
-void idle();
-void proc_block();
-void proc_unblock(PCB_t *p);
-void proc_kill(PCB_t* p);
 void run(proc_func *function, void *aux);
 void proc_echo();
 void sleep_tick();

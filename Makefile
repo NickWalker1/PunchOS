@@ -1,7 +1,7 @@
-C_SOURCES = $(wildcard src/kernel/*.c src/drivers/*.c src/lib/*.c src/gdt/*.c src/interrupt/*.c src/memory/*.c src/sync/*.c src/processes/*.c src/shell/functions/*.c src/shell/*.c src/tests/*.c )
-HEADERS   = $(wildcard src/kernel/*.h src/drivers/*.h src/lib/*.h src/gdt/*.h src/interrupt/*.h src/memory/*.h src/sync/*.h src/processes/*.h src/shell/functions/*.h src/shell/*.h src/tests/*.h )
+C_SOURCES = $(wildcard src/kernel/*.c src/drivers/*.c src/lib/*.c src/gdt/*.c src/interrupt/*.c src/memory/*.c src/sync/*.c src/processes/*.c src/shell/functions/*.c src/shell/*.c src/threads/*.c src/tests/*.c)
+HEADERS   = $(wildcard src/kernel/*.h src/drivers/*.h src/lib/*.h src/gdt/*.h src/interrupt/*.h src/memory/*.h src/sync/*.h src/processes/*.h src/shell/functions/*.h src/shell/*.h src/threads/*.h src/tests/*.h )
 
-ASM_SOURCES = $(wildcard src/boot/*.asm src/gdt/*.asm src/interrupt/*.asm src/memory/*.asm src/processes/*asm)
+ASM_SOURCES = $(wildcard src/boot/*.asm src/gdt/*.asm src/interrupt/*.asm src/memory/*.asm src/processes/*.asm src/threads/*.asm)
 
 ASM_OBJ =${ASM_SOURCES:.asm=.o}
 OBJ=${C_SOURCES:.c=.o}
