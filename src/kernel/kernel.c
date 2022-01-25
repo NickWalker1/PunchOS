@@ -46,14 +46,14 @@ void main(){
 	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
 	println("");
                       
-	create_proc("Hard1",proc_test_hardwork,NULL,PC_NFLAG);
-	create_proc("Hard2",proc_test_hardwork,NULL,PC_NFLAG);
+	create_proc("Hard1",proc_test_hardwork,NULL);
+	create_proc("Hard2",proc_test_hardwork,NULL);
 
-	create_proc("A",proc_test_A,NULL,PC_NFLAG);
-	create_proc("B",proc_test_A,NULL,PC_NFLAG);
+	create_proc("A",proc_test_A,NULL);
+	create_proc("B",proc_test_A,NULL);
 
 
-	create_proc("heap",proc_heap_display,NULL,PC_NFLAG);
+	create_proc("heap",proc_heap_display,NULL);
 
 
 
@@ -63,9 +63,9 @@ void main(){
 	/* Uncomment the following line to perform IPC tests */
 	MQ_test();
 
-	// proc_sleep(3,UNIT_SEC);
+	proc_sleep(3,UNIT_SEC);
 
-	// create_proc("PS",ps,NULL,PC_NFLAG);
+	create_proc("PS",ps,NULL);
 
 	spin(TOP_RIGHT);
 

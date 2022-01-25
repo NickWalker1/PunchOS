@@ -30,8 +30,8 @@ void MQ_test(){
 
     print_attempt("Testing Message Queue");
 
-    create_proc("PROD",producer,NULL,PC_NFLAG);
-    create_proc("CONS",consumer,NULL,PC_NFLAG);
+    proc_create("PROD",producer,NULL,PC_NFLAG);
+    proc_create("CONS",consumer,NULL,PC_NFLAG);
 
 
 	/* Wait for consumer to finish testing */

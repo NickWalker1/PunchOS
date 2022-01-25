@@ -52,10 +52,13 @@ typedef struct switch_entry_stack{
     void (*eip) (void);
 }__attribute__((packed, aligned(4))) switch_entry_stack;
 
+
+PCB_t *create_proc(char *name, proc_func *func, void *aux);
+
 void processes_init();
 MemorySegmentHeader_t *proc_heap_init();
 void proc_diagnostics_init(int pid, PCB_t *p);
-PCB_t *create_proc(char* name, proc_func* func, void* aux,uint8_t flags);
+PCB_t *proc_create(char *name, proc_func *func, void *aux,uint8_t flags);
 void proc_tick();
 void proc_yield();
 void proc_reschedule(PCB_t *p);

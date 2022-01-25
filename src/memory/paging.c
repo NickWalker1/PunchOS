@@ -151,27 +151,43 @@ void map_page(void* paddr, void* vaddr, uint8_t flags){
  * Will PANIC if no more pages are available and F_ASSERT flag present,
  * returns NULL otherwise. */
 void *get_next_free_phys_page(size_t n, uint8_t flags){
-    helper_variable+=n;
     phys_pool_t* pool = &phys_page_pool;
+
+    /* Check if the pool is already full */
     if(pool->first_free_idx==-1){
         if(flags & F_ASSERT)
             PANIC("NO PHYS PAGES AVAILABLE");
         KERN_WARN("phys page allocation failed");
         return NULL;
     }
+
+    /* Get first free address */
     void* base_addr= pool->pages[pool->first_free_idx].base_addr;
-    //pool.pages[pool.first_free_idx].type=M_ALLOCATED;
+
+
     int idx=pool->first_free_idx;
     int start=idx;
     size_t i;
+    /* Attempt to allocate the next n pages */
     for(i=1;i<n;i++){
         idx++;
+        /* Check if not enough pages available */
+        if(idx>=PG_COUNT){
+            if(flags & F_ASSERT)
+                PANIC("INSUFFICIENT PHYSICAL PAGES AVAILABLE");
+            
+            KERN_WARN("phys page allocation failed");
+            return NULL;
+        }
+
+        /* Check if the page isn't free */
         if(pool->pages[idx].type!=M_FREE){
-            //start again as slot not big enough.
+            /* Start again as slot not big enough. */
             i=1;
-            //jump to next free page.
-            while(pool->pages[idx].type!=M_FREE){
+            /* Jump to next free page. */
+            while(pool->pages[idx].type!=M_FREE){ 
                 idx++;
+                /* Check if now at the limit */
                 if(idx==PG_COUNT){
                     if(flags & F_ASSERT)
                         PANIC("INSUFFICIENT PHYSICAL PAGES AVAILABLE");
@@ -180,10 +196,14 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
                     return NULL;
                 }
             }
+            /* Reset indexes */
             start=idx;
             base_addr=pool->pages[idx].base_addr;
         }
     }
+    /* Have successfully found an n size block */
+
+
     //mark those pages as allocated.
     for(i=start;i<start+n;i++){
         pool->pages[i].type=M_ALLOCATED;
@@ -203,23 +223,16 @@ void *get_next_free_phys_page(size_t n, uint8_t flags){
     
     if(flags&F_VERBOSE){ println("Got phys page: "); print(itoa((int)base_addr,str,BASE_HEX));}
 
-    //TODO FIX AS currently broken.
-    //if(flags&F_ZERO){
-    if(0){
-        //Because this page may or may not be mapped to an unkown virtual address.
-        //must create temporary virtual kernel map and use that to reference this page
-
-        map_page(base_addr,Kptov(base_addr),0);
-        memset(Kptov(base_addr),0,n*PGSIZE);
-        unmap_page(Kptov(base_addr),0);
-    }
 
     pool->first_free_idx=idx;
     return base_addr;
 }
 
-/* TODO COmmnets */
+
+/* Returns base address of n virtual pages from the given pool, or NULL on failure. */
 void *get_virt_from_pool(size_t n, virt_pool_t *pool, uint8_t flags){
+
+    /* Check if pool is already full */
     if(pool->first_free_idx==-1){
         if(flags &F_ASSERT)
             PANIC("NO VIRT PAGES AVAILABLE");
@@ -227,6 +240,7 @@ void *get_virt_from_pool(size_t n, virt_pool_t *pool, uint8_t flags){
         return NULL;
     };
 
+    /* Get first free address */
     int idx=pool->first_free_idx;
 
     int start= idx;
@@ -234,11 +248,23 @@ void *get_virt_from_pool(size_t n, virt_pool_t *pool, uint8_t flags){
     void* base_addr = (void*) pool->pages[start].base_addr;
 
     size_t i;
+    /* Attempt to allocate the next n pages */
     for(i=1;i<n;i++){
         idx++;
+
+        /* Check if not enough pages available */
+        if(idx>=PG_COUNT){
+            if(flags & F_ASSERT)
+                PANIC("INSUFFICIENT VIRTUAL PAGES AVAILABLE");
+            KERN_WARN("virt page allocation failed");
+            return NULL;
+        }
+
+        /* Check if page isn't free */
         if(pool->pages[idx].type!=M_FREE){
-            //if next page not available, restart
+            /* If next page not available, restart */
             i=1;
+            /* Jump to next free page */
             while(pool->pages[idx].type!=M_FREE){
                 idx++;
                 if(idx==PROC_VPOOL_SIZE){
@@ -249,10 +275,14 @@ void *get_virt_from_pool(size_t n, virt_pool_t *pool, uint8_t flags){
                     return NULL;
                 }
             }
+            /* Reset indexes */
             start=idx;
             base_addr=pool->pages[start].base_addr;
         }
     }
+    /* Have successfully found an n sized block */
+
+    /* Mark as allocated */
     for(i=start;i<start+n;i++) pool->pages[i].type=M_ALLOCATED;
 
     //update next free pointer->

@@ -81,22 +81,28 @@ void processes_init(){
 
 
 
-    create_proc("init", main,NULL, PC_INIT); 
-    idle_proc=create_proc("idle",idle,NULL,PC_IDLE);
+    proc_create("init", main,NULL, PC_INIT); 
+    idle_proc=proc_create("idle",idle,NULL,PC_IDLE);
 
     int_enable();
 
     // sema_down(&init_started); //when sema_down is called the process will
     //block and schedule the next process. This next process will be
-    // the idle process as the last thing create_proc does is unblock
+    // the idle process as the last thing proc_create does is unblock
     // the process by changing the state and adding it to the ready queue
 }
+
+/* Create a new process with name running func with arguments aux */
+PCB_t *create_proc(char *name, proc_func *func, void *aux){
+    return proc_create(name,func,aux,PC_NFLAG);
+}
+
 
 
 /* Allocates a page in kernel space for the PCB and sets
  * some basic info in PCB_t struct and returns pointer to it.
  */
-PCB_t* create_proc(char* name, proc_func* func, void* aux, uint8_t flags){
+PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
     int int_level = int_disable();
 
     p_id pid = get_new_pid();

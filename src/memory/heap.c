@@ -133,7 +133,7 @@ void free(void* addr){
     MemorySegmentHeader_t *currSeg = (MemorySegmentHeader_t*) (addr - sizeof(MemorySegmentHeader_t));
     
     if(currSeg->magic!=segment_magic){
-        KERN_WARN("Tried to free non-base address");
+        KERN_WARN("Attempted to free non-base address");
         return;
     }
 
