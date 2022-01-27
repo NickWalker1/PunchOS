@@ -45,17 +45,17 @@ void ps(){
             offset+=4*CHAR_OFF;
             print_from(itoa(p->ppid,str,BASE_DEC),offset);
 
-            /* CPU */
-            offset+=5*CHAR_OFF;
-            print_from(itoa(pd->running_ticks*100/total_ticks,str,BASE_DEC),offset);
+            // /* CPU */
+            // offset+=5*CHAR_OFF;
+            // print_from(itoa(pd->running_ticks*100/total_ticks,str,BASE_DEC),offset);
             
-            /* MEM */
-            offset+=4*CHAR_OFF;
-            print_from(itoa(pd->mem_usage,str,BASE_DEC),offset);
+            // /* MEM */
+            // offset+=4*CHAR_OFF;
+            // print_from(itoa(pd->mem_usage,str,BASE_DEC),offset);
 
-            /* LATENCY */
-            offset+=4*CHAR_OFF;
-            print_from(itoa(pd->average_latency,str,BASE_DEC),offset);
+            // /* LATENCY */
+            // offset+=4*CHAR_OFF;
+            // print_from(itoa(pd->average_latency,str,BASE_DEC),offset);
 
 
             i++;

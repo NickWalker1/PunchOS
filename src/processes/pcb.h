@@ -68,13 +68,13 @@ typedef struct proc_diagnostics{
 
     PCB_t *process;
     
-    uint32_t mem_usage; /* % Local Memory usage calculated using heap_usage() yield or block. */
+    // uint32_t mem_usage; /* % Local Memory usage calculated using heap_usage() yield or block. */
 
-    /* Timing information */
-    uint32_t running_ticks; /* Count of ticks when has been running process */
-    uint32_t wait_ticks; /* Current wait time before rescheduling */
-    uint32_t average_latency; /* Average number of ticks between being scheduled and being run */
-    uint32_t scheduled_count; /* Number of times this process has been scheduled */
+    // /* Timing information */
+    // uint32_t running_ticks; /* Count of ticks when has been running process */
+    // uint32_t wait_ticks; /* Current wait time before rescheduling */
+    // uint32_t average_latency; /* Average number of ticks between being scheduled and being run */
+    // uint32_t scheduled_count; /* Number of times this process has been scheduled */
 
 } proc_diagnostics_t;
 

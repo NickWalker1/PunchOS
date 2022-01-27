@@ -51,7 +51,7 @@ typedef struct switch_entry_stack{
 /* Struct to contain sleeping thread info */
 typedef struct sleeper{
     uint32_t tick_remaining;
-    PCB_t *waiting;
+    TCB_t *waiting;
 } sleeper;
 
 bool multi_threading_init();
@@ -59,6 +59,7 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux, uint32_t owner_pi
 void thread_tick();
 void thread_yield();
 void schedule();
+void switch_complete(TCB_t *prev);
 void thread_block();
 void thread_unblock(TCB_t *t);
 void thread_kill(TCB_t *t);
@@ -70,3 +71,4 @@ void thread_sleep(uint32_t time, uint8_t format);
 /* Helpers */
 
 void *push_stack(TCB_t *t, uint32_t size);
+t_id get_new_tid();

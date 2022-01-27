@@ -27,13 +27,14 @@ INPUT
     src/sync/sync.o
     src/processes/pcb.o
     src/processes/process.o
-    src/processes/pswap.o
     src/shell/functions/ps.o
     src/shell/shell.o
     src/processes/mq.o
     src/tests/mq_test.o
     src/threads/tcb.o
     src/threads/thread.o
+    src/threads/sched.o
+    src/threads/tswap.o
 )
 OUTPUT
 (

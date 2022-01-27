@@ -16,7 +16,10 @@ list *sleeper_threads;
 static int total_ticks;
 static int cur_tick_count;
 
-//TODO gonna need some externs for the scheduling stuff
+//TODO gonna need some externs for the scheduling stuff?
+
+
+thread_diagnostics_t thread_tracker[256];
 
 
 bool multi_threading_init(){
@@ -30,10 +33,12 @@ bool multi_threading_init(){
     cur_tick_count=0;
 
 
+    return true;
+
 }
 
 
-TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid, uint8_t flags){
+TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid, UNUSED uint8_t flags){
      int int_level = int_disable();
 
     t_id tid = get_new_tid();
@@ -109,7 +114,7 @@ void thread_tick(){
     //add to each thread in the ready queue their current latency
     //when actualy being scheduled add that latency to the total wait
     //and update average latency using a "num times scheduled count" avg_latency=(avg_latency*n-1 + latency)/n
-    TCB_t *thread = current_thread();
+    // TCB_t *thread = current_thread();
 
 
     //TODO fix thread diagnostics
@@ -163,7 +168,7 @@ void schedule(){
     TCB_t* next = get_next_thread();
     TCB_t* prev = curr; //in case of no switch
     if(int_get_level()) PANIC("SCHEDULING WITH INTERUPTS ENABLED");
-    if(curr->status=T_RUNNING) PANIC("Current threadess is still running...");
+    if(curr->status==T_RUNNING) PANIC("Current threadess is still running...");
 
     // println("curr:");
     // print(itoa(curr->pid,str,BASE_DEC));
@@ -319,7 +324,7 @@ void thread_sleep(uint32_t time, uint8_t format){
     sleeper* s= shr_malloc(sizeof(sleeper));
     if(!s) PANIC("sleeper alloc failed");
 
-    s->waiting=current_proc();
+    s->waiting=current_thread();
     
     if(format&UNIT_TICK){
         s->tick_remaining=time;
@@ -336,7 +341,7 @@ void thread_sleep(uint32_t time, uint8_t format){
     if(!append_shared(sleeper_threads,s))
         PANIC("Reschedule fail.");
 
-    proc_block();
+    thread_block();
 
     //thread now awake
     //resets interrupt state to before it slept.
@@ -354,3 +359,12 @@ void* push_stack(TCB_t* t, uint32_t size){
     return t->stack;
 }
 
+t_id get_new_tid(){
+    int i=1;
+    while(thread_tracker[i-1].present && i<=MAX_PROCS) i++;
+
+    if(i==MAX_PROCS) return -1;
+
+    thread_tracker[i-1].present=true;
+    return i;
+}

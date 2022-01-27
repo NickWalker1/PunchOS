@@ -34,7 +34,6 @@ extern proc_diagnostics_t proc_tracker[MAX_PROCS];
 /* Begins mutliprocessing. THIS FUNCTION SHOULD NEVER RETURN */
 void multi_proc_start(){
 
-    //TODO instead call external mutli-threading go function?
     ASSERT(multi_threading_init(),"Multi-threading init fail");
 
     //Allow PIT interrupts
@@ -44,6 +43,7 @@ void multi_proc_start(){
     int_disable();
     
     multi_processing_enabled=true;
+
     //Switch to init process
     schedule();
 }
@@ -199,10 +199,10 @@ void proc_heap_init(PCB_t *p){
 void proc_diagnostics_init(int pid, PCB_t *p){
     proc_tracker[pid-1].present=true;
     proc_tracker[pid-1].process=p;
-    proc_tracker[pid-1].running_ticks=0;
-    proc_tracker[pid-1].wait_ticks=0;
-    proc_tracker[pid-1].average_latency=0;
-    proc_tracker[pid-1].scheduled_count=0;
+    // proc_tracker[pid-1].running_ticks=0;
+    // proc_tracker[pid-1].wait_ticks=0;
+    // proc_tracker[pid-1].average_latency=0;
+    // proc_tracker[pid-1].scheduled_count=0;
 
 }
 
@@ -250,15 +250,15 @@ void proc_echo(){
 
 
 /* Test Function */
-void proc_test_A(){
-    proc_sleep(1,UNIT_SEC);
-    while(1){
-        // println("proc "); print(current_proc()->name);
-        proc_sleep(1,UNIT_SEC);
-        malloc(256);
+// void proc_test_A(){
+//     proc_sleep(1,UNIT_SEC);
+//     while(1){
+//         // println("proc "); print(current_proc()->name);
+//         proc_sleep(1,UNIT_SEC);
+//         malloc(256);
         
-    }
-}
+//     }
+// }
 
 void proc_test_hardwork(){
     int a=0;
@@ -267,15 +267,15 @@ void proc_test_hardwork(){
     }
 }
 
-/* Test Function */
-void proc_heap_display(){
-    while(1){
-        proc_sleep(2,UNIT_SEC);
+// /* Test Function */
+// void proc_heap_display(){
+//     while(1){
+//         proc_sleep(2,UNIT_SEC);
         
-        print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
-        print_to("%",BOTTOM_RIGHT-2);
-    }
-}
+//         print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
+//         print_to("%",BOTTOM_RIGHT-2);
+//     }
+// }
 
 
 //-----------------------HELPERS--------------------------------
