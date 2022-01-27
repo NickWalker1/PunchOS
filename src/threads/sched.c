@@ -15,9 +15,16 @@ extern TCB_t *idle_thread;
 
 #include "thread.h"
 
+
+/* Initialises schedulising by initialising any lists or structures needed for scheduling */
 bool scheduling_init(){
     ready_threads=list_init();
+    if(!ready_threads) return false;
 
+    /* To be implemented. */
+
+
+    return true;
 }
 
 

@@ -33,7 +33,7 @@ bool multi_threading_init(){
 }
 
 
-void thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid, uint8_t flags){
+TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid, uint8_t flags){
      int int_level = int_disable();
 
     t_id tid = get_new_tid();

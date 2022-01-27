@@ -125,9 +125,10 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
     
     strcpy(new->name,name); 
 
-    //TODO create the heap now can actually do that by modifying heap init function.
 
-    //TODO do the bit that actually creates the new thread.
+    //TODO update names
+
+    
 
     // new->page_directory=Kptov(get_pd());
     if(flags&PC_ADDR_DUP){
@@ -143,16 +144,26 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
     init_vpool(&new->virt_pool); 
 
 
+    /* Initialise the process heap */
+    proc_heap_init(new);
+
     /* Default setup values */
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
-    // lock_init(&new->heap_lock);
 
 
     /* Initialise process diagnostics struct */
     proc_diagnostics_init(pid,new);
 
 
+    /* Create the primary thread for the process */    
+    TCB_t *t=thread_create("main",func,aux,pid,F_ASSERT);
+    if(!t){
+        //TODO update free all the stuff
+        return NULL;
+    }
+    new->threads[0]=t;
 
+    new->thread_count=1;
 
     
     /* Add to all procs list */
@@ -161,28 +172,26 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
 
     int_set(int_level);
 
-
-    /* add to ready queue */
-    proc_unblock(new);
-
     return new;
 }
 
-/* Initialses the current processes' inidivual heap space.
- * NOTE: Can only be called from inside the process */
-MemorySegmentHeader_t *proc_heap_init(){
+
+/* Initialses the current processes' inidivual heap space. */
+void proc_heap_init(PCB_t *p){
     void *phys = get_next_free_phys_page(HEAP_SIZE,F_ASSERT);
 
 
-    void *base = get_next_free_virt_page(HEAP_SIZE,F_ASSERT);
+    void *base = get_virt_from_pool(HEAP_SIZE,&p->virt_pool,F_ASSERT);
 
     int i;
     for(i=0;i<HEAP_SIZE;i++){
-        map_page(phys+i*PGSIZE,base+i*PGSIZE,F_ASSERT);
+        perform_map(phys+i*PGSIZE,base+i*PGSIZE,p->page_directory,F_ASSERT);
     }
 
+    //TODO lock
+    //lock_init(&new->heap_lock);
     
-    return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
+    p->heap_start_segment= intialise_heap(base,base+HEAP_SIZE*PGSIZE);
 }
 
 
@@ -196,9 +205,6 @@ void proc_diagnostics_init(int pid, PCB_t *p){
     proc_tracker[pid-1].scheduled_count=0;
 
 }
-
-
-
 
 
 /* Kills the given process and frees all associated memory*/

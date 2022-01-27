@@ -15,7 +15,6 @@ typedef struct PCB PCB_t;
 #define PROC_MAGIC 0x12345678
 
 
-#include "../threads/tcb.h"
 
 typedef enum proc_status
 {

@@ -46,20 +46,20 @@ void main(){
 	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
 	println("");
                       
-	create_proc("Hard1",proc_test_hardwork,NULL);
-	create_proc("Hard2",proc_test_hardwork,NULL);
+	// create_proc("Hard1",proc_test_hardwork,NULL);
+	// create_proc("Hard2",proc_test_hardwork,NULL);
 
-	create_proc("A",proc_test_A,NULL);
-	create_proc("B",proc_test_A,NULL);
-
-
-	create_proc("heap",proc_heap_display,NULL);
+	// create_proc("A",proc_test_A,NULL);
+	// create_proc("B",proc_test_A,NULL);
 
 
+	// create_proc("heap",proc_heap_display,NULL);
 
-	thread_sleep(3,UNIT_SEC);
 
-	create_proc("PS",ps,NULL);
+
+	// thread_sleep(3,UNIT_SEC);
+
+	// create_proc("PS",ps,NULL);
 
 	spin(TOP_RIGHT);
 

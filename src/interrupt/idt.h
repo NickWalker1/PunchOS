@@ -6,7 +6,6 @@
 #include "../lib/screen.h"
 #include "../lib/int.h"
 #include "../lib/typedefs.h"
-// #include "../processes/process.h"
 
 
 #define IDT_MAX_DESCRIPTORS 256
@@ -18,7 +17,7 @@
 #define PIC_EOI 0x20
 
 
-extern void proc_tick();
+extern void thread_tick();
 
 extern bool block_PIT;
 

@@ -46,14 +46,16 @@ typedef struct switch_entry_stack{
 #define UNIT_TICK 1<<1
 #define UNIT_SEC 1<<2
 
+#include "../processes/pcb.h"
+
 /* Struct to contain sleeping thread info */
 typedef struct sleeper{
     uint32_t tick_remaining;
     PCB_t *waiting;
 } sleeper;
 
-bool mutli_threading_init();
-void thread_create(char *name, thread_func *func, void *aux, uint32_t owner_pid, uint8_t flags);
+bool multi_threading_init();
+TCB_t *thread_create(char *name, thread_func *func, void *aux, uint32_t owner_pid, uint8_t flags);
 void thread_tick();
 void thread_yield();
 void schedule();

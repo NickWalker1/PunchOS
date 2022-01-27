@@ -157,7 +157,7 @@ void idt_global_int_wrapper(interrupt_state *state){
     outportb(PIC1_COMMAND, PIC_EOI);
     
 
-    if(state->interrupt_number==32 && !block_PIT) proc_tick();
+    if(state->interrupt_number==32 && !block_PIT) thread_tick();
 
     in_ext_int=false;
 }
