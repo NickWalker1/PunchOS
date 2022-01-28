@@ -24,12 +24,12 @@ void PANIC(char* msg){
     println("helper: ");
     print(itoa(helper_variable,str,BASE_HEX));
 
-    WARN_DUMP();
+    // WARN_DUMP();
 
-    print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
-    print_to("%",BOTTOM_RIGHT-2);
+    // print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
+    // print_to("%",BOTTOM_RIGHT-2);
 
-    shared_heap_dump();
+    // shared_heap_dump();
 
     halt();
 }

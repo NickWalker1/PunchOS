@@ -8,6 +8,7 @@
 #include "../lib/string.h"
 
 #define THR_MAGIC 0x18273645
+#define THR_MAIN 1<<1
 
 typedef int32_t t_id;
 typedef struct TCB TCB_t;
@@ -48,6 +49,7 @@ typedef enum thread_status
 } thread_status;
 
 
+
 /* Process Control Block Struct */
 struct  TCB{
     void *stack; /* DO NOT MOVE */
@@ -59,6 +61,8 @@ struct  TCB{
     char name[16]; 
 
     thread_status status; 
+
+    bool is_main; /* Is the first boostrap thread of the process */
 
     int priority; /* To be implemented */
 

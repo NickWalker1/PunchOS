@@ -15,7 +15,6 @@ typedef struct PCB PCB_t;
 #define PROC_MAGIC 0x12345678
 
 
-
 typedef enum proc_status
 {
     P_READY,
@@ -29,9 +28,6 @@ typedef enum proc_status
 
 /* Process Control Block Struct */
 struct  PCB{
-    void *stack; /* DO NOT MOVE */
-
-
     p_id pid; /* Process ID */
     p_id ppid; /* Parent process ID */
     char name[16]; 

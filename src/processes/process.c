@@ -27,14 +27,13 @@ extern list *ready_threads;
 extern TCB_t *idle_thread;
 
 // True at index i-1 if a process is using pid i. Is declared in pcb.c.
-extern proc_diagnostics_t proc_tracker[MAX_PROCS];
+extern proc_diagnostics_t proc_tracker[MAX_PROCS+1];
 
-
+PCB_t dummy_proc; /* Used only for bootstrap process */
 
 /* Begins mutliprocessing. THIS FUNCTION SHOULD NEVER RETURN */
 void multi_proc_start(){
 
-    ASSERT(multi_threading_init(),"Multi-threading init fail");
 
     //Allow PIT interrupts
     block_PIT=0;
@@ -58,21 +57,21 @@ void processes_init(){
     
     
 
-    /*Create a dummy process so it can be scheduled out of and killed.
-    It must exist long enough to finish the setup process however, then the final section
-    setup is to start multiprocesing. */ 
-    int esp  = (int) get_esp();
-    esp=esp-(esp%PGSIZE)-PGSIZE;
-    PCB_t *dummy_proc = (PCB_t*)esp;
-    dummy_proc->dummy=true;
-    dummy_proc->magic=PROC_MAGIC;
-    dummy_proc->pid=get_new_pid(); //TODO check this??
-    dummy_proc->status=P_DYING;
-    dummy_proc->page_directory=base_pd;
 
+    /* Initialise the parent dummy process for the dummy thread that will be used for bootstrap purposes then 
+    scheduled out of and killed */
+    dummy_proc.dummy=true;
+    dummy_proc.magic=PROC_MAGIC;
+    dummy_proc.pid=get_new_pid(); //TODO check this??
+    dummy_proc.page_directory=base_pd;
+
+    
+    ASSERT(multi_threading_init(&dummy_proc),"Multi-threading init fail");
+
+    
     lock_init(&shared_heap_lock);
 
-    memset(proc_tracker,0,sizeof(proc_tracker));
+    // memset(proc_tracker,0,sizeof(proc_tracker));
 
     all_procs=list_init_shared();
 
@@ -80,7 +79,10 @@ void processes_init(){
 
     proc_create("init", main,NULL, PC_INIT); 
 
+
+
     int_enable();
+
 
     // sema_down(&init_started); //when sema_down is called the process will
     //block and schedule the next process. This next process will be
@@ -103,7 +105,7 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
 
     p_id pid = get_new_pid();
     if(pid==-1) return NULL;
-    PCB_t *new= (PCB_t*) palloc_kern(1,F_ASSERT);
+    PCB_t *new= (PCB_t*) palloc_kern(1,F_ASSERT); //TODO update but its fine for now
     if(!new) return NULL;
 
 
@@ -143,20 +145,14 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
     /* Initialses the processes individual virtual page pool */
     init_vpool(&new->virt_pool); 
 
-
-    /* Initialise the process heap */
-    proc_heap_init(new);
-
-    /* Default setup values */
-    new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
-
-
     /* Initialise process diagnostics struct */
     proc_diagnostics_init(pid,new);
 
 
+
+
     /* Create the primary thread for the process */    
-    TCB_t *t=thread_create("main",func,aux,pid,F_ASSERT);
+    TCB_t *t=thread_create("main",func,aux,pid,THR_MAIN);
     if(!t){
         //TODO update free all the stuff
         return NULL;
@@ -177,21 +173,22 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
 
 
 /* Initialses the current processes' inidivual heap space. */
-void proc_heap_init(PCB_t *p){
+MemorySegmentHeader_t *proc_heap_init(){
     void *phys = get_next_free_phys_page(HEAP_SIZE,F_ASSERT);
 
 
-    void *base = get_virt_from_pool(HEAP_SIZE,&p->virt_pool,F_ASSERT);
+    void *base = get_next_free_virt_page(HEAP_SIZE,F_ASSERT);
 
     int i;
     for(i=0;i<HEAP_SIZE;i++){
-        perform_map(phys+i*PGSIZE,base+i*PGSIZE,p->page_directory,F_ASSERT);
+        map_page(phys+i*PGSIZE,base+i*PGSIZE,F_ASSERT);
     }
 
     //TODO lock
     //lock_init(&new->heap_lock);
     
-    p->heap_start_segment= intialise_heap(base,base+HEAP_SIZE*PGSIZE);
+    
+    return intialise_heap(base,base+HEAP_SIZE*PGSIZE);
 }
 
 
@@ -295,11 +292,12 @@ void* get_pd(){
 /* Returns an unused PID, and sets status to True in PCB_PID_TRACKER.
  * Returns -1 on failure. */
 p_id get_new_pid(){
-    int i=1;
-    while(proc_tracker[i-1].present && i<=MAX_PROCS) i++;
+    //PID 0 is dummy process 
+    int i=0;
+    while(proc_tracker[i].present && i<=MAX_PROCS) i++;
 
     if(i==MAX_PROCS) return -1;
 
-    proc_tracker[i-1].present=true;
+    proc_tracker[i].present=true;
     return i;
 }

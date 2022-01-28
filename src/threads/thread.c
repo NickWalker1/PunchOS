@@ -18,14 +18,28 @@ static int cur_tick_count;
 
 //TODO gonna need some externs for the scheduling stuff?
 
+extern MemorySegmentHeader_t *proc_heap_init();
+
 
 thread_diagnostics_t thread_tracker[256];
 
 
-bool multi_threading_init(){
+bool multi_threading_init(PCB_t *dummy_proc){
     if(!scheduling_init()) return false;
 
-    sleeper_threads=list_init();
+
+    /* Create dummy thread that can be scheduled out of */
+    int esp  = (int) get_esp();
+    esp=esp-(esp%PGSIZE)-PGSIZE;
+    TCB_t *dummy_thread = (TCB_t*)esp; /* Page allocated before main jump so this page is free */
+    dummy_thread->owner_pid=0;
+    dummy_thread->status=T_DYING;
+    dummy_thread->magic=THR_MAGIC;
+    dummy_thread->tid=get_new_tid(); //TODO check?
+    dummy_thread->priority=1;
+
+
+    sleeper_threads=list_init_shared();
     if(!sleeper_threads) return false;
 
     //counts total number of ticks for performance reports
@@ -33,12 +47,17 @@ bool multi_threading_init(){
     cur_tick_count=0;
 
 
+    /* Create the idle thread */
+    idle_thread=thread_create("idle",idle,NULL,1,0);
+
+
+
     return true;
 
 }
 
 
-TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid, UNUSED uint8_t flags){
+TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid, uint8_t flags){
      int int_level = int_disable();
 
     t_id tid = get_new_tid();
@@ -46,6 +65,9 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid
     TCB_t *new= (TCB_t*) palloc_kern(1,F_ASSERT);
     if(!new) return NULL;
 
+    if(flags & THR_MAIN){
+        new->is_main=true;
+    }
 
     new->owner_pid=owner_pid;
 
@@ -180,7 +202,8 @@ void schedule(){
     // thread_diagnostics_t *thread_d = &thread_tracker[next->pid-1];
     // thread_d->average_latency=((thread_d->average_latency*thread_d->scheduled_count)+thread_d->wait_ticks)/(thread_d->scheduled_count+1);
     // thread_d->scheduled_count++;
-    
+
+
     if(curr!=next){
         if(0){
             println("switching from: ");
@@ -213,9 +236,13 @@ void switch_complete(TCB_t* prev){
 
     cur_tick_count=0;
 
+
+
     //Update cr3 if required.
-    if(curr->owner_pid!=prev->owner_pid)
+    if(curr->owner_pid!=prev->owner_pid){
         update_pd(Kvtop(get_proc(curr->owner_pid)->page_directory));
+    }
+
 
     if(prev->status==T_DYING) thread_kill(prev);
 }
@@ -267,6 +294,7 @@ void thread_kill(TCB_t *t){
     ASSERT(is_thread(t),"Cannot kill non-thread");
     ASSERT(t!=current_thread(),"Cannot kill own thread");
 
+
     //TODO implement
 }
 
@@ -276,13 +304,19 @@ void thread_kill(TCB_t *t){
 void run(thread_func *function, void *aux){
     ASSERT(function!=NULL,"Cannot run NULL function");
     
+    /* Finalise the setup of process if required. */
+    TCB_t *curr = current_thread();
+    if(curr->is_main){
+        get_proc(curr->owner_pid)->heap_start_segment=proc_heap_init();
+    }
+
 
     int_enable();
 
     //do the work
     function(aux);
     
-    current_thread()->status=P_DYING;
+    curr->status=P_DYING;
 
     int_disable();
     schedule();
@@ -325,6 +359,7 @@ void thread_sleep(uint32_t time, uint8_t format){
     if(!s) PANIC("sleeper alloc failed");
 
     s->waiting=current_thread();
+
     
     if(format&UNIT_TICK){
         s->tick_remaining=time;

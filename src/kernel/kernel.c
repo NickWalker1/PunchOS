@@ -27,8 +27,6 @@ void kernel_entry(uint32_t magic, uint32_t addr){
 
 /* Main function run by init process */
 void main(){
-
-	
 	//Sleep to display bootscreen.
 	thread_sleep(1,UNIT_SEC);
 
@@ -106,7 +104,6 @@ bool setup(uint32_t magic, uint32_t addr){
 	print_attempt("Paging init.");
 	paging_init();
 	print_ok();
-
 
 	print_attempt("Processes init.");
 	processes_init();

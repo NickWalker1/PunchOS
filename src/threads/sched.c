@@ -18,11 +18,11 @@ extern TCB_t *idle_thread;
 
 /* Initialises schedulising by initialising any lists or structures needed for scheduling */
 bool scheduling_init(){
-    ready_threads=list_init();
+    ready_threads=list_init_shared();
     if(!ready_threads) return false;
 
     /* To be implemented. */
-
+    
 
     return true;
 }

@@ -54,7 +54,7 @@ typedef struct sleeper{
     TCB_t *waiting;
 } sleeper;
 
-bool multi_threading_init();
+bool multi_threading_init(PCB_t *dummy);
 TCB_t *thread_create(char *name, thread_func *func, void *aux, uint32_t owner_pid, uint8_t flags);
 void thread_tick();
 void thread_yield();
@@ -63,6 +63,7 @@ void switch_complete(TCB_t *prev);
 void thread_block();
 void thread_unblock(TCB_t *t);
 void thread_kill(TCB_t *t);
+void idle();
 void run(thread_func *function, void *aux);
 void sleep_tick();
 void thread_sleep(uint32_t time, uint8_t format);
