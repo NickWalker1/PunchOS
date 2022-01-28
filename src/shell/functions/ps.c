@@ -4,9 +4,12 @@
 #include "../../threads/thread.h"
 #include "../../memory/heap.h"
 
-extern proc_diagnostics_t proc_tracker[MAX_PROCS];
+extern proc_diagnostics_t   proc_tracker[MAX_PROCS+1];
+extern thread_diagnostics_t thread_tracker[256];
 extern uint32_t total_ticks;
 
+
+/* COMPLETELY BROKEN */
 void ps(){
     clear_screen();
     print_from("Process Status",TOP_LEFT);
@@ -45,7 +48,20 @@ void ps(){
             offset+=4*CHAR_OFF;
             print_from(itoa(p->ppid,str,BASE_DEC),offset);
 
-            // /* CPU */
+            /* Summations over threads */
+            uint32_t j;
+            int CPU,MEM,LAT;
+            CPU=MEM=LAT=0;
+            for(j=0;j<p->thread_count;j++){
+                int tid=p->threads[j]->tid;
+                CPU+= thread_tracker[tid].running_ticks;
+                MEM+= thread_tracker[tid].mem_usage;
+                LAT+= thread_tracker[tid].average_latency;
+            }
+            
+
+            /* CPU */
+            
             // offset+=5*CHAR_OFF;
             // print_from(itoa(pd->running_ticks*100/total_ticks,str,BASE_DEC),offset);
             

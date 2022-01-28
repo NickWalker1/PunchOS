@@ -44,14 +44,14 @@ void main(){
 	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
 	println("");
                       
-	// create_proc("Hard1",proc_test_hardwork,NULL);
-	// create_proc("Hard2",proc_test_hardwork,NULL);
+	thread_create("Hard1",proc_test_hardwork,NULL,1,0);
+	thread_create("Hard2",proc_test_hardwork,NULL,1,0);
 
 	// create_proc("A",proc_test_A,NULL);
 	// create_proc("B",proc_test_A,NULL);
 
 
-	// create_proc("heap",proc_heap_display,NULL);
+	thread_create("top",top,NULL,1,0);
 
 
 

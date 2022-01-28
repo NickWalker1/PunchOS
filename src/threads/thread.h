@@ -4,7 +4,7 @@
 #include "tcb.h"
 
 
-#define TIME_SLICE 4
+
 
 typedef void thread_func(void *aux);
 
@@ -54,7 +54,7 @@ typedef struct sleeper{
     TCB_t *waiting;
 } sleeper;
 
-bool multi_threading_init(PCB_t *dummy);
+bool multi_threading_init();
 TCB_t *thread_create(char *name, thread_func *func, void *aux, uint32_t owner_pid, uint8_t flags);
 void thread_tick();
 void thread_yield();
@@ -73,3 +73,5 @@ void thread_sleep(uint32_t time, uint8_t format);
 
 void *push_stack(TCB_t *t, uint32_t size);
 t_id get_new_tid();
+void thread_diagnostics_insert(t_id tid,TCB_t *t);
+void thread_diagnostics_delete(t_id tid);

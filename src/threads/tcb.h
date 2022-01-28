@@ -7,8 +7,14 @@
 #include "../lib/screen.h"
 #include "../lib/string.h"
 
+#define MAX_THREADS 256
+
+#define TIME_SLICE 4
+
 #define THR_MAGIC 0x18273645
 #define THR_MAIN 1<<1
+#define THR_IDLE 1<<2
+
 
 typedef int32_t t_id;
 typedef struct TCB TCB_t;

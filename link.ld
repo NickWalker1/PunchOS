@@ -28,6 +28,7 @@ INPUT
     src/processes/pcb.o
     src/processes/process.o
     src/shell/functions/ps.o
+    src/shell/functions/top.o
     src/shell/shell.o
     src/processes/mq.o
     src/tests/mq_test.o

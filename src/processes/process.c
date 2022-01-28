@@ -62,7 +62,8 @@ void processes_init(){
     scheduled out of and killed */
     dummy_proc.dummy=true;
     dummy_proc.magic=PROC_MAGIC;
-    dummy_proc.pid=get_new_pid(); //TODO check this??
+    dummy_proc.pid=0;
+    proc_tracker[0].present=true;
     dummy_proc.page_directory=base_pd;
 
     
@@ -152,7 +153,7 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
 
 
     /* Create the primary thread for the process */    
-    TCB_t *t=thread_create("main",func,aux,pid,THR_MAIN);
+    TCB_t *t=thread_create(name,func,aux,pid,THR_MAIN);
     if(!t){
         //TODO update free all the stuff
         return NULL;
@@ -289,11 +290,11 @@ void* get_pd(){
 }
 
 
-/* Returns an unused PID, and sets status to True in PCB_PID_TRACKER.
+/* Returns an unused PID, and sets status to True in proc_tracker.
  * Returns -1 on failure. */
 p_id get_new_pid(){
-    //PID 0 is dummy process 
-    int i=0;
+    /* PID 0 is dummy process. */ 
+    int i=1;
     while(proc_tracker[i].present && i<=MAX_PROCS) i++;
 
     if(i==MAX_PROCS) return -1;

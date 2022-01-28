@@ -13,18 +13,17 @@ TCB_t *idle_thread;
 
 list *sleeper_threads;
 
-static int total_ticks;
-static int cur_tick_count;
+int total_ticks;
+int cur_tick_count;
 
 //TODO gonna need some externs for the scheduling stuff?
 
 extern MemorySegmentHeader_t *proc_heap_init();
 
-
 thread_diagnostics_t thread_tracker[256];
 
 
-bool multi_threading_init(PCB_t *dummy_proc){
+bool multi_threading_init(){
     if(!scheduling_init()) return false;
 
 
@@ -35,7 +34,8 @@ bool multi_threading_init(PCB_t *dummy_proc){
     dummy_thread->owner_pid=0;
     dummy_thread->status=T_DYING;
     dummy_thread->magic=THR_MAGIC;
-    dummy_thread->tid=get_new_tid(); //TODO check?
+    dummy_thread->tid=0;
+    thread_tracker[0].present=true; //TODO check
     dummy_thread->priority=1;
 
 
@@ -48,7 +48,7 @@ bool multi_threading_init(PCB_t *dummy_proc){
 
 
     /* Create the idle thread */
-    idle_thread=thread_create("idle",idle,NULL,1,0);
+    idle_thread=thread_create("idle",idle,NULL,1,THR_IDLE);
 
 
 
@@ -58,7 +58,8 @@ bool multi_threading_init(PCB_t *dummy_proc){
 
 
 TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid, uint8_t flags){
-     int int_level = int_disable();
+    int int_level = int_disable();
+
 
     t_id tid = get_new_tid();
     if(tid==-1) return NULL;
@@ -69,13 +70,14 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid
         new->is_main=true;
     }
 
+    new->tid =tid;
     new->owner_pid=owner_pid;
 
     new->magic=THR_MAGIC;
     
     strcpy(new->name,name); 
 
-
+    thread_diagnostics_insert(tid,new);
 
     /* Default setup values */
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
@@ -136,21 +138,20 @@ void thread_tick(){
     //add to each thread in the ready queue their current latency
     //when actualy being scheduled add that latency to the total wait
     //and update average latency using a "num times scheduled count" avg_latency=(avg_latency*n-1 + latency)/n
-    // TCB_t *thread = current_thread();
+    TCB_t *thread = current_thread();
 
 
-    //TODO fix thread diagnostics
-    // thread_tracker[thread->pid-1].running_ticks++;
+    thread_tracker[thread->tid].running_ticks++;
 
-    // int i=0;
-    // while(thread_tracker[i].present){
-    //     if(thread_tracker[i].threadess==thread){
-    //         i++;
-    //         continue;
-    //     }
-    //     thread_tracker[i].wait_ticks++;
-    //     i++;
-    // }
+    int i=0;
+    while(thread_tracker[i].present){
+        if(thread_tracker[i].thread==thread){
+            i++;
+            continue;
+        }
+        thread_tracker[i].wait_ticks++;
+        i++;
+    }
 
     sleep_tick();
 
@@ -199,9 +200,9 @@ void schedule(){
 
     /* Update statistics */
     //TODO FIX
-    // thread_diagnostics_t *thread_d = &thread_tracker[next->pid-1];
-    // thread_d->average_latency=((thread_d->average_latency*thread_d->scheduled_count)+thread_d->wait_ticks)/(thread_d->scheduled_count+1);
-    // thread_d->scheduled_count++;
+    thread_diagnostics_t *td = &thread_tracker[next->tid];
+    td->average_latency=((td->average_latency*td->scheduled_count)+td->wait_ticks)/(td->scheduled_count+1);
+    td->scheduled_count++;
 
 
     if(curr!=next){
@@ -394,12 +395,33 @@ void* push_stack(TCB_t* t, uint32_t size){
     return t->stack;
 }
 
+/* Returns a new unique thread identifier based on the thread tracker */
 t_id get_new_tid(){
-    int i=1;
-    while(thread_tracker[i-1].present && i<=MAX_PROCS) i++;
+    int tid=1;
+    /* 0 is the dummy thread hence MAX_THREADS+1 */
+    while(thread_tracker[tid].present && tid<MAX_THREADS+1) tid++;
 
-    if(i==MAX_PROCS) return -1;
+    if(tid==MAX_THREADS+1) return -1;
 
-    thread_tracker[i-1].present=true;
-    return i;
+    return tid;
+}
+
+/* Inserts a new thread into the thread tracker */
+void thread_diagnostics_insert(t_id tid, TCB_t *t){
+    thread_diagnostics_t *td=&thread_tracker[tid];
+
+    td->present=true;
+    
+    td->average_latency=0;
+    td->mem_usage=0;
+    td->running_ticks=0;
+    td->scheduled_count=0;
+    td->wait_ticks=0;
+
+    td->thread=t;
+}
+
+/* Removes a thread from the thread tracker */
+void thread_diagnostics_delete(t_id tid){
+    thread_tracker[tid].present=false;
 }

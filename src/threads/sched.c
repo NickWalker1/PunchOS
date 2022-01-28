@@ -12,6 +12,7 @@ list *ready_threads;
 
 extern TCB_t *idle_thread;
 
+extern thread_diagnostics_t thread_tracker[MAX_THREADS+1];
 
 #include "thread.h"
 
@@ -36,7 +37,7 @@ void thread_reschedule(TCB_t *t){
     /* Reset waiting ticks counter to 0 */
 
     //TODO fix
-    // thread_tracker[p->pid-1].wait_ticks=0;
+    thread_tracker[t->tid].wait_ticks=0;
     
 
     /* Appending to ready threads if not idle threads. */
