@@ -16,6 +16,8 @@ void ASSERT(bool cond, char *msg){
 
 /* Displays PANIC screen and writes message */
 void PANIC(char* msg){
+    int_disable();
+
     draw_panic_screen();
 
     println("PANIC");
@@ -28,8 +30,6 @@ void PANIC(char* msg){
 
     print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
     print_to("%",BOTTOM_RIGHT-2);
-
-    shared_heap_dump();
 
     halt();
 }

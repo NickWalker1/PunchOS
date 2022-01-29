@@ -15,7 +15,6 @@ void kernel_entry(uint32_t magic, uint32_t addr){
 	print_ok();
 
 
-
 	/* Final job of setup is to start multiprocesing.
 	Must be final as this function will not return */
 	multi_proc_start();
@@ -43,21 +42,22 @@ void main(){
 	println(" | |   | |_| | | | | (__| | | | |__| |____) |");
 	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
 	println("");
+
                       
 	thread_create("Hard1",proc_test_hardwork,NULL,1,0);
 	thread_create("Hard2",proc_test_hardwork,NULL,1,0);
 
-	// create_proc("A",proc_test_A,NULL);
-	// create_proc("B",proc_test_A,NULL);
-
+	create_proc("A",proc_test_A,NULL);
+	create_proc("B",proc_test_A,NULL);
 
 	thread_create("top",top,NULL,1,0);
 
 
 
+
 	// thread_sleep(3,UNIT_SEC);
 
-	// create_proc("PS",ps,NULL);
+	
 
 	spin(TOP_RIGHT);
 
@@ -72,7 +72,7 @@ void spin(int offset){
 	uint8_t i=0;
 	while(1){
 		print_char_offset(spinBars[i++%4],WHITE_ON_BLACK,offset);
-		thread_sleep(4,UNIT_TICK);
+		thread_sleep(5,UNIT_TICK);
 	}
 		
 }

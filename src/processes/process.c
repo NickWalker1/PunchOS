@@ -248,15 +248,15 @@ void proc_echo(){
 
 
 /* Test Function */
-// void proc_test_A(){
-//     proc_sleep(1,UNIT_SEC);
-//     while(1){
-//         // println("proc "); print(current_proc()->name);
-//         proc_sleep(1,UNIT_SEC);
-//         malloc(256);
+void proc_test_A(){
+    thread_sleep(1,UNIT_SEC);
+    while(1){
+        // println("proc "); print(current_proc()->name);
+        thread_sleep(1,UNIT_SEC);
+        malloc(256);
         
-//     }
-// }
+    }
+}
 
 void proc_test_hardwork(){
     int a=0;

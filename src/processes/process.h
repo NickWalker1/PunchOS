@@ -37,6 +37,6 @@ p_id get_new_pid();
 
 
 
-// void proc_test_A();
+void proc_test_A();
 void proc_test_hardwork();
 void proc_heap_display();

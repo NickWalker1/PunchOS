@@ -26,11 +26,8 @@ MemorySegmentHeader_t *intialise_heap(void *base, void *limit){
 /* Returns pointer to the start of size many bytes in process' dynamic memory space, returns NULL on failure */
 void *malloc(uint32_t size){
     ASSERT(multi_processing_enabled,"Must enable multiprocesing before using malloc");
-    void *addr=alloc(size,current_proc()->heap_start_segment);
-    if(!addr) KERN_WARN("malloc failed");
-    return addr;
+    return alloc(size,current_proc()->heap_start_segment);
 }
-
 
 /* Returns pointer to the start of size many bytes in shared kernel dynamic memory space, returns NULL on failure.
  * May block so must not be called inside interrupt handler. */
@@ -199,7 +196,7 @@ uint32_t heap_usage(MemorySegmentHeader_t *s){
     uint32_t used,all,size;
  
     used=0;
-    all=0;
+    all=1;
     while(s!=NULL){
         size=s->size+sizeof(MemorySegmentHeader_t);//TODO think about this
         all+=size;

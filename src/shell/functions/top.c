@@ -34,9 +34,9 @@ void top(){
         // clear_screen();
 
         while(thread_tracker[i].present){
-            clear_line(i+2);
+            clear_line(i+1);
 
-            offset=LINE(i+2);
+            offset=LINE(i+1);
             thread_diagnostics_t *pd=&thread_tracker[i];
             TCB_t *t=pd->thread;
 

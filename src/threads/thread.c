@@ -14,6 +14,7 @@ TCB_t *idle_thread;
 list *sleeper_threads;
 
 int total_ticks;
+int block_ticks;
 int cur_tick_count;
 
 //TODO gonna need some externs for the scheduling stuff?
@@ -130,49 +131,47 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid
 
 /* called by PIT interrupt handler */
 void thread_tick(){
-    //TODO REMOVE
-    //report OK to PIT so it can send the next one.
-    outportb(PIC1_COMMAND, PIC_EOI);
 
     //TODO get thread to do some analytics n shit
     //add to each thread in the ready queue their current latency
     //when actualy being scheduled add that latency to the total wait
     //and update average latency using a "num times scheduled count" avg_latency=(avg_latency*n-1 + latency)/n
-    TCB_t *thread = current_thread();
 
+    total_ticks++;
+
+    TCB_t *thread = current_thread();
 
     thread_tracker[thread->tid].running_ticks++;
 
-    int i=0;
+
+    int i=1;
     while(thread_tracker[i].present){
-        if(thread_tracker[i].thread==thread){
-            i++;
-            continue;
+        TCB_t *t = thread_tracker[i].thread;
+        if(t->status==T_READY){
+            thread_tracker[i].wait_ticks++;
         }
-        thread_tracker[i].wait_ticks++;
         i++;
     }
 
     sleep_tick();
 
-    total_ticks++;
+    
 
-    //Preemption
+    /* Preemption */
     if(++cur_tick_count>= TIME_SLICE){
         thread_yield();
     }
 }
 
 
-/* Yeilds current threades by updating status, adding to ready threades
+/* Yields current threades by updating status, adding to ready threades
  * and scheduling a new one */
 void thread_yield(){
     TCB_t* t = current_thread();
 
     int int_level=int_disable();
 
-    //Update diagnostics TODO
-    // thread_tracker[p->pid-1].mem_usage=heap_usage(p->heap_start_segment);
+    thread_tracker[t->tid].mem_usage=heap_usage(get_proc(t->owner_pid)->heap_start_segment);
 
     if(t!=idle_thread)
         thread_reschedule(t);
@@ -193,13 +192,8 @@ void schedule(){
     if(int_get_level()) PANIC("SCHEDULING WITH INTERUPTS ENABLED");
     if(curr->status==T_RUNNING) PANIC("Current threadess is still running...");
 
-    // println("curr:");
-    // print(itoa(curr->pid,str,BASE_DEC));
-    // print(" next: ");
-    // print(itoa(next->pid,str,BASE_DEC));
 
     /* Update statistics */
-    //TODO FIX
     thread_diagnostics_t *td = &thread_tracker[next->tid];
     td->average_latency=((td->average_latency*td->scheduled_count)+td->wait_ticks)/(td->scheduled_count+1);
     td->scheduled_count++;
@@ -272,7 +266,7 @@ void thread_block(){
     t->status=T_BLOCKED; 
 
     //TODO update
-    // proc_tracker[p->pid-1].mem_usage=heap_usage(p->heap_start_segment);
+    thread_tracker[t->tid].mem_usage=heap_usage(get_proc(t->owner_pid)->heap_start_segment);
 
     //Force an early context switch
     schedule();
