@@ -6,7 +6,7 @@
 
 #include "../lib/list.h"
 
-#include "../processes/pcb.h"
+#include "../processes/process.h"
 
 TCB_t *idle_thread;
 
@@ -79,6 +79,7 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid
     new->tid =tid;
     new->owner_pid=owner_pid;
 
+
     new->magic=THR_MAGIC;
     
     strcpy(new->name,name); 
@@ -123,6 +124,9 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid
 
     int_set(int_level);
 
+    // PCB_t *owner = get_proc(owner_pid);
+    // owner->thread_count++;
+    // owner->threads[owner->thread_count-1]=new;
 
     /* add to ready queue */
     thread_unblock(new);
@@ -292,25 +296,43 @@ void thread_unblock(TCB_t* t){
     int_set(level);
 }
 
+
 /* Kills the given thread and frees the associated memory */
 void thread_kill(TCB_t *t){
     ASSERT(is_thread(t),"Cannot kill non-thread");
     ASSERT(t!=current_thread(),"Cannot kill own thread");
 
+    /* Core system component so need interrupts disabled for atomic operation */
+    int level = int_disable();
+
+    /* Remove from thread tracker */
     thread_tracker[t->tid].present=false;
-    
-    //TODO implement
 
-    t->magic=0; //TODO REMOVE THIS
+    /* Remove from any ready queues */
+    deschedule(t);
 
-    /* Remove from parent and kill parent if it's the last one? */
+
+    /* Remove from sleeping list */
+    sleeper_remove(t);
+
+
+    /* Remove from parent and kill parent if there are no remaining threads */
+    // PCB_t *parent =get_proc(t->owner_pid);
+    // parent->thread_count--;
+    // parent->threads[parent->thread_count]=NULL;
+
+    // if(parent->thread_count==0) proc_kill(parent);
+
+
+    palloc_kern_free(t,1,F_ZERO);
+
+    int_set(level);
 }
 
 
-/* Attempts to kill a thread, if it's no longer a thread then don't do anything */
+/* Attempts to kill a thread, if it's not a thread then return */
 void thread_attempt_kill(TCB_t *t){
-    //TODO
-    // if(is_thread(t) && thread_tracker[t->tid].present) thread_kill(t);
+    if(is_thread(t) && thread_tracker[t->tid].present) thread_kill(t);
     
 }
 
@@ -357,6 +379,20 @@ void sleep_tick(){
             shr_free(s);
             
             int_set(level);
+        }
+    }
+}
+
+
+/* Removes a sleeping process from the list */
+void sleeper_remove(TCB_t *t){
+    uint32_t i;
+    for(i=0;i<sleeper_threads->size;i++){
+        sleeper* s=list_get(sleeper_threads,i);
+        if(s->waiting==t){
+            remove_shared(sleeper_threads,s);
+            shr_free(s);
+            return;
         }
     }
 }

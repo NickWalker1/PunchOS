@@ -87,11 +87,11 @@ void KERN_WARN(char *msg){
     strcpy(&WARN[WARN_LINE*WARN_CHAR_MAX],msg);
     WARN_LINE=WARN_LINE+(strlen(msg)/WARN_LINE_MAX) + 1;
 
-    println("Proc: ");
-    print(current_proc()->name);
-    print(" KERN WARN: ");
-
-    print(msg);
+    /* Removed as too verbose */
+    // println("Thread: ");
+    // print(current_thread()->name);
+    // print(" KERN WARN: ");
+    // print(msg);
 }
 
 

@@ -52,8 +52,7 @@ bool scheduling_init(){
 }
 
 
-/* Reschedules a threadess by adding it
- *  to the appropriate queue.
+/* Reschedules a thread by adding itto the appropriate queue.
  * Must be called with interrupts disabled.*/
 void thread_reschedule(TCB_t *t){
     /* Appending to ready threads if not idle threads. */
@@ -116,6 +115,12 @@ TCB_t* get_next_thread(){
 }
 
 
+/* Used to remove any thread from any queues in the case of preemptive kill */
+bool deschedule(TCB_t *t){
+    return remove_shared(prio_0,t) || remove_shared(prio_1,t) || remove_shared(prio_2,t);
+}
+
+/* Returns what would be the next thread thread to execute without removing anything */  
 TCB_t *peek_next_thread(){
     TCB_t *next;
     next=peek(prio_0);
@@ -130,7 +135,9 @@ TCB_t *peek_next_thread(){
     return idle_thread;
 }
 
+
 void queue_dump(){
+    println("Queue Dump:");
     list_dump(prio_0);
     list_dump(prio_1);
     list_dump(prio_2);

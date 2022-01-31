@@ -94,7 +94,7 @@ void test_func_d(){
     println("D completed.");
 }
 
-
+/* Returns true if all threads have finished execution. */
 bool end_cond(){
     return completedA==4 && completedB==2 && completedC==1 && completedD==2;
 }
@@ -146,6 +146,7 @@ void scheduling_test(){
     /* All threads are ready */
     print_attempt("Running scheduling tests...");
 
+    /* Best chance at getting them to start as close as they can to each other. As none can start until all are ready. */
     lock_acquire(&start_lock);
     cond_broadcast(&start_cond,&start_lock);
     lock_release(&start_lock);
@@ -185,5 +186,5 @@ void scheduling_test(){
     print(itoa(calc_time(t2-t1),str,BASE_DEC));
     print(" seconds.");
 
-    println("\nNaive scheduling time is 11 seconds.\n");
+    println("\nNaive scheduling time is ~12 seconds.\n");
 }

@@ -28,6 +28,7 @@ MemorySegmentHeader_t *proc_heap_init();
 void proc_diagnostics_init(int pid, PCB_t *p);
 PCB_t *proc_create(char *name, proc_func *func, void *aux,uint8_t flags);
 void proc_echo();
+void proc_kill(PCB_t *p);
 void sleep_tick();
 
 void multi_proc_start();

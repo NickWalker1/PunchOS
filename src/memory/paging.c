@@ -453,16 +453,14 @@ void *palloc(size_t n, uint8_t flags){
     return vaddr;
 }
 
-
-/* Returns pointer to a free page in the  MAX_PROCS*PGSIZE sized Kernel PCB Block of memory. */
-/*
-void *palloc_pcb(int pid){
-    //needs process ID to index the block
-    void *addr=base_PCB_block+(pid-1)*PGSIZE;
-    memset(addr,0,PGSIZE);
-    return addr;
+/* Frees palloc_kern'd pages */
+void palloc_kern_free(void *vaddr, size_t n, uint8_t flags){
+    if(flags & F_ZERO){
+        memset(vaddr,0,n*PGSIZE);
+    }
+    free_phys_page(Kvtop(vaddr),n);
+    return;
 }
-*/
 
 
 /* Allocates n pages and maps them to kern addres space in the given pd */

@@ -68,6 +68,7 @@ void idle();
 void run(thread_func *function, void *aux);
 void sleep_tick();
 void thread_sleep(uint32_t time, uint8_t format);
+void sleeper_remove(TCB_t *t);
 
 
 /* Helpers */
