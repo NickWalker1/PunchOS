@@ -169,7 +169,7 @@ void thread_tick(){
     }
 
     TCB_t *pn = peek_next_thread();
-    if(pn!=idle_thread && (pn->priority < curr->priority)){
+    if(pn && pn!=idle_thread && (pn->priority < curr->priority)){
         thread_yield();
     }
 }

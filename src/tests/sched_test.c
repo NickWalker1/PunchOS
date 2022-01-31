@@ -21,7 +21,7 @@ void test_func_a(){
 
 
     for(int i=0;i<10;i++){
-        thread_sleep(2,UNIT_TICK);
+        thread_sleep(8,UNIT_TICK);
         malloc(50);
     }
     completedA++;
@@ -100,7 +100,10 @@ bool end_cond(){
 }
 
 
-/* For test validity please call from init thread with no extra threads running */
+
+/* Test function for validating performance improvements of MLFQ. 
+ * For test validity please crate a new thread to run this and ensure no extra threads running 
+ * other than the init thread. */
 void scheduling_test(){
     bool timeout=false;
 
@@ -154,7 +157,6 @@ void scheduling_test(){
     int t1= get_time(); /* Start clock */
 
     while(!end_cond()){
-        // println(itoa(completion,str,BASE_BIN));
         thread_sleep(2,UNIT_TICK);
         if((get_time()-t1)>20*TICK_PS){
             timeout=true;
@@ -186,5 +188,5 @@ void scheduling_test(){
     print(itoa(calc_time(t2-t1),str,BASE_DEC));
     print(" seconds.");
 
-    println("\nNaive scheduling time is ~12 seconds.\n");
+    println("\nNaive scheduling time is 11 seconds.\n");
 }

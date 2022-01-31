@@ -23,6 +23,8 @@ extern TCB_t *idle_thread;
 extern thread_diagnostics_t thread_tracker[MAX_THREADS+1];
 
 
+bool naive_scheduling=false;
+
 /* MLFQ queues here: */
 list *prio_0;
 list *prio_1;
@@ -34,19 +36,23 @@ int prio_2_TQ = 8;
 
 /* Initialises schedulising by initialising any lists or structures needed for scheduling */
 bool scheduling_init(){
-    // ready_queue=list_init_shared();
-    // if(!ready_queue) return false;
+    if(naive_scheduling){
+        /* Default setup value */
+        time_quantum=4;
 
-    /* Default setup value */
-    time_quantum=4;
+        ready_queue=list_init_shared();
+        if(!ready_queue) return false;
+
+        return true;
+    }
+    /* MLFQ Scheduling */
 
     /* To be implemented. */
+
     prio_0=list_init_shared();
     prio_1=list_init_shared();
     prio_2=list_init_shared();
     if(!prio_0 || !prio_1 ||  !prio_2) return false;
-
-
 
     return true;
 }
@@ -55,15 +61,18 @@ bool scheduling_init(){
 /* Reschedules a thread by adding itto the appropriate queue.
  * Must be called with interrupts disabled.*/
 void thread_reschedule(TCB_t *t){
-    /* Appending to ready threads if not idle threads. */
-    // append_shared(ready_queue,t);
-
     /* Reset waiting ticks counter to 0 */
     thread_tracker[t->tid].wait_ticks=0;
 
     t->status=T_READY;
 
-    // return;
+    if(naive_scheduling){
+        append_shared(ready_queue,t);
+        return;
+    }
+
+    /* MLFQ to be implemented. */
+
 
     /* If thread has been preempted then reduce it's priority 0 is highest, 2 is lowest*/
     if(timeout && t->priority<PRIO_MIN) ++(t->priority);
@@ -86,14 +95,15 @@ void thread_reschedule(TCB_t *t){
 /* Returns the next process to be scheduled.
  * Currently round robin approach */
 TCB_t* get_next_thread(){
+    if(naive_scheduling){
+        if(is_empty(ready_queue)){
+            return idle_thread;
+        }
 
-    /* Round robin approach */
-    // if(is_empty(ready_queue)){
-    //     return idle_thread;
-    // }
+        return (TCB_t*)(pop_shared(ready_queue));
+    }
 
-    // return (TCB_t*)(pop_shared(ready_queue));
-
+    /* MLFQ to be implemented. */
     
     if(!is_empty(prio_0)){
         time_quantum=prio_0_TQ;
@@ -117,11 +127,26 @@ TCB_t* get_next_thread(){
 
 /* Used to remove any thread from any queues in the case of preemptive kill */
 bool deschedule(TCB_t *t){
+    if(naive_scheduling){
+        return remove_shared(ready_queue,t);
+    }
+
+    /* MLFQ to be implemented. */
+
     return remove_shared(prio_0,t) || remove_shared(prio_1,t) || remove_shared(prio_2,t);
+
+    // return false;
 }
+
 
 /* Returns what would be the next thread thread to execute without removing anything */  
 TCB_t *peek_next_thread(){
+    if(naive_scheduling){
+        return peek(ready_queue);
+    }
+
+    /* MLFQ to be implemented. */
+
     TCB_t *next;
     next=peek(prio_0);
     if(next) return next;
@@ -138,6 +163,13 @@ TCB_t *peek_next_thread(){
 
 void queue_dump(){
     println("Queue Dump:");
+    if(naive_scheduling){
+        list_dump(ready_queue);
+        return;
+    }
+
+    /* MLFQ to be implemented. */
+
     list_dump(prio_0);
     list_dump(prio_1);
     list_dump(prio_2);
