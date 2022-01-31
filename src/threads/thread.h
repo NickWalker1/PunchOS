@@ -63,6 +63,7 @@ void switch_complete(TCB_t *prev);
 void thread_block();
 void thread_unblock(TCB_t *t);
 void thread_kill(TCB_t *t);
+void thread_attempt_kill(TCB_t *t);
 void idle();
 void run(thread_func *function, void *aux);
 void sleep_tick();

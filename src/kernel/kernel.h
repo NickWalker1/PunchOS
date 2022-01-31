@@ -11,6 +11,7 @@
 #include "../processes/process.h"
 #include "../shell/shell.h"
 #include "../threads/thread.h"
+#include "../tests/sched_test.h"
 
 
 void kernel_entry(uint32_t, uint32_t addr);

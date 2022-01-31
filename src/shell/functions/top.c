@@ -26,6 +26,8 @@ void top(){
     print_from("MEM",offset);
     offset+=4*CHAR_OFF;
     print_from("LAT",offset);
+    offset+=4*CHAR_OFF;
+    print_from("PRIO",offset);
 
     int i;
 
@@ -63,6 +65,9 @@ void top(){
             offset+=4*CHAR_OFF;
             print_from(itoa(pd->average_latency,str,BASE_DEC),offset);
 
+            /* PRIORITY */
+            offset+=4*CHAR_OFF;
+            print_from(itoa(t->priority,str,BASE_DEC),offset);
 
             i++;
             set_cursor(BOTTOM_LEFT);

@@ -12,6 +12,7 @@ TCB_t *idle_thread;
 
 
 extern int time_quantum;
+extern bool timeout;
 
 
 list *sleeper_threads;
@@ -140,9 +141,9 @@ void thread_tick(){
 
     total_ticks++;
 
-    TCB_t *thread = current_thread();
+    TCB_t *curr = current_thread();
 
-    thread_tracker[thread->tid].running_ticks++;
+    thread_tracker[curr->tid].running_ticks++;
 
 
     int i=1;
@@ -156,11 +157,15 @@ void thread_tick(){
 
     sleep_tick();
 
-    // if(thread==idle_thread) schedule();
-    
 
     /* Preemption */
     if(++cur_tick_count>= time_quantum){
+        timeout=true;
+        thread_yield();
+    }
+
+    TCB_t *pn = peek_next_thread();
+    if(pn!=idle_thread && (pn->priority < curr->priority)){
         thread_yield();
     }
 }
@@ -188,6 +193,7 @@ void thread_yield(){
 /* Primary context switching function
  * Must be called with interrupts off */
 void schedule(){
+    
     TCB_t* curr = current_thread();
     TCB_t* next = get_next_thread();
     TCB_t* prev = curr; //in case of no switch
@@ -291,8 +297,21 @@ void thread_kill(TCB_t *t){
     ASSERT(is_thread(t),"Cannot kill non-thread");
     ASSERT(t!=current_thread(),"Cannot kill own thread");
 
-
+    thread_tracker[t->tid].present=false;
+    
     //TODO implement
+
+    t->magic=0; //TODO REMOVE THIS
+
+    /* Remove from parent and kill parent if it's the last one? */
+}
+
+
+/* Attempts to kill a thread, if it's no longer a thread then don't do anything */
+void thread_attempt_kill(TCB_t *t){
+    //TODO
+    // if(is_thread(t) && thread_tracker[t->tid].present) thread_kill(t);
+    
 }
 
 

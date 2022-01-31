@@ -44,20 +44,9 @@ void main(){
 	println("");
 
                       
-	thread_create("Hard1",proc_test_hardwork,NULL,1,0);
-	thread_create("Hard2",proc_test_hardwork,NULL,1,0);
 
-	create_proc("A",proc_test_A,NULL);
-	create_proc("B",proc_test_A,NULL);
+	thread_create("sched_test",scheduling_test,NULL,1,0);
 
-	thread_create("top",top,NULL,1,0);
-
-
-
-
-	// thread_sleep(3,UNIT_SEC);
-
-	
 
 	spin(TOP_RIGHT);
 

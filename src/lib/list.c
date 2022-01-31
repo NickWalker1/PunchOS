@@ -167,7 +167,6 @@ bool remove_shared(list *l, void *data){
     ASSERT(l->is_shared,"List shared type mismatch on remove_shared");
     list_elem *elem = remove_elem(l,data);
     if(elem){
-        // println("removing");print(itoa(elem,str,BASE_HEX));
         shr_free(elem);
         return true;
     }
@@ -204,6 +203,13 @@ list_elem *remove_elem(list *l, void *data){
     }
     l->size--;
     return elem;
+}
+
+
+/* Returns data pointer of the head of the list */
+void *peek(list *l){
+    if(is_empty(l)) return NULL;
+    return l->head->data;
 }
 
 

@@ -32,11 +32,12 @@ INPUT
     src/shell/functions/top.o
     src/shell/shell.o
     src/processes/mq.o
-    src/tests/mq_test.o
     src/threads/tcb.o
     src/threads/thread.o
     src/threads/sched.o
     src/threads/tswap.o
+    src/tests/mq_test.o
+    src/tests/sched_test.o
 )
 OUTPUT
 (

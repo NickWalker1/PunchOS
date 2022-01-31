@@ -38,5 +38,6 @@ void *pop_shared(list *l);
 list_elem *pop_elem(list *l);
 int get_size(list *l);
 bool is_empty(list *l);
+void *peek(list *l);
 void list_dump(list *l);
 void* list_get(list *l, uint32_t idx);
