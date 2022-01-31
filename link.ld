@@ -17,6 +17,7 @@ INPUT
     src/lib/screen.o 
     src/lib/string.o
     src/lib/list.o
+    src/lib/time.o
     src/interrupt/cpu_state.o
     src/interrupt/handlers.o
     src/interrupt/idt.o

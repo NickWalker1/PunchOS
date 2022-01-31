@@ -11,10 +11,12 @@
 TCB_t *idle_thread;
 
 
+extern int time_quantum;
+
+
 list *sleeper_threads;
 
 int total_ticks;
-int block_ticks;
 int cur_tick_count;
 
 //TODO gonna need some externs for the scheduling stuff?
@@ -36,8 +38,10 @@ bool multi_threading_init(){
     dummy_thread->status=T_DYING;
     dummy_thread->magic=THR_MAGIC;
     dummy_thread->tid=0;
+    dummy_thread->priority=0; /* To be modified with MLFQ implementation details */
+    
+
     thread_tracker[0].present=true; //TODO check
-    dummy_thread->priority=1;
 
 
     sleeper_threads=list_init_shared();
@@ -83,9 +87,6 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid
     /* Default setup values */
     new->stack=(void*) ((uint32_t)new)+PGSIZE; /* initialise to top of page */
     new->status=T_BLOCKED;
-
-
-    //TODO add 1 to thread_diagnostics count n shit and the threadesses info
 
 
     
@@ -155,10 +156,11 @@ void thread_tick(){
 
     sleep_tick();
 
+    // if(thread==idle_thread) schedule();
     
 
     /* Preemption */
-    if(++cur_tick_count>= TIME_SLICE){
+    if(++cur_tick_count>= time_quantum){
         thread_yield();
     }
 }
@@ -190,7 +192,7 @@ void schedule(){
     TCB_t* next = get_next_thread();
     TCB_t* prev = curr; //in case of no switch
     if(int_get_level()) PANIC("SCHEDULING WITH INTERUPTS ENABLED");
-    if(curr->status==T_RUNNING) PANIC("Current threadess is still running...");
+    if(curr->status==T_RUNNING) PANIC("Current thread is still running...");
 
 
     /* Update statistics */
