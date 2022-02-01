@@ -309,11 +309,13 @@ void thread_kill(TCB_t *t){
     thread_tracker[t->tid].present=false;
 
     /* Remove from any ready queues */
-    deschedule(t);
+    if(t->status==T_READY)
+        deschedule(t);
 
 
     /* Remove from sleeping list */
-    sleeper_remove(t);
+    if(t->status==T_BLOCKED)
+        sleeper_remove(t);
 
 
     /* Remove from parent and kill parent if there are no remaining threads */

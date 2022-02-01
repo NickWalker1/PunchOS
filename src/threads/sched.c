@@ -43,6 +43,7 @@ bool scheduling_init(){
         ready_queue=list_init_shared();
         if(!ready_queue) return false;
 
+
         return true;
     }
     /* MLFQ Scheduling */

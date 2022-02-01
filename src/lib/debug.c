@@ -28,8 +28,8 @@ void PANIC(char* msg){
 
     WARN_DUMP();
 
-    print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
-    print_to("%",BOTTOM_RIGHT-2);
+    // print_to(itoa(get_shared_heap_usage(),str,BASE_DEC),BOTTOM_RIGHT-4);
+    // print_to("%",BOTTOM_RIGHT-2);
 
     halt();
 }
