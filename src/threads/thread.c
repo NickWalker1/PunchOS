@@ -334,7 +334,7 @@ void thread_kill(TCB_t *t){
 
 /* Attempts to kill a thread, if it's not a thread then return */
 void thread_attempt_kill(TCB_t *t){
-    if(is_thread(t) && thread_tracker[t->tid].present) thread_kill(t);
+    if(t && is_thread(t) && thread_tracker[t->tid].present) thread_kill(t);
     
 }
 

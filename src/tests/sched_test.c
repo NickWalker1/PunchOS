@@ -105,6 +105,7 @@ bool end_cond(){
  * For test validity please crate a new thread to run this and ensure no extra threads running 
  * other than the init thread. */
 void scheduling_test(){
+    print_attempt("Scheduling test setup.");
     bool timeout=false;
 
 
@@ -140,6 +141,7 @@ void scheduling_test(){
         return;
     }
 
+    print_ok();
 
     /* Wait for all threads to be waiting on a start signal */
     while(get_size(start_cond.waiters)!=9) 
@@ -147,7 +149,7 @@ void scheduling_test(){
     
 
     /* All threads are ready */
-    print_attempt("Running scheduling tests...");
+    print_attempt("Running tests...");
 
     /* Best chance at getting them to start as close as they can to each other. As none can start until all are ready. */
     lock_acquire(&start_lock);
@@ -182,11 +184,18 @@ void scheduling_test(){
         return;
     }
 
-    print_ok();
 
     println("Time taken: ");
-    print(itoa(calc_time(t2-t1),str,BASE_DEC));
+    int time =calc_time(t2-t1);
+    print(itoa(time,str,BASE_DEC));
     print(" seconds.");
+
+    if(time<11){ 
+        print_pass();
+    }
+    else{
+        print_fail();
+    }
 
     println("\nNaive scheduling time is 11 seconds.\n");
 }

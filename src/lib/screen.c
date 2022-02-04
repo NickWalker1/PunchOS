@@ -197,7 +197,15 @@ void print_fail(){
     print_char_loc('A',2,row,RED_ON_BLACK);
     print_char_loc('I',3,row,RED_ON_BLACK);
     print_char_loc('L',4,row,RED_ON_BLACK);
+}
 
+/* Fills last brackets with PASS status */
+void print_pass(){
+    int row=pop_row();
+    print_char_loc('P',1,row,GREEN_ON_BLACK);
+    print_char_loc('A',2,row,GREEN_ON_BLACK);
+    print_char_loc('S',3,row,GREEN_ON_BLACK);
+    print_char_loc('S',4,row,GREEN_ON_BLACK);
 }
 
 

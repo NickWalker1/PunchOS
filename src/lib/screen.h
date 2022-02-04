@@ -54,6 +54,7 @@ void print(char* message);
 void println(char* message);
 void print_attempt(char* message);
 void print_ok();
+void print_pass();
 void print_fail();
 void clear_screen();
 void clear_line(int line);
