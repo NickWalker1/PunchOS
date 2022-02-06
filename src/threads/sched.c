@@ -23,7 +23,7 @@ extern TCB_t *idle_thread;
 extern thread_diagnostics_t thread_tracker[MAX_THREADS+1];
 
 
-bool naive_scheduling=false;
+bool naive_scheduling=true;
 
 /* MLFQ queues here: */
 list *prio_0;

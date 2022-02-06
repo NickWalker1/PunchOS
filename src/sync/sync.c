@@ -117,7 +117,7 @@ void cond_init(condition* cond){
 }
 
 
-/* Releases lock then waits until has been signaled by another threadess to wake up.
+/* Releases lock then waits until has been signaled by another threads to wake up.
  * will reaquire lock on wakeup so may block
  */
 void cond_wait(condition* c, lock* l){
@@ -165,7 +165,7 @@ void cond_signal(condition* c, lock* l){
 }
 
 
-/* Signals all threadesses waiting on cond c to wakeup */
+/* Signals all threads waiting on cond c to wakeup */
 void cond_broadcast(condition* c, lock* l){
     ASSERT(c!=NULL, "NULL cond in broadcast");
     ASSERT(l!=NULL, "NULL lock in broadcast");

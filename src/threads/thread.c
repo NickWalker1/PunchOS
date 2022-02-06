@@ -62,7 +62,12 @@ bool multi_threading_init(){
 
 }
 
-
+/* Creates a new PunchOS thread with the given name which will run func on arguments aux. 
+ * It must also take an owner_pid for bootstrapping purposes.
+ * Flags:
+ *  THR_MAIN: Is the main thread of a process
+ *  F_VERBOSE: Verbose enabled
+ */
 TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid, uint8_t flags){
     int int_level = int_disable();
 
@@ -127,6 +132,15 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid
     // PCB_t *owner = get_proc(owner_pid);
     // owner->thread_count++;
     // owner->threads[owner->thread_count-1]=new;
+
+    if(flags & F_VERBOSE){
+        println("Created thread: ");
+        print(name);
+        print(" at: ");
+        print(itoa(new,str,BASE_HEX));
+        print(". Owner proc: ");
+        print(itoa(owner_pid,str,BASE_DEC));
+    }
 
     /* add to ready queue */
     thread_unblock(new);
@@ -355,10 +369,11 @@ void run(thread_func *function, void *aux){
 
     //do the work
     function(aux);
+
+    int_disable();
     
     curr->status=P_DYING;
 
-    int_disable();
     schedule();
 }
 
