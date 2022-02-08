@@ -1,105 +1,131 @@
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
- 
- 
-/* Hardware text mode color constants. */
-enum vga_color {
-	VGA_COLOR_BLACK = 0,
-	VGA_COLOR_BLUE = 1,
-	VGA_COLOR_GREEN = 2,
-	VGA_COLOR_CYAN = 3,
-	VGA_COLOR_RED = 4,
-	VGA_COLOR_MAGENTA = 5,
-	VGA_COLOR_BROWN = 6,
-	VGA_COLOR_LIGHT_GREY = 7,
-	VGA_COLOR_DARK_GREY = 8,
-	VGA_COLOR_LIGHT_BLUE = 9,
-	VGA_COLOR_LIGHT_GREEN = 10,
-	VGA_COLOR_LIGHT_CYAN = 11,
-	VGA_COLOR_LIGHT_RED = 12,
-	VGA_COLOR_LIGHT_MAGENTA = 13,
-	VGA_COLOR_LIGHT_BROWN = 14,
-	VGA_COLOR_WHITE = 15,
-};
- 
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) 
-{
-	return fg | bg << 4;
+#include "kernel.h"
+
+
+/* Entry point into the OS */
+void kernel_entry(uint32_t magic, uint32_t addr){
+	print("Entering Kernel Code.");
+
+	print_attempt("Boot process");
+	if(!setup(magic, addr)){
+		println("Magic recieved: ");
+		print(itoa(magic,str,BASE_HEX));
+		print_fail();
+		halt();
+	}
+	print_ok();
+
+
+	/* Final job of setup is to start multiprocesing.
+	Must be final as this function will not return */
+	multi_proc_start();
+
+	/* UNREACHABLE */
+	PANIC("Reached unreachable position.");
 }
- 
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color) 
-{
-	return (uint16_t) uc | (uint16_t) color << 8;
+
+
+/* Main function run by init process */
+void main(){
+	//Sleep to display bootscreen.
+	thread_sleep(1,UNIT_SEC);
+
+	
+	//Splash screen
+	clear_screen();
+
+	print("Welcome to...");
+	println("");
+	println("  _____                  _      ____   _____");
+	println(" |  __ \\                | |    / __ \\ / ____|");
+	println(" | |__) |   _ _ __   ___| |__ | |  | | (___  ");
+	println(" |  ___/ | | | '_ \\ / __| '_ \\| |  | |\\___ \\ ");
+	println(" | |   | |_| | | | | (__| | | | |__| |____) |");
+	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
+	println("");
+
+                      
+
+	spin(TOP_RIGHT);
+
 }
- 
-size_t strlen(const char* str) 
-{
-	size_t len = 0;
-	while (str[len])
-		len++;
-	return len;
+
+
+/* Little function that causes a bar to spin indefinitely...
+ * NOTE: Highly inefficient as requires lots of context switches */
+void spin(int offset){
+	char spinBars[] = {'|','/','-','\\'};
+
+	uint8_t i=0;
+	while(1){
+		print_char_offset(spinBars[i++%4],WHITE_ON_BLACK,offset);
+		thread_sleep(5,UNIT_TICK);
+	}
+		
 }
- 
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 25;
- 
-size_t terminal_row;
-size_t terminal_column;
-uint8_t terminal_color;
-uint16_t* terminal_buffer;
- 
-void terminal_initialize(void) 
-{
-	terminal_row = 0;
-	terminal_column = 0;
-	terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-	terminal_buffer = (uint16_t*) 0xC00B8000;
-	for (size_t y = 0; y < VGA_HEIGHT; y++) {
-		for (size_t x = 0; x < VGA_WIDTH; x++) {
-			const size_t index = y * VGA_WIDTH + x;
-			terminal_buffer[index] = vga_entry(' ', terminal_color);
+
+
+/* Function to ensure multiboot header and memory loaded properly */
+bool setup(uint32_t magic, uint32_t addr){
+	if(magic!=MULTIBOOT_BOOTLOADER_MAGIC){
+		println("Invalid multiboot header.");
+		return false;
+	}
+	
+	print_attempt("GDT init.");
+	gdt_init();
+	print_ok();
+
+
+	if(!validate_memory(addr)){
+		println("Memory unable to meet assumptions.");
+		return false;
+	}
+
+
+	print_attempt("IDT init.");
+	idt_init();
+	print_ok();
+
+
+	print_attempt("Paging init.");
+	paging_init();
+	print_ok();
+
+	print_attempt("Processes init.");
+	processes_init();
+	print_ok();
+
+
+
+	return true;
+}
+
+
+/* Ensures the memory map provided by multiboot meets the assumptions
+ * made further on in the code.
+ */
+bool validate_memory(uint32_t addr){
+	multiboot_info_t *mbi = (multiboot_info_t *) addr;
+
+	int count=0;
+
+	bool okay=false;
+
+	if(mbi->flags & 6){
+		multiboot_memory_map_t *mmap;
+		for (mmap = (multiboot_memory_map_t *) mbi->mmap_addr;
+           	(uint32_t) mmap < mbi->mmap_addr + mbi->mmap_length;
+           	mmap = (multiboot_memory_map_t *) ((uint32_t) mmap
+                                    + mmap->size + sizeof (mmap->size)))
+		{
+			count++;
+			//check the memory meets some assumptions I have made later on in the OS
+			//Assume: memory is free, it's larger than 1MiB, and starts at 1MiB
+			if(mmap->type==1 && mmap->len>0x100000 && mmap->addr==0x100000) okay=true;
 		}
 	}
+	return okay;
 }
- 
-void terminal_setcolor(uint8_t color) 
-{
-	terminal_color = color;
-}
- 
-void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) 
-{
-	const size_t index = y * VGA_WIDTH + x;
-	terminal_buffer[index] = vga_entry(c, color);
-}
- 
-void terminal_putchar(char c) 
-{
-	terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-	if (++terminal_column == VGA_WIDTH) {
-		terminal_column = 0;
-		if (++terminal_row == VGA_HEIGHT)
-			terminal_row = 0;
-	}
-}
- 
-void terminal_write(const char* data, size_t size) 
-{
-	for (size_t i = 0; i < size; i++)
-		terminal_putchar(data[i]);
-}
- 
-void terminal_writestring(const char* data) 
-{
-	terminal_write(data, strlen(data));
-}
- 
-void kernel_main(void) 
-{
-	/* Initialize terminal interface */
-	terminal_initialize();
- 
-	/* Newline support is left as an exercise. */
-	terminal_writestring("Hello!\n");
-}
+
+
+

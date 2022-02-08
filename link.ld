@@ -6,8 +6,35 @@ KERNEL_VIRT_BASE = 0xC0000000;
 
 INPUT
 (
-    bin/boot.o 
+    src/boot/boot.o 
     src/kernel/kernel.o
+    src/gdt/gdt.o
+    src/gdt/gdt_flush.o
+    src/drivers/low_level.o
+    src/lib/int.o
+    src/lib/math.o
+    src/lib/debug.o
+    src/lib/screen.o 
+    src/lib/string.o
+    src/lib/list.o
+    src/lib/time.o
+    src/interrupt/cpu_state.o
+    src/interrupt/handlers.o
+    src/interrupt/idt.o
+    src/interrupt/interrupt.o
+    src/memory/paging.o
+    src/memory/heap.o
+    src/memory/pd_swp.o
+    src/sync/sync.o
+    src/processes/pcb.o
+    src/processes/process.o
+    src/shell/functions/ps.o
+    src/shell/functions/top.o
+    src/shell/shell.o
+    src/threads/tcb.o
+    src/threads/thread.o
+    src/threads/sched.o
+    src/threads/tswap.o
 )
 OUTPUT
 (
@@ -28,44 +55,51 @@ SECTIONS
 	{
 		*(.multiboot.data)
 	}
-	
+    
 	.multiboot.text :
 	{
 		*(.multiboot.text)
 	}
 
     
-	
+	/* Now align with higher half addresses */
     . += KERNEL_VIRT_BASE;
 
+
+    /* Note when using labels, ensure to use with & as it's a label not a variable
+     * otherwise it will return garbage data. */
 	
-    TEXT_SECTION_START = .;  
+    _TEXT_SECTION_START = .;  
 	.text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRT_BASE)
     {
         *(.text)
     }
-    TEXT_SECTION_END = .;
+    _TEXT_SECTION_END = .;
 
 
-    RODATA_SECTION_START = .;
+    _RODATA_SECTION_START = .;
 	.rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRT_BASE)
     {
         *(.rodata)
     }
-    RODATA_SECTION_END = .;
+    _RODATA_SECTION_END = .;
 
 
-    DATA_SECTION_START = .;
+    _DATA_SECTION_START = .;
 	.data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRT_BASE)
     {
         *(.data)
     }
-    DATA_SECTION_END = .;
+    _DATA_SECTION_END = .;
 
-    BSS_SECTION_START = .;
+
 	.bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VIRT_BASE)
     {
+        _BSS_SECTION_START = .;
         *(.bss)
+        _BSS_SECTION_END = .;
     }
-    BSS_SECTION_END = .;
+
+
+    _KERNEL_END = .;
 }

@@ -15,14 +15,18 @@ align 4
 
 section .bss
 align 16
+resb 4096 ; 1 Page
+
+
 stack_bottom:
-resb 4096 ; 16 KiB
+resb 4096 ; 1 Page
 stack_top:
 
 
 
 section .multiboot.text
 %include "src/boot/gdt.asm"
+
 
 ; 3 Pages beneath 1MiB mark where kernel is loaded
 
@@ -39,6 +43,7 @@ KERNEL_VIRT_BASE equ 0xC0000000 ; 3GiB address
 ; as 1024 entries each pointing to a different 4k page.
 
 clear_tables:
+    pusha
     mov eax,0
 
     .clear_loop:
@@ -47,7 +52,8 @@ clear_tables:
 
     cmp eax, PG_SIZE * 3
     jl .clear_loop
-
+    
+    popa
     ret
 
 create_page_directory:
@@ -77,7 +83,7 @@ create_identity_page_table:
     ; phys address start
     mov ebx, 0
 
-    .indentity_loop
+    .indentity_loop:
     mov ecx, ebx
     or dword ecx, 3
 
@@ -101,7 +107,7 @@ create_kernel_page_table:
     ; phys address
     mov ebx, 0
 
-    .kernel_loop
+    .kernel_loop:
     mov ecx, ebx
     or dword ecx, 3
 
@@ -158,39 +164,55 @@ _start:
 
 	mov esp, stack_top - KERNEL_VIRT_BASE
 	
+    ; clear EFLAGS
+    push 0
+    popf
+     
+    finit
+
+    cli
+
+    ; Pushing items to the stack is the way a function is provided arguments
+    ; As defined in Multiboot2 specification can push these values to the stack from eax,ebx.
+    ; Push multiboot2 header pointer
+    push ebx
+
+    ; Push multiboot2 magic value
+    push eax
+
 	lgdt [gdt_descriptor]
 
+    ; Series of calls to setup temporary paging
     call clear_tables
 
     call create_page_directory
     
+    ; To ensure we don't pull out the rug from beneath us when enabling paging
     call create_identity_page_table
 
     call create_kernel_page_table
 
     call enable_paging
 
+    ; Update the stack pointer to be in Kernel Virtual address range
     mov eax, esp
     add eax, KERNEL_VIRT_BASE
     mov esp, eax
 
-    
-    
-	call higher
+
+    ; Jump to addresses based in kernel range (0xC0000000+)
+	jmp higher
 .end:
 
 
 section .text
 higher:
 
-    ;call clear_identity_map
-    
+    ; Jump to kernel main function in C.     
+    extern kernel_entry
+    call kernel_entry
 
-    ;call enable_paging
-    
-    extern kernel_main
-    call kernel_main
-
+    ; Incase kernel main ever returns, just loop.
 	cli
 .hang:	hlt
 	jmp .hang
