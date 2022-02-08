@@ -38,6 +38,7 @@ INPUT
     src/threads/tswap.o
     src/tests/mq_test.o
     src/tests/sched_test.o
+    src/tests/pthread_test.o
 )
 OUTPUT
 (

@@ -4,7 +4,7 @@
 
 
 
-/* Pthread logic vs PunchOS threads.
+/*                           -------- Pthread logic vs PunchOS threads -------- 
  * Each pthread is of course a punchOS thread, however it is an abstraction around it for added functionality and cleanliness.
  * Each Pthread must have a *permanent* struct allocated to it on creation or boot. (Boot preferable of data array of size 64?)
  * this is because it's error code and state must be saved for any pthread_join call that may be called on it's ID.

@@ -137,9 +137,9 @@ TCB_t *thread_create(char *name, thread_func *func, void *aux,uint32_t owner_pid
         println("Created thread: ");
         print(name);
         print(" at: ");
-        print(itoa(new,str,BASE_HEX));
+        print(itoa((int)new,str,BASE_HEX));
         print(". Owner proc: ");
-        print(itoa(owner_pid,str,BASE_DEC));
+        print(itoa((int)owner_pid,str,BASE_DEC));
     }
 
     /* add to ready queue */
@@ -372,7 +372,7 @@ void run(thread_func *function, void *aux){
 
     int_disable();
     
-    curr->status=P_DYING;
+    curr->status=T_DYING;
 
     schedule();
 }
