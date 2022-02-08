@@ -97,7 +97,7 @@ void idt_init(){
 *  Double Fault! Without remapping, every time IRQ0 fires,
 *  you get a Double Fault Exception, which is NOT actually
 *  what's happening. We send commands to the Programmable
-*  Interrupt Controller (PICs - also called the 8259's) in
+e*  Interrupt Controller (PICs - also called the 8259's) in
 *  order to make IRQ0 to 15 be remapped to IDT entries 32 to
 *  47 */
 void irq_remap(void)
@@ -162,9 +162,16 @@ void idt_global_int_wrapper(interrupt_state *state){
     in_ext_int=false;
 }
 
+
+extern bool page_fault_handler(exception_state *state);
+
 void idt_global_exc_wrapper(exception_state *state){
+    if(state->interrupt_number==14){
+        if(page_fault_handler(state)) return;
+    }
     default_exception_handler(state);
 }
+
 
 uint32_t ticks=0; 
 void timer_tick(){

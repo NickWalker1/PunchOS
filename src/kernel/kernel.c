@@ -43,7 +43,9 @@ void main(){
 	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
 	println("");
 
-                      
+
+	 int *x=0;
+	 *x=50;
 
 	spin(TOP_RIGHT);
 

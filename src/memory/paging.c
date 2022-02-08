@@ -498,8 +498,6 @@ void *virt_addr_space_duplication(page_directory_entry_t *pd){
         if(pde.present){
             pt_addr=get_next_free_phys_page(1,F_ASSERT);
 
-            /* Map page temporarily so we can write to it. */
-            // map_page(pt_addr,Kptov(pt_addr),F_ASSERT);
 
             /* Copy the page table over into the new pt */
             memcpy(Kptov(pt_addr),Kptov((void*)(pde.page_table_base_addr<<PTSHIFT)),PGSIZE);
@@ -511,14 +509,8 @@ void *virt_addr_space_duplication(page_directory_entry_t *pd){
             new_pde[i].user_supervisor=1;
             new_pde[i].page_table_base_addr=(uint32_t)pt_addr>>PTSHIFT;
 
-            /* Unmap again */
-            // unmap_page(Kptov(pt_addr),F_ASSERT);
         }
     }
-
-    /* Unmap page from current processes virtual address space */
-    // unmap_page(Kptov(new_pd),0);
-    
 
     return Kptov(new_pd);
 }

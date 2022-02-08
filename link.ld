@@ -24,6 +24,7 @@ INPUT
     src/interrupt/interrupt.o
     src/memory/paging.o
     src/memory/heap.o
+    src/memory/pg_swap.o
     src/memory/pd_swp.o
     src/sync/sync.o
     src/processes/pcb.o

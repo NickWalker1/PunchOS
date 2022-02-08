@@ -8,3 +8,4 @@ void *memcpy(void* dest, void* source, size_t n);
 char *strcpy(char* dest, char* src); 
 int strlen(char* str);
 int strcmp(char* a, char* b); 
+char *strcat(char *a, char *b);

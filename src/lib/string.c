@@ -32,6 +32,8 @@ char *strcpy(char *dest, char *src){
         dest[i]=src[i];
         i++;
     }
+    dest[i]=src[i];
+
     return dest;
 }
 
@@ -64,4 +66,11 @@ int strncmp(char *a, char *b, size_t n){
     }
     
     return a[i]-b[i];
+}
+
+/* Concatenates b onto a and returns a.
+ * Assumes a is big enough to contain b also */
+char *strcat(char *a, char *b){
+    memcpy(a+strlen(a),b,strlen(b)+1);
+    return a;
 }
