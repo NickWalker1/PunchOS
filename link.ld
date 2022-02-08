@@ -36,6 +36,7 @@ INPUT
     src/threads/thread.o
     src/threads/sched.o
     src/threads/tswap.o
+    src/tests/pg_swap_test.o
 )
 OUTPUT
 (

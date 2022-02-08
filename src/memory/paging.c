@@ -21,6 +21,7 @@ page_directory_entry_t *base_pd;
 
 phys_pool_t phys_page_pool;
 
+uint32_t *phys_page_pool_end;
 
 
 void *base_PCB_block;
@@ -65,6 +66,7 @@ void paging_init(){
         phys_page_pool.pages[i].type=M_FREE;
     }
 
+    phys_page_pool_end = phys_page_pool.pages[PG_COUNT].base_addr + PGSIZE;
 
     
     //acquire another page for the base pd template for each new processes.
