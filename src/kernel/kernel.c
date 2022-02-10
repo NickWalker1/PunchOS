@@ -44,8 +44,8 @@ void main(){
 	println("");
 
 
-	 int *x=0;
-	 *x=50;
+	for(int i=0;i<50;i++) palloc_HDD();
+
 
 	spin(TOP_RIGHT);
 

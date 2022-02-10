@@ -516,3 +516,27 @@ void *virt_addr_space_duplication(page_directory_entry_t *pd){
 
     return Kptov(new_pd);
 }
+
+/* Given a virtual address and the page directory of the vaddr's process it will invalidate the associated entry.
+ * Returns false on if entry was already not present or in Kernel Space*/
+bool invalidate_entry(void *vaddr, page_directory_entry_t *pd){
+    if((int)vaddr>0xC0000000){
+        KERN_WARN("Cannot invalidate address in kernel region");
+        return false;
+    }
+
+    page_directory_entry_t pde = pd[pd_no(vaddr)];
+
+    if(!pde.present) return false;
+
+
+    page_table_entry_t* pt=(page_table_entry_t*) Kptov((void*)(pde.page_table_base_addr<<PTBITS));
+    page_table_entry_t pte = pt[pt_no(vaddr)];
+    
+    if(pte.present==0) return false;
+    pte.present=0;
+
+    /* Force TLB flush to avoid horrible bugs */
+    tlb_flush();
+    return true;
+}

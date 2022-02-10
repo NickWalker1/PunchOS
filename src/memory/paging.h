@@ -6,7 +6,7 @@
 #include "../lib/typedefs.h"
 
 #define KERN_BASE           0xC0000000
-#define PROC_VPOOL_SIZE     32
+#define PROC_VPOOL_SIZE     64
 #define HEAP_SIZE           8
 
 #define F_VERBOSE 1<<1 /* 1 for print, 0 for not */
@@ -50,6 +50,7 @@ void palloc_kern_free(void *vaddr, size_t n, uint8_t flags);
 void *new_pd();
 
 void *virt_addr_space_duplication(page_directory_entry_t *pd);
+bool invalidate_entry(void *vaddr, page_directory_entry_t *pd);
 
 extern void update_pd(uint32_t* pd); /* Note cr3 register takes physical address of pd */
 extern void tlb_flush(); /* Flushes TLB cache */ 

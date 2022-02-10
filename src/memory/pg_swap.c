@@ -22,19 +22,14 @@ extern uint32_t *phys_page_pool_end;
 void *virt_HDD_start;
 void *virt_RAM_start;
 
-typedef struct swap_page{
-    void *vaddr;
-    p_id owner_pid;
-    void *swap_paddr; /* This shouldn't change throughout the lifetime of the page */
-} swap_page_t; 
-
-
-
-
+/* Array of bools indicating if a page is present at that index */
 bool HDD_status[virt_HDD_size];
 bool RAM_status[virt_RAM_size];
 
+
+/* Tracks the status of HDD pages */
 swap_page_t page_swap_tracker[virt_HDD_size];
+
 
 /* Copies the given page from the source to the destination given the PHYSICAL addresses */
 void phys_page_copy(void *dest, void *src){
@@ -54,11 +49,87 @@ void *palloc_HDD(){
     HDD_status[i]=true;
     page_swap_tracker[i].owner_pid=current_proc()->pid;
     page_swap_tracker[i].vaddr=get_next_free_virt_page(1,F_ASSERT);
-    page_swap_tracker[i].swap_paddr=virt_HDD_start+i*PGSIZE;
+    page_swap_tracker[i].HDD_paddr=virt_HDD_start+i*PGSIZE;
+    page_swap_tracker[i].RAM_paddr=NULL; /* As not been moved into RAM yet */
 
     return page_swap_tracker[i].vaddr;
 
 }
+
+
+
+/* Sets the accesssed state bits to 0 on all pages */
+void access_reset(){
+    //For simplicitity can just set every present one to 0 rather than one ones that are releveant to us. 
+    /* To be implemented. */
+}
+
+
+
+
+
+
+
+/* This function is called directly from the generic exception handler in idt.c.
+ */
+void page_fault_handler(exception_state *state){
+    void *vaddr=state->cr2; /* The virtual adress that caused the exception is stored in the cr2 register */
+
+    /* To be implemented */
+
+
+    page_fault_panic(vaddr);
+    
+
+    /* Lookup if the vaddr is a valid page stored in the tracker for that process */
+
+    /* If it is, see if there is space in virt_RAM using virt_RAM status */
+    
+    /* If space, can copy page into memory, update the page mapping using map_page function */
+
+    /* If not space, determine a page to swap out using NRU */
+
+    /* Depending on the status of that page either copy it back or simply overwrite it.
+     * Do not forget to mark that page in the PD as not present, to do this simply call my function.*/
+}
+
+
+/* Will return the swap_page_t * relating to the vaddr and the current process if it exists.
+ * Otherwise return NULL which indicates a faulty VADDR and should PANIC. */
+swap_page_t *page_swap_lookup(void *vaddr){
+    int i=0;
+    p_id pid = current_proc()->pid;
+    
+    while(i<virt_HDD_size && (page_swap_tracker[i].vaddr!=vaddr || page_swap_tracker[i].owner_pid!=pid)) i++;
+    
+    if(i==virt_HDD_size) return NULL;
+
+    return &page_swap_tracker[i];
+}
+
+/* Used to invalidate a RAM_paddr in that process' page directory */
+bool invalidate_RAM_page(void *RAM_paddr){
+    int i=0;
+    while(page_swap_tracker[i].RAM_paddr!=RAM_paddr && i<virt_RAM_size) i++;
+    if(i==virt_RAM_size) return false;
+
+    p_id pid=page_swap_tracker[i].owner_pid;
+
+    return invalidate_entry(page_swap_tracker[i].vaddr, get_proc(pid)->page_directory);
+}
+
+
+void page_fault_panic(void *vaddr){
+    char msg[128];
+    strcpy(msg, "Page fault on virtual address: ");
+    itoa(vaddr,msg+strlen(msg),BASE_HEX);
+
+    
+    PANIC(msg);
+}
+
+
+
 
 /* Must allocate some pages for simulated RAM environment */
 void virt_RAM_init(){
@@ -75,30 +146,6 @@ void virt_HDD_init(){
     /*Some pages between:
      *  phys_page_pool_end + virt_RAM_size*PGSIZE and phys_page_pool_end + (virt_RAM_size+virt_HDD_size) * PGSIZE
      */     
-    virt_HDD_start=virt_RAM_size+virt_RAM_size*PGSIZE;
-
-}
-
-/* Sets the accesssed state bits to 0 on all pages */
-void access_reset(){
-    //For simplicitity can just set every present one to 0 rather than one ones that are releveant to us. 
-    /* To be implemented. */
-}
-
-
-/* This function is called directly from the generic exception handler in idt.c.
- */
-void page_fault_handler(exception_state *state){
-
-    /* To be implemented */
-
-    /* Replace this */
-    char msg[128];
-    strcpy(msg, "Page fault on virtual address: ");
-    itoa(state->cr2,msg+strlen(msg),BASE_HEX);
-
-    
-    PANIC(msg);
-
+    virt_HDD_start=virt_RAM_start+virt_RAM_size*PGSIZE;
 
 }
