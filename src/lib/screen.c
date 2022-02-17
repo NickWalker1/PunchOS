@@ -190,6 +190,15 @@ void print_ok(){
 
 }
 
+/* Fills was brackets with PASS status */
+void print_pass(){
+    int row=pop_row();
+    print_char_loc('P',1,row,GREEN_ON_BLACK);
+    print_char_loc('A',2,row,GREEN_ON_BLACK);
+    print_char_loc('S',3,row,GREEN_ON_BLACK);
+    print_char_loc('S',4,row,GREEN_ON_BLACK);
+}
+
 /* Fills last brackets with FAIL status */
 void print_fail(){
     int row=pop_row();

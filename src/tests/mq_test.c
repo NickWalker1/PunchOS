@@ -19,6 +19,20 @@ char *blocka = "blocka";
 char *blockb = "blockb";
 char *blockc = "blockc";
 
+/* Test descriptions */
+char test_descriptions[][24]={
+	"MQ Creation",
+	"MQ Using Attributes",
+	"Generic Creation Failure",
+	"Basic Receive",
+	"Repeated Send",
+	"Buffer wrap around",
+	"Full queue error",
+	"Message size error",
+	"Basic Recieve",
+	"Repeated Recieve"
+};
+
 
 /* Primary function for MQ test process.
  * WARNING: Tests are not exhaustive */
@@ -176,7 +190,7 @@ void consumer(){
 void test_report(){
 
 	if(mq_mark==(size_t)pow(2,MQ_NUM_TESTS)-1){
-		print_ok();
+		print_pass();
 	}
 	else{
 		print_fail();
@@ -184,7 +198,9 @@ void test_report(){
 		for(i=0;i<MQ_NUM_TESTS;i++){
 			if(!(mq_mark&(1<<i))){
 				println("Failed test: ");
-				print(itoa(i+1,str,BASE_DEC));	
+				print(itoa(i+1,str,BASE_DEC));
+				print(" ");
+				print(test_descriptions[i]);
 			}
 		}
 	}
@@ -195,7 +211,6 @@ void fail_now(){
 	early_fail=true;
 	cond_signal(&test_cond,&test_lock);
 	lock_release(&test_lock);
-	return;
 }
 
 

@@ -19,4 +19,5 @@ void main();
 bool setup(uint32_t magic, uint32_t addr);
 bool validate_memory(uint32_t addr);
 void test_func();
+void draw_PUNCHOS();
 void spin(int position);

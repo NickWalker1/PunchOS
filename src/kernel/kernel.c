@@ -37,35 +37,13 @@ void main(){
 	clear_screen();
 
 	print("Welcome to...");
-	println("");
-	println("  _____                  _      ____   _____");
-	println(" |  __ \\                | |    / __ \\ / ____|");
-	println(" | |__) |   _ _ __   ___| |__ | |  | | (___  ");
-	println(" |  ___/ | | | '_ \\ / __| '_ \\| |  | |\\___ \\ ");
-	println(" | |   | |_| | | | | (__| | | | |__| |____) |");
-	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
-	println("");
-                      
-	create_proc("Hard1",proc_test_hardwork,NULL);
-	create_proc("Hard2",proc_test_hardwork,NULL);
-
-	create_proc("A",proc_test_A,NULL);
-	create_proc("B",proc_test_A,NULL);
+	draw_PUNCHOS();
 
 
-	create_proc("heap",proc_heap_display,NULL);
+	proc_sleep(1, UNIT_SEC);
 
-
-
-
-
-
-	/* Uncomment the following line to perform IPC tests */
+	/* Perform the message queue tests */
 	MQ_test();
-
-	proc_sleep(3,UNIT_SEC);
-
-	create_proc("PS",ps,NULL);
 
 	spin(TOP_RIGHT);
 
@@ -83,6 +61,20 @@ void spin(int offset){
 		proc_sleep(4,UNIT_TICK);
 	}
 		
+}
+
+
+/* Prints the logo to the screen with a series of printlns */
+void draw_PUNCHOS(){
+	println("");
+	println("  _____                  _      ____   _____");
+	println(" |  __ \\                | |    / __ \\ / ____|");
+	println(" | |__) |   _ _ __   ___| |__ | |  | | (___  ");
+	println(" |  ___/ | | | '_ \\ / __| '_ \\| |  | |\\___ \\ ");
+	println(" | |   | |_| | | | | (__| | | | |__| |____) |");
+	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
+	println("");
+
 }
 
 
