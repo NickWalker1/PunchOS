@@ -42,10 +42,31 @@ void main(){
 
 	proc_sleep(1, UNIT_SEC);
 
+	// set_rseed(50);
+
+	// while(true){
+	// 	println(itoa(rand(),str,BASE_DEC));
+	// 	proc_sleep(1,UNIT_SEC);
+	// }
+
 	/* Perform the message queue tests */
-	MQ_test();
+	// MQ_test();
+	spinning_bars();
+
 
 	spin(TOP_RIGHT);
+
+}
+
+#define SCREENSIZE (80*24*2)
+
+void spinning_bars(){
+	clear_screen();
+
+	set_rseed(38); //Some random number to start the seed
+
+	/* To be implemented. */
+
 
 }
 
@@ -54,6 +75,7 @@ void main(){
  * NOTE: Highly inefficient as requires lots of context switches */
 void spin(int offset){
 	char spinBars[] = {'|','/','-','\\'};
+	if(offset%2)offset--;
 
 	uint8_t i=0;
 	while(1){
@@ -144,3 +166,8 @@ bool validate_memory(uint32_t addr){
 
 
 
+/*
+	for(int i=0;i<5;i++){
+		create_proc(itoa(i,str,BASE_DEC),spin,(void *) (rand()%SCREENSIZE));
+	}
+*/
