@@ -44,7 +44,9 @@ void main(){
 	println("");
 
 
-	for(int i=0;i<50;i++) palloc_HDD();
+	// for(int i=0;i<50;i++) palloc_HDD();
+
+	pg_swap_test();
 
 
 	spin(TOP_RIGHT);

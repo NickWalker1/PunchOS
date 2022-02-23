@@ -12,6 +12,7 @@
 #include "../shell/shell.h"
 #include "../threads/thread.h"
 #include "../memory/pg_swap.h"
+#include "../tests/pg_swap_test.h"
 
 
 void kernel_entry(uint32_t, uint32_t addr);

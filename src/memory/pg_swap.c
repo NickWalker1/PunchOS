@@ -37,7 +37,7 @@ void phys_page_copy(void *dest, void *src){
 }
 
 
-/* Allocates a page in virtual HDD memory, and notably does NOT add anything to RAM.
+/* Allocates a page in virt_HDD memory, and notably does NOT add anything to virt_RAM.
  * Pages are only added to the virt_RAM on pagefault (demand paging) */
 void *palloc_HDD(){
     int i=0;
@@ -48,7 +48,7 @@ void *palloc_HDD(){
     }
     HDD_status[i]=true;
     page_swap_tracker[i].owner_pid=current_proc()->pid;
-    page_swap_tracker[i].vaddr=get_next_free_virt_page(1,F_ASSERT);
+    page_swap_tracker[i].vaddr=get_next_free_virt_page(1,F_ASSERT); //TODO update??? Have a space at 0xa0000000??
     page_swap_tracker[i].HDD_paddr=virt_HDD_start+i*PGSIZE;
     page_swap_tracker[i].RAM_paddr=NULL; /* As not been moved into RAM yet */
 
@@ -122,7 +122,7 @@ bool invalidate_RAM_page(void *RAM_paddr){
 void page_fault_panic(void *vaddr){
     char msg[128];
     strcpy(msg, "Page fault on virtual address: ");
-    itoa(vaddr,msg+strlen(msg),BASE_HEX);
+    itoa((int)vaddr,msg+strlen(msg),BASE_HEX);
 
     
     PANIC(msg);
