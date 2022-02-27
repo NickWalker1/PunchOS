@@ -50,8 +50,8 @@ void main(){
 	// }
 
 	/* Perform the message queue tests */
-	// MQ_test();
-	spinning_bars();
+	MQ_test();
+	// spinning_bars();
 
 
 	spin(TOP_RIGHT);

@@ -20,11 +20,11 @@ char *blockb = "blockb";
 char *blockc = "blockc";
 
 /* Test descriptions */
-char test_descriptions[][24]={
+char test_descriptions[][32]={
 	"MQ Creation",
 	"MQ Using Attributes",
 	"Generic Creation Failure",
-	"Basic Receive",
+	"Basic Send",
 	"Repeated Send",
 	"Buffer wrap around",
 	"Full queue error",
@@ -95,7 +95,7 @@ void producer(){
 
 	
 
-	/* Test 4: Basic Send/Recieve */
+	/* Test 4: Basic Send */
 	if(mq_send(mqdes_2,blockb,7)==7) mq_mark = mq_mark | 1<<3;
 
 
@@ -133,7 +133,7 @@ void producer(){
 
 	/* Test 8: Failure on message size */
 	status = mq_send(mqdes_3,blockc,2000000);
-	if(!status) mq_mark = mq_mark | 1<<7;
+	if(!status && (mq_mark&1<<3)) mq_mark = mq_mark | 1<<7;
 
 
     lock_release(&test_lock);
@@ -194,16 +194,27 @@ void test_report(){
 	}
 	else{
 		print_fail();
+	}
 		int i;
 		for(i=0;i<MQ_NUM_TESTS;i++){
 			if(!(mq_mark&(1<<i))){
-				println("Failed test: ");
+		println("");
+				print_fail_generic();
+				print(" test: ");
+				print(itoa(i+1,str,BASE_DEC));
+				print(" ");
+				print(test_descriptions[i]);
+			}
+			else{
+		println("");
+				print_pass_generic();
+				print(" test: ");
 				print(itoa(i+1,str,BASE_DEC));
 				print(" ");
 				print(test_descriptions[i]);
 			}
 		}
-	}
+	
 
 }
 

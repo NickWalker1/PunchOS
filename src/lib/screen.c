@@ -218,6 +218,21 @@ void clear_line(int line){
     }
 }
 
+
+void print_pass_generic(){
+    print_char('P',GREEN_ON_BLACK);
+    print_char('A',GREEN_ON_BLACK);
+    print_char('S',GREEN_ON_BLACK);
+    print_char('S',GREEN_ON_BLACK);
+}
+
+void print_fail_generic(){  
+    print_char('F',RED_ON_BLACK);
+    print_char('A',RED_ON_BLACK);
+    print_char('I',RED_ON_BLACK);
+    print_char('L',RED_ON_BLACK);
+}
+
 /* Used to clear the screen */
 void clear_screen(){
     int row;

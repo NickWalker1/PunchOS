@@ -23,8 +23,8 @@ typedef struct mqd{
     char name[12];
     mq_attr_t *attr;
     void *base; /* Base vaddr of the mq block */
-    size_t write_idx; /* Index of write header */
-    size_t read_idx; /* Index of read header */
+    int write_idx; /* Index of write header */
+    int read_idx; /* Index of read header */
     lock mq_lock; /* Synchronisation lock */
 }mqd_t;
 
