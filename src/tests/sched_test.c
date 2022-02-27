@@ -190,12 +190,12 @@ void scheduling_test(){
     print(itoa(time,str,BASE_DEC));
     print(" seconds.");
 
-    if(time<11){ 
+    if(time<20){ 
         print_pass();
     }
     else{
         print_fail();
     }
 
-    println("\nNaive scheduling time is 11 seconds.\n");
+    println("\nNaive scheduling time is 20 seconds.\n");
 }
