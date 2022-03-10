@@ -25,7 +25,6 @@ typedef struct mqd{
     void *base; /* Base vaddr of the mq block */
     int write_idx; /* Index of write header */
     int read_idx; /* Index of read header */
-    lock mq_lock; /* Synchronisation lock */
 }mqd_t;
 
 
@@ -34,3 +33,7 @@ mqd_t *mq_open(char *name, mq_attr_t *attr, uint8_t flags);
 size_t mq_close(mqd_t *mqdes);
 size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size);
 size_t mq_receive(mqd_t *mqdes, char *buffer , size_t buff_len);
+
+
+void mq_clear(mqd_t *mqdes);
+void mq_dump(mqd_t *mqdes);

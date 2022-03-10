@@ -29,8 +29,8 @@ char test_descriptions[][32]={
 	"Buffer wrap around",
 	"Full queue error",
 	"Message size error",
-	"Basic Recieve",
-	"Repeated Recieve"
+	"Basic Receive",
+	"Repeated Receive"
 };
 
 
@@ -61,8 +61,8 @@ void producer(){
 
     mq_init();
 
-
-	void *buffer=malloc(256);
+	bool okay;
+	void *msg_addr;
 
 
 	/* Test 1: Creation */
@@ -87,53 +87,78 @@ void producer(){
 
 	if(!mqdes_2) return fail_now();
 	
+	//Check if attr used correctly
 	if(mqdes_2->attr->mq_msgsize==128) mq_mark= mq_mark | 1<<1;
 
 	/* Test 3: Generic Failure Cases */
 
+	//Check for Creating duplicate failure & check for null argument failure
 	if(!mq_open("MQ1",NULL, O_CREAT) && !mq_open("A",NULL,0)) mq_mark = mq_mark | 1<<2;
 
 	
 
 	/* Test 4: Basic Send */
-	if(mq_send(mqdes_2,blockb,7)==7) mq_mark = mq_mark | 1<<3;
+	okay=mq_send(mqdes_2,blockb,7)==7;
+
+	msg_addr= mqdes_2->base;
+
+	okay=okay && (strcmp(msg_addr,blockb)==0);
+	
+	if(okay) mq_mark = mq_mark | 1<<3;
 
 
 
 	/* Test 5: Repeated Send */
-
 	mqd_t *mqdes_3 = mq_open("MQ3",attr,O_CREAT);
 
-	int status=1;
+	okay = true;
 
-	status = status & (mq_send(mqdes_3,blockc,7)==7);
-	status = status & (mq_send(mqdes_3,blockb,7)==7);
-	status = status & (mq_send(mqdes_3,blocka,7)==7);
-	if(status) mq_mark = mq_mark | 1<<4;
+	okay = okay && (mq_send(mqdes_3,blockc,7)==7);
+	msg_addr = mqdes_3->base;
+	okay = okay && (strcmp(msg_addr,blockc)==0);
+
+	okay = okay && (mq_send(mqdes_3,blockb,7)==7);
+	msg_addr = msg_addr+mqdes_3->attr->mq_msgsize;
+	okay = okay && (strcmp(msg_addr,blockb)==0);
+
+	okay = okay && (mq_send(mqdes_3,blocka,7)==7);
+	msg_addr = msg_addr+mqdes_3->attr->mq_msgsize;
+	okay = okay && (strcmp(msg_addr,blocka)==0);
+
+	if(okay) mq_mark = mq_mark | 1<<4;
 
 
 	/* Test 6: Buffer wrap around */
 
 	mqd_t *mqdes_4 = mq_open("MQ4",attr,O_CREAT);
-	mq_send(mqdes_4,blocka,7);
-	mq_send(mqdes_4,blocka,7);
-	mq_send(mqdes_4,blocka,7);
 
-	mq_receive(mqdes_4,buffer,256);
-	mq_receive(mqdes_4,buffer,256);
+	if(mq_mark & 1<<4){ //Only if test 5 passes
+		mqdes_4->write_idx=6;
+		
+		okay = true;
+		okay = okay && mq_send(mqdes_4,blocka,7);
+		okay = okay && mq_send(mqdes_4,blocka,7);
+		okay = okay && mq_send(mqdes_4,blocka,7);
 
-	if(mqdes_4->write_idx==3 && mqdes_4->read_idx==2) mq_mark = mq_mark | 1<<5;
+		//Assumes write index starts at 0
+		if(okay && mqdes_4->write_idx==1) mq_mark = mq_mark | 1<<5;
+	}
+	
 
 
 	
 	/* Test 7: Test Full Queue*/
-	status=1;
-	for(int i=3;i<8;i++)status=status & mq_send(mqdes_3,blocka,7);
-	if(status && !mq_send(mqdes_3,blockb,7)) mq_mark = mq_mark | 1<<6;
+	if(mq_mark & 1<<4){
+		mq_clear(mqdes_4);
+
+		for(int i=0;i<8;i++) mq_send(mqdes_4,blocka,7);
+		if(mq_send(mqdes_4,blockb,7)==0) mq_mark = mq_mark | 1<<6;
+	}
+	
 
 	/* Test 8: Failure on message size */
-	status = mq_send(mqdes_3,blockc,2000000);
-	if(!status && (mq_mark&1<<3)) mq_mark = mq_mark | 1<<7;
+	
+	if(!mq_send(mqdes_3,blockc,2000000) && (mq_mark&1<<3)) mq_mark = mq_mark | 1<<7;
 
 
     lock_release(&test_lock);
@@ -144,14 +169,13 @@ void producer(){
 void consumer(){
 	if(early_fail) return;
 
-	
-	//TODO close any that are opened
+	bool okay;
 
-
+	//As non-blocking, must ensure sender finishes first.
     lock_acquire(&test_lock);
 
 
-
+	//Receive buffer
 	void *buffer = malloc(256);
 
 
@@ -166,16 +190,18 @@ void consumer(){
 
 	mqd_t *mqdes_3 = mq_open("MQ3",NULL,O_OPEN);
 
-	int status=1;
 	int check=1;
-	status = status & mq_receive(mqdes_3,buffer,256);
-	check  = check  & (strcmp(buffer,blockc)==0);
+	okay = true;
 
-	status = status & mq_receive(mqdes_3,buffer,256);
-	check  = check  & (strcmp(buffer,blockb)==0);
 
-	status = status & mq_receive(mqdes_3,buffer,256);
-	check  = check  & (strcmp(buffer,blocka)==0);
+	okay = okay && mq_receive(mqdes_3,buffer,256);
+	check  = check  && (strcmp(buffer,blockc)==0);
+
+	okay = okay && mq_receive(mqdes_3,buffer,256);
+	check  = check  && (strcmp(buffer,blockb)==0);
+
+	okay = okay && mq_receive(mqdes_3,buffer,256);
+	check  = check  && (strcmp(buffer,blocka)==0);
 
 	if(check) mq_mark = mq_mark | 1<< 9;
 
@@ -223,6 +249,30 @@ void fail_now(){
 	cond_signal(&test_cond,&test_lock);
 	lock_release(&test_lock);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* Shared Memory test a horrible faliure so here is the graveyard... 

@@ -473,6 +473,12 @@ void *palloc_kern(size_t n, uint8_t flags){
     return Kptov(paddr);
 }
 
+/* Free n page(s) allocated with palloc_kern */
+void palloc_kern_free(void *vaddr_base, size_t n){
+    void *paddr=lookup_phys(vaddr_base);
+
+    free_phys_page(paddr,n);
+}
 
 /* Duplicates the given virtual address space by creating new PD and associated PTs
  * Returns PHYSICAL address of new page directory.
