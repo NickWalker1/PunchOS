@@ -79,7 +79,6 @@ mqd_t *mq_open(char *name, mq_attr_t *given_attr,uint8_t flags){
         mqdes->read_idx=0;
         mqdes->write_idx=0;
         mqdes->base=palloc_kern(1,F_ASSERT);
-        // lock_init(&mqdes->mq_lock);
 
         append_shared(mq_list, mqdes);
         return mqdes;
@@ -118,7 +117,6 @@ size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size){
 
     
 
-
     if(attr->mq_curmsgs==attr->mq_maxmsg){
         return 0;
     }
@@ -146,15 +144,16 @@ size_t mq_receive(mqd_t *mqdes, char *buffer, size_t buff_len){
 
     mq_attr_t *attr = mqdes->attr;
 
-    if(buff_len < attr->mq_msgsize){return 0;}
+    if(buff_len < attr->mq_msgsize) return 0;
 
-    if(attr->mq_curmsgs==0) return 0;
+    if(attr->mq_curmsgs==0) return 0; //make bug
 
-    void *read_addr = mqdes->base + (mqdes->read_idx * attr->mq_msgsize);
+    void *read_addr = mqdes->base + (mqdes->read_idx * attr->mq_msgsize); //is bug
 
     memcpy(buffer,read_addr,buff_len);
 
-    mqdes->read_idx++;
+    // mqdes->read_idx++;
+    // mqdes->read_idx=(mqdes->read_idx+1)%attr->mq_maxmsg; //make bug?
     attr->mq_curmsgs--;
 
     return buff_len;

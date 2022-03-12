@@ -1,6 +1,6 @@
 #pragma once
 
-#define MQ_NUM_TESTS 10
+#define MQ_NUM_TESTS 13
 
 void MQ_test();
 

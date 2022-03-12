@@ -42,16 +42,8 @@ void main(){
 
 	proc_sleep(1, UNIT_SEC);
 
-	// set_rseed(50);
-
-	// while(true){
-	// 	println(itoa(rand(),str,BASE_DEC));
-	// 	proc_sleep(1,UNIT_SEC);
-	// }
-
 	/* Perform the message queue tests */
 	MQ_test();
-	// spinning_bars();
 
 
 	spin(TOP_RIGHT);

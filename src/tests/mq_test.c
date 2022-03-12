@@ -26,11 +26,14 @@ char test_descriptions[][32]={
 	"Generic Creation Failure",
 	"Basic Send",
 	"Repeated Send",
-	"Buffer wrap around",
+	"Send Buffer wrap around",
 	"Full queue error",
 	"Message size error",
 	"Basic Receive",
-	"Repeated Receive"
+	"Empty queue error",
+	"Buffer size error",
+	"Repeated Receive",
+	"Receive Buffer wrap around",
 };
 
 
@@ -65,6 +68,7 @@ void producer(){
 	void *msg_addr;
 
 
+
 	/* Test 1: Creation */
 
 	/* Test default attributes */
@@ -73,7 +77,7 @@ void producer(){
 
 	if(mqdes_1) mq_mark=mq_mark | 1<<0;
 
-	//TODO close any that are opened
+
 
 	/* Test 2 using attributes */
 
@@ -89,6 +93,8 @@ void producer(){
 	
 	//Check if attr used correctly
 	if(mqdes_2->attr->mq_msgsize==128) mq_mark= mq_mark | 1<<1;
+
+
 
 	/* Test 3: Generic Failure Cases */
 
@@ -128,7 +134,8 @@ void producer(){
 	if(okay) mq_mark = mq_mark | 1<<4;
 
 
-	/* Test 6: Buffer wrap around */
+
+	/* Test 6:  Send buffer wrap around */
 
 	mqd_t *mqdes_4 = mq_open("MQ4",attr,O_CREAT);
 
@@ -143,7 +150,6 @@ void producer(){
 		//Assumes write index starts at 0
 		if(okay && mqdes_4->write_idx==1) mq_mark = mq_mark | 1<<5;
 	}
-	
 
 
 	
@@ -155,6 +161,7 @@ void producer(){
 		if(mq_send(mqdes_4,blockb,7)==0) mq_mark = mq_mark | 1<<6;
 	}
 	
+
 
 	/* Test 8: Failure on message size */
 	
@@ -179,32 +186,70 @@ void consumer(){
 	void *buffer = malloc(256);
 
 
+
 	/* Test 9: Basic Send/Recieve (Based on test 4 send)*/
 	mqd_t *mqdes_2 = mq_open("MQ2",NULL,O_OPEN);
 
-	mq_receive(mqdes_2,buffer,256);
-	if(strcmp(buffer,blockb)==0) mq_mark = mq_mark | 1<<8;
+	okay = mq_receive(mqdes_2,buffer,256)==256;
+	if(okay && strcmp(buffer,blockb)==0) mq_mark = mq_mark | 1<<8;
 
 
-	/* Test 10: Repeated Recieve (Based on test 5 send) */
 
+	/* Test 10: Empty queue error */
+	mq_clear(mqdes_2);
+	
+	if(mq_mark & 1<<8){
+		
+		if(!mq_receive(mqdes_2,buffer,256)) mq_mark = mq_mark | 1<<9;
+	}
+
+
+
+	/* Test 11: Buffer size error */
+	if(mq_mark & 1<<8){
+		//Expect fail on insufficient buffer size
+		mq_send(mqdes_2,blocka,7);
+		if(!mq_receive(mqdes_2,buffer,5)) mq_mark = mq_mark | 1<< 10;
+	}
+
+
+	/* Test 12: Repeated Recieve (Based on test 5 send) */
 	mqd_t *mqdes_3 = mq_open("MQ3",NULL,O_OPEN);
 
-	int check=1;
-	okay = true;
+	if(mq_mark & 1<<8){
+
+		int check=1;
+		okay = true;
 
 
-	okay = okay && mq_receive(mqdes_3,buffer,256);
-	check  = check  && (strcmp(buffer,blockc)==0);
+		okay = okay && mq_receive(mqdes_3,buffer,256)==256;
+		check  = check  && (strcmp(buffer,blockc)==0);
 
-	okay = okay && mq_receive(mqdes_3,buffer,256);
-	check  = check  && (strcmp(buffer,blockb)==0);
+		okay = okay && mq_receive(mqdes_3,buffer,256)==256;
+		check  = check  && (strcmp(buffer,blockb)==0);
 
-	okay = okay && mq_receive(mqdes_3,buffer,256);
-	check  = check  && (strcmp(buffer,blocka)==0);
+		okay = okay && mq_receive(mqdes_3,buffer,256)==256;
+		check  = check  && (strcmp(buffer,blocka)==0);
 
-	if(check) mq_mark = mq_mark | 1<< 9;
+		if(check) mq_mark = mq_mark | 1<< 11;
+	}
 
+
+
+	/* Test 13: Receive buffer wrap around */
+	if(mq_mark & 1<<8){
+		mq_clear(mqdes_3);
+
+		mqdes_3->read_idx=7;
+		mqdes_3->attr->mq_curmsgs=5;
+
+		mq_receive(mqdes_3,buffer,256);
+		mq_receive(mqdes_3,buffer,256);
+		mq_receive(mqdes_3,buffer,256);
+
+		if(mqdes_3->read_idx==2) mq_mark = mq_mark | 1<<12;
+	}
+	
 
 
     cond_signal(&test_cond,&test_lock);
