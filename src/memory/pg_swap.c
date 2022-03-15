@@ -57,10 +57,18 @@ void *palloc_HDD(){
 }
 
 
+void swap_out_page(){
+
+}
+
 
 /* Sets the accesssed state bits to 0 on all pages */
 void access_reset(){
-    //For simplicitity can just set every present one to 0 rather than one ones that are releveant to us. 
+    //For simplicitity, you can just set every present one to 0 rather than only ones that are releveant to us. 
+
+    /* Get the page directory */
+    page_directory_entry_t *pd = current_proc()->page_directory;
+
     /* To be implemented. */
 }
 
@@ -81,17 +89,19 @@ void page_fault_handler(exception_state *state){
     page_fault_panic(vaddr);
     
 
-    /* Lookup if the vaddr is a valid page stored in the tracker for that process */
+    /* Lookup if the vaddr is a valid page stored in the tracker for that process using page_swap_lookup() */
 
-    /* If it is, see if there is space in virt_RAM using virt_RAM status */
+    /* If it is, see if there is space in virt_RAM using the virt_RAM status array */
     
-    /* If space, can copy page into memory, update the page mapping using map_page function */
+    /* If there is space, copy page into memory, update the page mapping using map_page function */
 
-    /* If not space, determine a page to swap out using NRU */
+    /* If there is not space, determine a page to swap out using NRU */
 
     /* Depending on the status of that page either copy it back or simply overwrite it.
      * Do not forget to mark that page in the PD as not present, to do this simply call my function.*/
 }
+
+
 
 
 /* Will return the swap_page_t * relating to the vaddr and the current process if it exists.

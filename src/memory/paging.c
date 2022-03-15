@@ -346,21 +346,30 @@ void* unmap_page(void* vaddr,uint8_t flags){
 }
 
 
-/* Returns mapped base physical address of vaddr
- * Vaddr must be PGSIZE alligned*/ 
-void *lookup_phys(void* vaddr){
-    if(!(uint32_t) vaddr%4096) PANIC("Vaddr not PGSIZE alligned on lookup.");
-
-    //TODO update to PCB pd.
-    page_directory_entry_t* pd = current_proc()->page_directory;
+/* Will return a pointer to the page_table_entry for the given vaddr.
+ * Returns NULL if page not present */ 
+page_table_entry_t *pte_lookup(void *vaddr){
+    if(!(uint32_t) vaddr%4096) PANIC("Vaddr not PGSIZE alligned on pte lookup.");
+     page_directory_entry_t* pd = current_proc()->page_directory;
     
     uint32_t pd_idx, pt_idx;
     pd_idx=pd_no(vaddr);
     pt_idx=pt_no(vaddr);
 
-    page_table_entry_t* pt=(page_table_entry_t*) Kptov((void*)(pd[pd_idx].page_table_base_addr<<PGBITS)); //Push back to correct address
+    page_table_entry_t* pt=(page_table_entry_t*) Kptov((void*)(pd[pd_idx].page_table_base_addr<<PGBITS)); 
+    return pt[pt_idx].present ? &pt[pt_idx] : NULL;
+}
+
+
+/* Returns mapped base physical address of vaddr
+ * Vaddr must be PGSIZE alligned*/ 
+void *lookup_phys(void* vaddr){
+    if(!(uint32_t) vaddr%4096) PANIC("Vaddr not PGSIZE alligned on phys lookup.");
+
+    page_table_entry_t *pte = pte_lookup(vaddr);
     
-    return pt[pt_idx].present ? (void*)(pt[pt_idx].page_base_addr<<PGBITS) : (void*)0;
+    
+    return pte ? (void*)(pte->page_base_addr<<PGBITS) : NULL;
 }
 
 
