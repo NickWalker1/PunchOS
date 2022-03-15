@@ -144,16 +144,16 @@ size_t mq_receive(mqd_t *mqdes, char *buffer, size_t buff_len){
 
     mq_attr_t *attr = mqdes->attr;
 
-    if(buff_len < attr->mq_msgsize) return 0;
+    if(buff_len < attr->mq_msgsize) return 0; //to be bug
 
-    if(attr->mq_curmsgs==0) return 0; //make bug
+    if(attr->mq_curmsgs==0) return 0; 
 
-    void *read_addr = mqdes->base + (mqdes->read_idx * attr->mq_msgsize); //is bug
+    void *read_addr = mqdes->base + (mqdes->read_idx * attr->mq_msgsize); 
 
     memcpy(buffer,read_addr,buff_len);
 
-    // mqdes->read_idx++;
-    // mqdes->read_idx=(mqdes->read_idx+1)%attr->mq_maxmsg; //make bug?
+    // mqdes->read_idx++; // start with this 
+    // mqdes->read_idx=(mqdes->read_idx+1)%attr->mq_maxmsg;  // then modify to this
     attr->mq_curmsgs--;
 
     return buff_len;
