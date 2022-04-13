@@ -60,8 +60,6 @@ void *malloc(uint32_t size){
         return ++currSeg;
     }
 
-    PANIC("FUCKED IT");
-
     //next segment must therefore be free
     
     MemorySegmentHeader_t *nextSeg=currSeg->next;
