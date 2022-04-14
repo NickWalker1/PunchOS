@@ -177,6 +177,24 @@ void print_fail(){
     print_char_loc('L',4,row,RED_ON_BLACK);
 
 }
+
+/* Prints a green PASS to the current cursor position */
+void print_pass_generic(){
+    print_char('P',GREEN_ON_BLACK);
+    print_char('A',GREEN_ON_BLACK);
+    print_char('S',GREEN_ON_BLACK);
+    print_char('S',GREEN_ON_BLACK);
+}
+
+/* Prints a red FAIL to the current cursor position */
+void print_fail_generic(){  
+    print_char('F',RED_ON_BLACK);
+    print_char('A',RED_ON_BLACK);
+    print_char('I',RED_ON_BLACK);
+    print_char('L',RED_ON_BLACK);
+}
+
+
 /* Used to clear the screen */
 void clear_screen(){
     int row;

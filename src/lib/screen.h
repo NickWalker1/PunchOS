@@ -40,6 +40,8 @@ void println(char* message);
 void print_attempt(char* message);
 void print_ok();
 void print_fail();
+void print_pass_generic();
+void print_fail_generic();
 void clear_screen();
 void test_colours();
 void push_row();
