@@ -5,12 +5,13 @@
 int NUMTESTS=6;
 
 char test_descriptions[][32]={
-	"Waa",
-	"Woop",
-	"Yaa",
-	"yeet",
-	"yote",
-	"yope"
+	"Basic malloc",
+	"Consecutive malloc",
+	"malloc fail on size",
+	"free inside 2 segments",
+	"free combination 1",
+	"free combination 2",
+    // "free combination 3"
 };
 
 
@@ -136,19 +137,19 @@ int perform_test(){
 
 	//TEST 7: Free again
 
-	clear_heap(KHEAP_ADDR);
-	intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
+	// clear_heap(KHEAP_ADDR);
+	// intialiseHeap(KHEAP_ADDR,KHEAP_ADDR_MAX);
 
-	test1=(uint32_t)malloc(0x50);
-	test2=(uint32_t)malloc(0x50);
-	test3=(uint32_t)malloc(0x50);
-	test4=(uint32_t)malloc(0x50);
-	malloc(0x50);
-	free((void*)test2);
-	free((void*)test4);
-	free((void*)test3);
-	test5= (uint32_t) malloc(0x150+2*MSH);
-	free((void*)test5);
+	// test1=(uint32_t)malloc(0x50);
+	// test2=(uint32_t)malloc(0x50);
+	// test3=(uint32_t)malloc(0x50);
+	// test4=(uint32_t)malloc(0x50);
+	// malloc(0x50);
+	// free((void*)test2);
+	// free((void*)test4);
+	// free((void*)test3);
+	// test5= (uint32_t) malloc(0x150+2*MSH);
+	// free((void*)test5);
 
 	// heap_dump();
 

@@ -15,7 +15,8 @@ void intialiseHeap(void* base, void* limit){
 }
 
 void *malloc(uint32_t size){
-     MemorySegmentHeader_t *currSeg=firstSegment;
+    if(1) return 0;
+    MemorySegmentHeader_t *currSeg=firstSegment;
 
     //traverse linked list to find one that meets conditions
     //if at end return NULL
@@ -23,64 +24,38 @@ void *malloc(uint32_t size){
         currSeg=currSeg->next;
         if(!currSeg) return NULL;
     }
-    //update the segment info
+    /* Update the segment info */
     uint32_t init_size =currSeg->size;
     currSeg->size=size;
     currSeg->free=false;
 
-    //first check if there isn't a next segment, or the next segment is not free
-    if(!currSeg->next || !currSeg->next->free){
-        //now need to create a new segment
+    /* Quick check for heap corruption, as this should never exist that two free states are next to each other */
+    // if(currSeg->next && currSeg->next->free)PANIC("Heap corruption. (Likely erronous writes)");
 
-        //check if we can fit a new header in + some bytes to ensure it's actually useful.
-        if(init_size>sizeof(MemorySegmentHeader_t)+64){
-            MemorySegmentHeader_t* newSegment = (MemorySegmentHeader_t*) ((uint32_t)currSeg + size+ sizeof(MemorySegmentHeader_t));
-            newSegment->free=true;
-            newSegment->magic=segment_magic;
-            newSegment->previous=currSeg;
-            newSegment->next=currSeg->next;
-            newSegment->size=init_size-sizeof(MemorySegmentHeader_t)-size;
 
-            if(currSeg->next) currSeg->next->previous=newSegment;
-            currSeg->next=newSegment;
+    /* Check if we can fit a new header in + some bytes to ensure it's actually useful. */
+    if(init_size>sizeof(MemorySegmentHeader_t)+64){
+        MemorySegmentHeader_t* newSegment = (MemorySegmentHeader_t*) ((uint32_t)currSeg + size+ sizeof(MemorySegmentHeader_t));
+        newSegment->free=true;
+        newSegment->magic=segment_magic;
+        newSegment->previous=currSeg;
+        newSegment->next=currSeg->next;
+        newSegment->size=init_size-sizeof(MemorySegmentHeader_t)-size;
 
-            //Make sure to return the start of the free memory space, not the space containing
-            //the header information.
-            return ++currSeg;
-        }
-  
+        if(currSeg->next) currSeg->next->previous=newSegment;
+        currSeg->next=newSegment;
 
-        //cannot fit a new segmentHeader in.
-
-        //adjust currSeg to be initial size
-        currSeg->size=init_size;
-        
         //Make sure to return the start of the free memory space, not the space containing
         //the header information.
         return ++currSeg;
     }
 
-    //next segment must therefore be free
+
+    //cannot fit a new segmentHeader in.
+
+    //adjust currSeg to be initial size
+    currSeg->size=init_size;
     
-    MemorySegmentHeader_t *nextSeg=currSeg->next;
-
-    //logic to "move" next header over.
-    MemorySegmentHeader_t *newNextSeg = (MemorySegmentHeader_t*) (uint32_t)currSeg+ size+sizeof(MemorySegmentHeader_t);
-    newNextSeg->size=nextSeg->size + init_size; //Do not need to adjust for sizeof(MSH) as is only moved
-    newNextSeg->free=true;
-    newNextSeg->magic=segment_magic;
-
-    //copy pointers over as these are still valid.
-    newNextSeg->next=nextSeg->next;
-    newNextSeg->previous=newNextSeg->previous;
-
-    //can set the nextSeg struct to 0 to ensure no horrid bugs later
-    nextSeg->free=0;
-    nextSeg->next=0;
-    nextSeg->previous=0;
-    nextSeg->size=0;
-    nextSeg->magic=0;
-
     //Make sure to return the start of the free memory space, not the space containing
     //the header information.
     return ++currSeg;
