@@ -39,8 +39,9 @@ void test_report(){
 		else{
 			print_pass_generic();
 		}
+        print(" test: ");
 		print(itoa(i+1,str,BASE_DEC));
-		print(" - ");
+		print(" ");
 		print(test_descriptions[i]);
 	}
 }
