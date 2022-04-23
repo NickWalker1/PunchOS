@@ -137,6 +137,12 @@ size_t mq_send(mqd_t *mqdes, char *msg_pointer, size_t msg_size){
 }
 
 
+
+
+
+
+
+
 /* Given a message queue descripter and a buffer of size msg_len.
  * If there is a message in the queue, the oldest one will be written to the buffer if the buffer is big enough. */
 size_t mq_receive(mqd_t *mqdes, char *buffer, size_t buff_len){
@@ -144,20 +150,28 @@ size_t mq_receive(mqd_t *mqdes, char *buffer, size_t buff_len){
 
     mq_attr_t *attr = mqdes->attr;
 
-    if(buff_len < attr->mq_msgsize) return 0;
+    if(buff_len < attr->mq_msgsize) return 0; 
 
-    if(attr->mq_curmsgs==0) return 0; //make bug
+    // if(attr->mq_curmsgs==0) return 0; 
 
-    void *read_addr = mqdes->base + (mqdes->read_idx * attr->mq_msgsize); //is bug
+    void *read_addr = mqdes->base + (mqdes->read_idx * attr->mq_msgsize); 
 
     memcpy(buffer,read_addr,buff_len);
 
-    // mqdes->read_idx++;
-    // mqdes->read_idx=(mqdes->read_idx+1)%attr->mq_maxmsg; //make bug?
+    // mqdes->read_idx++; 
+    // mqdes->read_idx=(mqdes->read_idx+1)%attr->mq_maxmsg;  
     attr->mq_curmsgs--;
 
     return buff_len;
 }
+
+
+
+
+
+
+
+
 
 
 
