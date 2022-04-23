@@ -1,5 +1,62 @@
 #include "kernel.h"
 
+#define SCREENSIZE (80*24*2)
+
+
+char spinBars[] = {'|','/','-','\\'};
+
+
+/* Main function run by init process */
+void main(){
+	//Prints welcome to PunchOS!
+	welcome();
+
+
+	spinning_bars();
+
+	/* Perform the message queue tests */
+	// MQ_test();
+
+
+	//Uncomment to show OS still operational.
+	// spin(TOP_RIGHT);
+}
+
+
+void spinning_bars(){
+	clear_screen();
+
+	set_rseed(38); //Some random number to start the seed
+
+	/* To be implemented. */
+	int x=15;
+	while(x--)
+		create_proc(NULL,spin,rand()%SCREENSIZE);
+
+}
+
+
+/* Little function that causes a bar to spin indefinitely... */
+void spin(int offset){
+	//Ensure is location not colour.
+	if(offset%2)offset--;
+
+	uint8_t i=0;
+	while(1){
+		print_char_offset(spinBars[i++%4],WHITE_ON_BLACK,offset);
+		proc_sleep(4,UNIT_TICK);
+	}
+		
+}
+
+
+
+
+
+//---------------------------------------------
+//----------------Helper Code------------------
+//---------------------------------------------
+
 
 /* Entry point into the OS */
 void kernel_entry(uint32_t magic, uint32_t addr){
@@ -25,10 +82,7 @@ void kernel_entry(uint32_t magic, uint32_t addr){
 }
 
 
-/* Main function run by init process */
-void main(){
-
-	
+void welcome(){
 	//Sleep to display bootscreen.
 	proc_sleep(1,UNIT_SEC);
 
@@ -41,40 +95,6 @@ void main(){
 
 
 	proc_sleep(1, UNIT_SEC);
-
-	/* Perform the message queue tests */
-	MQ_test();
-
-
-	spin(TOP_RIGHT);
-
-}
-
-#define SCREENSIZE (80*24*2)
-
-void spinning_bars(){
-	clear_screen();
-
-	set_rseed(38); //Some random number to start the seed
-
-	/* To be implemented. */
-
-
-}
-
-
-/* Little function that causes a bar to spin indefinitely...
- * NOTE: Highly inefficient as requires lots of context switches */
-void spin(int offset){
-	char spinBars[] = {'|','/','-','\\'};
-	if(offset%2)offset--;
-
-	uint8_t i=0;
-	while(1){
-		print_char_offset(spinBars[i++%4],WHITE_ON_BLACK,offset);
-		proc_sleep(4,UNIT_TICK);
-	}
-		
 }
 
 
@@ -155,11 +175,3 @@ bool validate_memory(uint32_t addr){
 	}
 	return okay;
 }
-
-
-
-/*
-	for(int i=0;i<5;i++){
-		create_proc(itoa(i,str,BASE_DEC),spin,(void *) (rand()%SCREENSIZE));
-	}
-*/

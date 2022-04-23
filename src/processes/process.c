@@ -127,7 +127,9 @@ PCB_t* proc_create(char *name, proc_func *func, void *aux, uint8_t flags){
 
     new->magic=PROC_MAGIC;
     
-    strcpy(new->name,name); 
+    //If name not null
+    if(name)
+        strcpy(new->name,name); 
 
     // new->page_directory=Kptov(get_pd());
     if(flags&PC_ADDR_DUP){
