@@ -31,6 +31,80 @@ bool RAM_status[virt_RAM_size];
 swap_page_t page_swap_tracker[virt_HDD_size];
 
 
+
+
+
+
+
+
+/* This function is called directly from the generic exception handler in idt.c.
+ */
+void page_fault_handler(exception_state *state){
+    void *vaddr=state->cr2; /* The virtual adress that caused the exception is stored in the cr2 register */
+
+    /* To be implemented */
+
+
+    
+
+    /* Lookup if the vaddr is a valid page stored in the tracker for that process using page_swap_lookup() */
+    swap_page_t *swp_page = page_swap_lookup(vaddr);
+    if(!swp_page)
+        page_fault_panic(vaddr);
+
+
+    /* If it is, see if there is space in virt_RAM using the virt_RAM status array */
+    
+
+    /* If there is space, copy page into memory, update the page mapping using map_page function */
+
+    /* If there is not space, determine a page to swap out using NRU */
+
+    /* Depending on the status of that page either copy it back or simply overwrite it.
+     * Do not forget to mark that page in the PD as not present, to do this simply call my function.*/
+}
+
+
+
+/* Finds an appropriate page using preference heirarchy,
+ *  updates associated swap_page struct
+ *  and sets the status of that virt_RAM page to free */
+void swap_out_page(){
+
+}
+
+
+/* Sets the accesssed state bits to 0 on all pages */
+void access_reset(){
+    //For simplicitity, you can just set every present one to 0 rather than only ones that are releveant to us. 
+
+    /* Get the page directory */
+    page_directory_entry_t *pd = current_proc()->page_directory;
+
+    /* To be implemented. */
+}
+
+
+
+//---------------------------------------------------
+//--------------------HELPER CODE--------------------
+//---------------------------------------------------
+
+
+/* Will return the swap_page_t * relating to the vaddr and the current process if it exists.
+ * Otherwise return NULL which indicates a faulty VADDR and should PANIC. */
+swap_page_t *page_swap_lookup(void *vaddr){
+    int i=0;
+    p_id pid = current_proc()->pid;
+    
+    while(i<virt_HDD_size && (page_swap_tracker[i].vaddr!=vaddr || page_swap_tracker[i].owner_pid!=pid)) i++;
+    
+    if(i==virt_HDD_size) return NULL;
+
+    return &page_swap_tracker[i];
+}
+
+
 /* Copies the given page from the source to the destination given the PHYSICAL addresses */
 void phys_page_copy(void *dest, void *src){
     memcpy(Kptov(dest),Kptov(src),PGSIZE);
@@ -57,65 +131,6 @@ void *palloc_HDD(){
 }
 
 
-void swap_out_page(){
-
-}
-
-
-/* Sets the accesssed state bits to 0 on all pages */
-void access_reset(){
-    //For simplicitity, you can just set every present one to 0 rather than only ones that are releveant to us. 
-
-    /* Get the page directory */
-    page_directory_entry_t *pd = current_proc()->page_directory;
-
-    /* To be implemented. */
-}
-
-
-
-
-
-
-
-/* This function is called directly from the generic exception handler in idt.c.
- */
-void page_fault_handler(exception_state *state){
-    void *vaddr=state->cr2; /* The virtual adress that caused the exception is stored in the cr2 register */
-
-    /* To be implemented */
-
-
-    page_fault_panic(vaddr);
-    
-
-    /* Lookup if the vaddr is a valid page stored in the tracker for that process using page_swap_lookup() */
-
-    /* If it is, see if there is space in virt_RAM using the virt_RAM status array */
-    
-    /* If there is space, copy page into memory, update the page mapping using map_page function */
-
-    /* If there is not space, determine a page to swap out using NRU */
-
-    /* Depending on the status of that page either copy it back or simply overwrite it.
-     * Do not forget to mark that page in the PD as not present, to do this simply call my function.*/
-}
-
-
-
-
-/* Will return the swap_page_t * relating to the vaddr and the current process if it exists.
- * Otherwise return NULL which indicates a faulty VADDR and should PANIC. */
-swap_page_t *page_swap_lookup(void *vaddr){
-    int i=0;
-    p_id pid = current_proc()->pid;
-    
-    while(i<virt_HDD_size && (page_swap_tracker[i].vaddr!=vaddr || page_swap_tracker[i].owner_pid!=pid)) i++;
-    
-    if(i==virt_HDD_size) return NULL;
-
-    return &page_swap_tracker[i];
-}
 
 /* Used to invalidate a RAM_paddr in that process' page directory */
 bool invalidate_RAM_page(void *RAM_paddr){

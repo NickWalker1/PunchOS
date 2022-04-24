@@ -9,10 +9,10 @@
 #include "../processes/pcb.h"
 
 typedef struct swap_page{
-    void *vaddr;
-    p_id owner_pid;
+    void *vaddr;     /* Associated vaddr */
+    p_id owner_pid;  /* Owning process PID */
     void *HDD_paddr; /* This shouldn't change throughout the lifetime of the page */
-    void *RAM_paddr; /* May be NULL if swapped out */
+    void *RAM_paddr; /* NULL if swapped out */
 } swap_page_t; 
 
 
