@@ -35,8 +35,6 @@ swap_page_t page_swap_tracker[virt_HDD_size];
 
 
 
-
-
 /* This function is called directly from the generic exception handler in idt.c.
  */
 void page_fault_handler(exception_state *state){
@@ -54,21 +52,32 @@ void page_fault_handler(exception_state *state){
 
 
     /* If it is, see if there is space in virt_RAM using the virt_RAM status array */
+    int i;
+    while(!RAM_status[i] && i<virt_RAM_size) i++;
     
+    /* No space */
+    if(i==virt_RAM_size){
+        /* If there is not space, determine a page to swap out using NRU */
 
+
+        /* Depending on the status of that page either copy it back or simply overwrite it.
+        * Do not forget to invalidate that virtual mapping with invalidate_RAM_page(), to do this simply call my function.*/
+    }
+    /* Space */
+    
     /* If there is space, copy page into memory, update the page mapping using map_page function */
-
-    /* If there is not space, determine a page to swap out using NRU */
-
-    /* Depending on the status of that page either copy it back or simply overwrite it.
-     * Do not forget to mark that page in the PD as not present, to do this simply call my function.*/
+    phys_page_copy(virt_RAM_start+i*PGSIZE,swp_page->HDD_paddr);
+    map_page(virt_RAM_start+i*PGSIZE,swp_page->vaddr,F_ASSERT);
+ 
 }
 
 
 
 /* Finds an appropriate page using preference heirarchy,
  *  updates associated swap_page struct
- *  and sets the status of that virt_RAM page to free */
+ *  copies data back to HDD if necessary
+ *  sets the status of that virt_RAM page to free
+ *  unmaps the vaddr */
 void swap_out_page(){
 
 }
@@ -112,6 +121,8 @@ void phys_page_copy(void *dest, void *src){
 
 
 /* Allocates a page in virt_HDD memory, and notably does NOT add anything to virt_RAM.
+ * It will however, generate a vaddr to be consistent throughout the lifetime of the page,
+ * regardless of its physical location.
  * Pages are only added to the virt_RAM on pagefault (demand paging) */
 void *palloc_HDD(){
     int i=0;
