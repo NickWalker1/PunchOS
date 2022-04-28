@@ -20,3 +20,4 @@ bool setup(uint32_t magic, uint32_t addr);
 bool validate_memory(uint32_t addr);
 void test_func();
 void spin(int position);
+void scheduling_test();

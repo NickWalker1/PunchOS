@@ -44,13 +44,19 @@ void main(){
 	println("");
 
                       
-
-	thread_create("sched_test",scheduling_test,NULL,1,0);
+	scheduling_test();
 
 
 	spin(TOP_RIGHT);
 
 }
+
+
+
+void scheduling_test(){
+	thread_create("sched_test",scheduling_test_func,NULL,1,0);
+}
+
 
 
 /* Little function that causes a bar to spin indefinitely...

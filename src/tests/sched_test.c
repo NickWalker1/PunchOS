@@ -104,7 +104,7 @@ bool end_cond(){
 /* Test function for validating performance improvements of MLFQ. 
  * For test validity please crate a new thread to run this and ensure no extra threads running 
  * other than the init thread. */
-void scheduling_test(){
+void scheduling_test_func(){
     print_attempt("Scheduling test setup.");
     bool timeout=false;
 

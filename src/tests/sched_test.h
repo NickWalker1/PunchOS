@@ -1,3 +1,3 @@
 #pragma once
 
-void scheduling_test();
+void scheduling_test_func();
