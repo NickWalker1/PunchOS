@@ -57,13 +57,13 @@ void page_fault_handler(exception_state *state){
     
     /* No space */
     if(i==virt_RAM_size){
-        /* If there is not space, determine a page to swap out using NRU */
+        /* If there is not space, determine a page to swap out using NRU, and swap it out!
+         * Remember to update all necessary trackers: swap_page struct, virt_RAM array and the pd mapping. */
 
 
-        /* Depending on the status of that page either copy it back or simply overwrite it.
-        * Do not forget to invalidate that virtual mapping with invalidate_RAM_page(), to do this simply call my function.*/
+        
     }
-    /* Space */
+    /* Is Space */
     
     /* If there is space, copy page into memory, update the page mapping using map_page function */
     phys_page_copy(virt_RAM_start+i*PGSIZE,swp_page->HDD_paddr);
@@ -73,7 +73,7 @@ void page_fault_handler(exception_state *state){
 
 
 
-/* Finds an appropriate page using preference heirarchy,
+/* Finds an appropriate page using NRU preference heirarchy,
  *  updates associated swap_page struct
  *  copies data back to HDD if necessary
  *  sets the status of that virt_RAM page to free
