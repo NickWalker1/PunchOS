@@ -6,8 +6,15 @@ KERNEL_VIRT_BASE = 0xC0000000;
 
 INPUT
 (
-    bin/boot.o 
+    src/boot/boot.o 
     src/kernel/kernel.o
+    src/kernel/heap.o
+    src/drivers/low_level.o
+    src/lib/int.o
+    src/lib/screen.o
+    src/lib/string.o
+    src/lib/debug.o
+    src/lib/math.o
 )
 OUTPUT
 (
@@ -35,37 +42,39 @@ SECTIONS
 	}
 
     
-	
-    . += KERNEL_VIRT_BASE;
-
-	
+	/* Main text section where all the kernel code is loaded */
     TEXT_SECTION_START = .;  
-	.text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRT_BASE)
+	.text ALIGN(4K) : AT(ADDR(.text) )
     {
         *(.text)
     }
     TEXT_SECTION_END = .;
 
 
+    /* Section for read only data */
     RODATA_SECTION_START = .;
-	.rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRT_BASE)
+	.rodata ALIGN(4K) : AT(ADDR(.rodata) )
     {
         *(.rodata)
     }
     RODATA_SECTION_END = .;
 
 
+    /* Section for extra data */
     DATA_SECTION_START = .;
-	.data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRT_BASE)
+	.data ALIGN(4K) : AT(ADDR(.data) )
     {
         *(.data)
     }
     DATA_SECTION_END = .;
 
+    /* Section for statically allocated variables */
     BSS_SECTION_START = .;
-	.bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VIRT_BASE)
+	.bss ALIGN(4K) : AT(ADDR(.bss) )
     {
         *(.bss)
     }
     BSS_SECTION_END = .;
+
+    _KERNEL_END_ = .;
 }

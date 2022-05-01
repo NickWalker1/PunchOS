@@ -1,105 +1,93 @@
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
- 
- 
-/* Hardware text mode color constants. */
-enum vga_color {
-	VGA_COLOR_BLACK = 0,
-	VGA_COLOR_BLUE = 1,
-	VGA_COLOR_GREEN = 2,
-	VGA_COLOR_CYAN = 3,
-	VGA_COLOR_RED = 4,
-	VGA_COLOR_MAGENTA = 5,
-	VGA_COLOR_BROWN = 6,
-	VGA_COLOR_LIGHT_GREY = 7,
-	VGA_COLOR_DARK_GREY = 8,
-	VGA_COLOR_LIGHT_BLUE = 9,
-	VGA_COLOR_LIGHT_GREEN = 10,
-	VGA_COLOR_LIGHT_CYAN = 11,
-	VGA_COLOR_LIGHT_RED = 12,
-	VGA_COLOR_LIGHT_MAGENTA = 13,
-	VGA_COLOR_LIGHT_BROWN = 14,
-	VGA_COLOR_WHITE = 15,
-};
- 
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) 
-{
-	return fg | bg << 4;
+#include "kernel.h"
+
+#include "../lib/math.h"
+
+#include "heap.h"
+
+int NUMTESTS=6;
+
+uint32_t* KHEAP_ADDR;
+uint32_t* KHEAP_ADDR_MAX;
+
+/* Main entry point into the OS */
+int kernel_main(uint32_t magic, uint32_t addr){
+	print("Entering Kernel Code.");
+
+	print_attempt("Boot process");
+	if(!setup(magic, addr)){
+		print_fail();
+		halt();
+	}
+	print_ok();
+
+
+	//Splash screen
+	// clear_screen();
+
+	println("\nWelcome to...");
+	println("");
+	println("  _____                  _      ____   _____");
+	println(" |  __ \\                | |    / __ \\ / ____|");
+	println(" | |__) |   _ _ __   ___| |__ | |  | | (___  ");
+	println(" |  ___/ | | | '_ \\ / __| '_ \\| |  | |\\___ \\ ");
+	println(" | |   | |_| | | | | (__| | | | |__| |____) |");
+	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
+	println("");
+
+
+	println("\nYou are currently in the PunchOS main branch.");
+
+	println("\nThe 4 labs are available in git branches Lab1, Lab2, Lab3 and Lab4...");
+
+	println("\nuse `git checkout' to move to a lab!");
+
+	println("\nEnjoy!");
+
+
+	println("\n\n\nKernel End Reached. Halting."); 
+
+	//will return to boot.asm where it will disable interrupts and halt.
+	return 0;
 }
- 
-static inline uint16_t vga_entry(unsigned char uc, uint8_t color) 
-{
-	return (uint16_t) uc | (uint16_t) color << 8;
+
+
+
+/* Function to ensure multiboot header and memory loaded properly */
+bool setup(uint32_t magic, uint32_t addr){
+	if(magic!=MULTIBOOT_BOOTLOADER_MAGIC){
+		println("Invalid multiboot header.");
+		return false;
+	}
+
+	if(!validMemory(addr)){
+		println("Memory unable to meet assumptions.");
+		return false;
+	}
+	return true;
 }
- 
-size_t strlen(const char* str) 
-{
-	size_t len = 0;
-	while (str[len])
-		len++;
-	return len;
-}
- 
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 25;
- 
-size_t terminal_row;
-size_t terminal_column;
-uint8_t terminal_color;
-uint16_t* terminal_buffer;
- 
-void terminal_initialize(void) 
-{
-	terminal_row = 0;
-	terminal_column = 0;
-	terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-	terminal_buffer = (uint16_t*) 0xC00B8000;
-	for (size_t y = 0; y < VGA_HEIGHT; y++) {
-		for (size_t x = 0; x < VGA_WIDTH; x++) {
-			const size_t index = y * VGA_WIDTH + x;
-			terminal_buffer[index] = vga_entry(' ', terminal_color);
+
+/* Ensures the memory map provided by multiboot meets the assumptions
+ * made further on in the code.
+ */
+bool validMemory(uint32_t addr){
+	multiboot_info_t *mbi = (multiboot_info_t *) addr;
+
+	int count=0;
+
+	bool okay=false;
+
+	if(mbi->flags & 6){
+		multiboot_memory_map_t *mmap;
+		for (mmap = (multiboot_memory_map_t *) mbi->mmap_addr;
+           	(uint32_t) mmap < mbi->mmap_addr + mbi->mmap_length;
+           	mmap = (multiboot_memory_map_t *) ((uint32_t) mmap
+                                    + mmap->size + sizeof (mmap->size)))
+		{
+			count++;
+			//check the memory meets some assumptions I have made later on in the OS
+			//Assume: memory is free, it's larger than 1MiB, and starts at 1MiB
+			if(mmap->type==1 && mmap->len>0x100000 && mmap->addr==0x100000) okay=true;
 		}
 	}
-}
- 
-void terminal_setcolor(uint8_t color) 
-{
-	terminal_color = color;
-}
- 
-void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) 
-{
-	const size_t index = y * VGA_WIDTH + x;
-	terminal_buffer[index] = vga_entry(c, color);
-}
- 
-void terminal_putchar(char c) 
-{
-	terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-	if (++terminal_column == VGA_WIDTH) {
-		terminal_column = 0;
-		if (++terminal_row == VGA_HEIGHT)
-			terminal_row = 0;
-	}
-}
- 
-void terminal_write(const char* data, size_t size) 
-{
-	for (size_t i = 0; i < size; i++)
-		terminal_putchar(data[i]);
-}
- 
-void terminal_writestring(const char* data) 
-{
-	terminal_write(data, strlen(data));
-}
- 
-void kernel_main(void) 
-{
-	/* Initialize terminal interface */
-	terminal_initialize();
- 
-	/* Newline support is left as an exercise. */
-	terminal_writestring("Hello!\n");
+	return okay;
 }
