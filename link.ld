@@ -9,6 +9,7 @@ INPUT
     src/boot/boot.o 
     src/kernel/kernel.o
     src/kernel/heap.o
+    src/kernel/heap_test.o
     src/drivers/low_level.o
     src/lib/int.o
     src/lib/screen.o

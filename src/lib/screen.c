@@ -168,6 +168,15 @@ void print_ok(){
 
 }
 
+/* Fills was brackets with PASS status */
+void print_pass(){
+    int row=pop_row();
+    print_char_loc('P',1,row,GREEN_ON_BLACK);
+    print_char_loc('A',2,row,GREEN_ON_BLACK);
+    print_char_loc('S',3,row,GREEN_ON_BLACK);
+    print_char_loc('S',4,row,GREEN_ON_BLACK);
+}
+
 /* Fills last brackets with FAIL status */
 void print_fail(){
     int row=pop_row();
@@ -177,6 +186,23 @@ void print_fail(){
     print_char_loc('L',4,row,RED_ON_BLACK);
 
 }
+
+
+void print_pass_generic(){
+    print_char('P',GREEN_ON_BLACK);
+    print_char('A',GREEN_ON_BLACK);
+    print_char('S',GREEN_ON_BLACK);
+    print_char('S',GREEN_ON_BLACK);
+}
+
+void print_fail_generic(){  
+    print_char('F',RED_ON_BLACK);
+    print_char('A',RED_ON_BLACK);
+    print_char('I',RED_ON_BLACK);
+    print_char('L',RED_ON_BLACK);
+}
+
+
 /* Used to clear the screen */
 void clear_screen(){
     int row;
