@@ -33,42 +33,16 @@ swap_page_t page_swap_tracker[virt_HDD_size];
 
 
 
-
-
 /* This function is called directly from the generic exception handler in idt.c.
  */
 void page_fault_handler(exception_state *state){
-    void *vaddr=state->cr2; /* The virtual adress that caused the exception is stored in the cr2 register */
-
-    /* To be implemented */
+    void *vaddr=(void*)state->cr2; /* The virtual adress that caused the exception is stored in the cr2 register */
 
 
-    
-
-    /* Lookup if the vaddr is a valid page stored in the tracker for that process using page_swap_lookup() */
-    swap_page_t *swp_page = page_swap_lookup(vaddr);
-    if(!swp_page)
-        page_fault_panic(vaddr);
+    page_fault_panic(vaddr);
+    /* To be implemented. */
 
 
-    /* If it is, see if there is space in virt_RAM using the virt_RAM status array */
-    int i;
-    while(!RAM_status[i] && i<virt_RAM_size) i++;
-    
-    /* No space */
-    if(i==virt_RAM_size){
-        /* If there is not space, determine a page to swap out using NRU, and swap it out!
-         * Remember to update all necessary trackers: swap_page struct, virt_RAM array and the pd mapping. */
-
-
-        
-    }
-    /* Is Space */
-    
-    /* If there is space, copy page into memory, update the page mapping using map_page function */
-    phys_page_copy(virt_RAM_start+i*PGSIZE,swp_page->HDD_paddr);
-    map_page(virt_RAM_start+i*PGSIZE,swp_page->vaddr,F_ASSERT);
- 
 }
 
 
@@ -80,13 +54,12 @@ void page_fault_handler(exception_state *state){
  *  unmaps the vaddr */
 void swap_out_page(){
 
+    /* To be implemented. */
 }
 
 
 /* Sets the accesssed state bits to 0 on all pages */
 void access_reset(){
-    //For simplicitity, you can just set every present one to 0 rather than only ones that are releveant to us. 
-
     /* Get the page directory */
     page_directory_entry_t *pd = current_proc()->page_directory;
 
@@ -126,7 +99,7 @@ void phys_page_copy(void *dest, void *src){
  * Pages are only added to the virt_RAM on pagefault (demand paging) */
 void *palloc_HDD(){
     int i=0;
-    while(HDD_status[i]&& i<virt_HDD_size) i++;
+    while(HDD_status[i] && i<virt_HDD_size) i++;
     if(i==virt_HDD_size) {
         KERN_WARN("HDD full");
         return NULL;
@@ -185,3 +158,32 @@ void virt_HDD_init(){
     virt_HDD_start=virt_RAM_start+virt_RAM_size*PGSIZE;
 
 }
+
+
+/* PARTIAL ANSWERS */
+/* Lookup if the vaddr is a valid page stored in the tracker for that process using page_swap_lookup() 
+    swap_page_t *swp_page = page_swap_lookup(vaddr);
+    if(!swp_page)
+        page_fault_panic(vaddr);
+
+
+    // If it is, see if there is space in virt_RAM using the virt_RAM status array 
+    int i;
+    while(!RAM_status[i] && i<virt_RAM_size) i++;
+    
+    // No space 
+    if(i==virt_RAM_size){
+        // If there is not space, determine a page to swap out using NRU, and swap it out!
+        // Remember to update all necessary trackers: swap_page struct, virt_RAM array and the pd mapping. 
+
+
+        
+    }
+    // Is Space 
+    
+    // If there is space, copy page into memory, update the page mapping using map_page function 
+    phys_page_copy(virt_RAM_start+i*PGSIZE,swp_page->HDD_paddr);
+    map_page(virt_RAM_start+i*PGSIZE,swp_page->vaddr,F_ASSERT);
+
+
+    */

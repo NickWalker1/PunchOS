@@ -44,13 +44,13 @@ void main(){
 	println("");
 
 
-	// for(int i=0;i<50;i++) palloc_HDD();
 
-	pg_swap_test();
-
+	/* Uncomment to run page swap tests. Default behaviour is page fault PANIC. */
+	// pg_swap_test();
+	
+	println("Ensure to run the tests!");
 
 	spin(TOP_RIGHT);
-
 }
 
 

@@ -209,6 +209,21 @@ void print_pass(){
 }
 
 
+void print_pass_generic(){
+    print_char('P',GREEN_ON_BLACK);
+    print_char('A',GREEN_ON_BLACK);
+    print_char('S',GREEN_ON_BLACK);
+    print_char('S',GREEN_ON_BLACK);
+}
+
+void print_fail_generic(){  
+    print_char('F',RED_ON_BLACK);
+    print_char('A',RED_ON_BLACK);
+    print_char('I',RED_ON_BLACK);
+    print_char('L',RED_ON_BLACK);
+}
+
+
 void clear_line(int line){
     if(line<0 || line>24) return;
     int c;

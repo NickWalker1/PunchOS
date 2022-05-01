@@ -56,6 +56,8 @@ void print_attempt(char* message);
 void print_ok();
 void print_pass();
 void print_fail();
+void print_pass_generic();
+void print_fail_generic();
 void clear_screen();
 void clear_line(int line);
 void push_row();

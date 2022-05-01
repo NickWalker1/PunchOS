@@ -529,7 +529,7 @@ void *virt_addr_space_duplication(page_directory_entry_t *pd){
 /* Given a virtual address and the page directory of the vaddr's process it will invalidate the associated entry.
  * Returns false on if entry was already not present or in Kernel Space*/
 bool invalidate_entry(void *vaddr, page_directory_entry_t *pd){
-    if((int)vaddr>0xC0000000){
+    if((unsigned int)vaddr>0xC0000000){
         KERN_WARN("Cannot invalidate address in kernel region");
         return false;
     }

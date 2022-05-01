@@ -35,6 +35,7 @@ void pg_swap_test(){
     perform_pg_swap_test();
 
     test_report();
+
 }
 
 
@@ -44,12 +45,13 @@ void perform_pg_swap_test(){
         vaddrs[i]=palloc_HDD();
     }
 
+
     /* Test read/write */
     *(char*)vaddrs[15]='x';
     if(*(char*)vaddrs[15]!='x'){
         return;
     }
-
+    
     //If not broken, must be okay...
     pg_swap_mark = pg_swap_mark | 1;
     
@@ -90,7 +92,7 @@ void perform_pg_swap_test(){
 /* Displays results of tests. */
 void test_report(){
 
-	if(pg_swap_mark==(size_t)pow(2,NUM_TESTS)-1){
+	if(pg_swap_mark==pow(2,NUM_TESTS)-1){
 		print_pass();
 	}
 	else{
