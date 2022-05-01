@@ -8,8 +8,8 @@ char spinBars[] = {'|','/','-','\\'};
 
 /* Main function run by init process */
 void main(){
-	//Prints welcome to PunchOS!
-	welcome();
+	
+	welcome(); //Displays welcome to PunchOS!
 
 
 	spinning_bars();
@@ -23,17 +23,16 @@ void main(){
 }
 
 
+/* Function to be implemented for Task 1 */
 void spinning_bars(){
 	clear_screen();
 
 	set_rseed(38); //Some random number to start the seed
 
 	/* To be implemented. */
-	int x=15;
-	while(x--)
-		create_proc(NULL,spin,rand()%SCREENSIZE);
-
+	
 }
+
 
 
 /* Little function that causes a bar to spin indefinitely... */
