@@ -187,7 +187,6 @@ void print_fail(){
 
 }
 
-
 void print_pass_generic(){
     print_char('P',GREEN_ON_BLACK);
     print_char('A',GREEN_ON_BLACK);

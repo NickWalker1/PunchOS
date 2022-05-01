@@ -8,6 +8,9 @@
 uint32_t* KHEAP_ADDR;
 uint32_t* KHEAP_ADDR_MAX;
 
+
+
+
 /* Main entry point into the OS */
 int kernel_main(uint32_t magic, uint32_t addr){
 	print("Entering Kernel Code.");
