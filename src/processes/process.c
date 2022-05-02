@@ -234,7 +234,7 @@ void proc_tick(){
     //report OK to PIT so it can send the next one.
     outportb(PIC1_COMMAND, PIC_EOI);
 
-    //TODO get proc to do some analytics n shit
+    //TODO get proc to do some analytics
     //add to each proc in the ready queue their current latency
     //when actualy being scheduled add that latency to the total wait
     //and update average latency using a "num times scheduled count" avg_latency=(avg_latency*n-1 + latency)/n
