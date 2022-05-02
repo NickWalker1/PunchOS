@@ -15,6 +15,7 @@
 #include "../tests/mq_test.h"
 
 
+void welcome();
 void kernel_entry(uint32_t, uint32_t addr);
 void main();
 void spinning_bars();

@@ -97,8 +97,6 @@ void *alloc(uint32_t size, MemorySegmentHeader_t *start_seg){
         return ++currSeg;
     }
 
-    PANIC("FUCKED IT");
-
     //next segment must therefore be free
     
     MemorySegmentHeader_t *nextSeg=currSeg->next;

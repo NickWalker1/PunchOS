@@ -18,14 +18,17 @@ void main(){
 	// MQ_test();
 
 
-	//Uncomment to show OS still operational.
-	// spin(TOP_RIGHT);
+	//To show OS still operational.
+	spin(TOP_RIGHT);
+	
 }
 
 
 /* Function to be implemented for Task 1 */
 void spinning_bars(){
 	clear_screen();
+
+	println("Spinning bars to be implemented here!...");
 
 	set_rseed(38); //Some random number to start the seed
 
