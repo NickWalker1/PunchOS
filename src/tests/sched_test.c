@@ -13,6 +13,11 @@ uint8_t completedD=0;
 condition start_cond;
 lock start_lock;
 
+
+
+int naive_runtime = 10; //seconds
+int timeout_time = 30; //seconds
+
 void test_func_a(){
     /* Wait for start signal */
     lock_acquire(&start_lock);
@@ -160,7 +165,7 @@ void scheduling_test_func(){
 
     while(!end_cond()){
         thread_sleep(2,UNIT_TICK);
-        if((get_time()-t1)>20*TICK_PS){
+        if((get_time()-t1)>timeout_time*TICK_PS){
             timeout=true;
             break;
         }
@@ -190,12 +195,14 @@ void scheduling_test_func(){
     print(itoa(time,str,BASE_DEC));
     print(" seconds.");
 
-    if(time<20){ 
+    if(time<naive_runtime){ 
         print_pass();
     }
     else{
         print_fail();
     }
 
-    println("\nNaive scheduling time is 20 seconds.\n");
+    println("\nNaive scheduling time is ");
+    print(itoa(naive_runtime,str,BASE_DEC));
+    print(" seconds.\n");
 }

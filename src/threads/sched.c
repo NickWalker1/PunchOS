@@ -34,7 +34,8 @@ int prio_0_TQ = 2;
 int prio_1_TQ = 4;
 int prio_2_TQ = 8;
 
-/* Initialises schedulising by initialising any lists or structures needed for scheduling */
+/* Initialises schedulising by initialising any lists or structures needed for scheduling.
+ * Returns true on success. */
 bool scheduling_init(){
     if(naive_scheduling){
         /* Default setup value */
@@ -50,12 +51,8 @@ bool scheduling_init(){
 
     /* To be implemented. */
 
-    prio_0=list_init_shared();
-    prio_1=list_init_shared();
-    prio_2=list_init_shared();
-    if(!prio_0 || !prio_1 ||  !prio_2) return false;
 
-    return true;
+    return false;
 }
 
 
@@ -75,21 +72,7 @@ void thread_reschedule(TCB_t *t){
     /* MLFQ to be implemented. */
 
 
-    /* If thread has been preempted then reduce it's priority 0 is highest, 2 is lowest*/
-    if(timeout && t->priority<PRIO_MIN) ++(t->priority);
-    timeout=false;
     
-    switch(t->priority){
-    case 0:
-        append_shared(prio_0,t);
-        break;
-    case 1:
-        append_shared(prio_1,t);
-        break;
-    default:
-        append_shared(prio_2,t);
-    }
-
 }
 
 
@@ -106,23 +89,7 @@ TCB_t* get_next_thread(){
 
     /* MLFQ to be implemented. */
     
-    if(!is_empty(prio_0)){
-        time_quantum=prio_0_TQ;
-        return pop_shared(prio_0);
-
-    }
-
-    if(!is_empty(prio_1)) {
-        time_quantum=prio_1_TQ;
-        return pop_shared(prio_1);
-    }
-
-    if(!is_empty(prio_2)) {
-        time_quantum=prio_2_TQ;
-        return pop_shared(prio_2);
-    }
-
-    return idle_thread;
+    return NULL;
 }
 
 
@@ -134,9 +101,8 @@ bool deschedule(TCB_t *t){
 
     /* MLFQ to be implemented. */
 
-    return remove_shared(prio_0,t) || remove_shared(prio_1,t) || remove_shared(prio_2,t);
-
-    // return false;
+    
+    return false;
 }
 
 
@@ -148,17 +114,7 @@ TCB_t *peek_next_thread(){
 
     /* MLFQ to be implemented. */
 
-    TCB_t *next;
-    next=peek(prio_0);
-    if(next) return next;
-    next=peek(prio_1);
-
-    if(next) return next;
-    next=peek(prio_2);
-
-    if(next) return next;
-
-    return idle_thread;
+    return NULL;
 }
 
 
@@ -171,7 +127,4 @@ void queue_dump(){
 
     /* MLFQ to be implemented. */
 
-    list_dump(prio_0);
-    list_dump(prio_1);
-    list_dump(prio_2);
 }
