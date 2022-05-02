@@ -3,6 +3,8 @@
 #include "../threads/thread.h"
 
 
+/* Implementation logic largey derived from PintOS */
+
 /* NOTE:
  * ALL SYNCHRONISATION PRIMITIVES MAKE USE OF THE SHARED KERNEL SPACE 
  */
