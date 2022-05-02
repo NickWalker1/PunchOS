@@ -20,7 +20,6 @@ list *sleeper_threads;
 int total_ticks;
 int cur_tick_count;
 
-//TODO gonna need some externs for the scheduling stuff?
 
 extern MemorySegmentHeader_t *proc_heap_init();
 
@@ -42,7 +41,7 @@ bool multi_threading_init(){
     dummy_thread->priority=0; /* To be modified with MLFQ implementation details */
     
 
-    thread_tracker[0].present=true; //TODO check
+    thread_tracker[0].present=true; //TODO check this valid for dummy
 
 
     sleeper_threads=list_init_shared();
@@ -290,7 +289,7 @@ void thread_block(){
     TCB_t *t=current_thread();
     t->status=T_BLOCKED; 
 
-    //TODO update
+    //TODO cleanup/update
     thread_tracker[t->tid].mem_usage=heap_usage(get_proc(t->owner_pid)->heap_start_segment);
 
     //Force an early context switch
