@@ -60,7 +60,7 @@ void *malloc(uint32_t size){
         return ++currSeg;
     }
 
-    PANIC("FUCKED IT");
+    //PANIC("heap corruption");
 
     //next segment must therefore be free
     
