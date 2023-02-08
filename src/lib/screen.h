@@ -45,6 +45,7 @@ uint16_t get_cursor();
 struct pos get_position(int offset);
 void set_cursor(int offset);
 int handle_scrolling(int offset);
+void printf(char* fmt, ...);
 void putc(char c);
 void print_char(char character, char attribute_type);
 void print_char_loc(char character, int col, int row, char attribute_type);

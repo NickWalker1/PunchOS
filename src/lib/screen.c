@@ -78,12 +78,55 @@ inline void putc(char c){
     print_char(c, WHITE_ON_BLACK);
 }
 
-int printf(char *fmt, ...){
+/* printf implementation. Inspiring by K&R's original :)*/
+void printf(char *fmt, ...){
     va_list args;
 
-    va_start(args, fmt);
+    int x;
 
-    return 0;
+    va_start(args, fmt);
+    
+    char c;
+    for(;;){
+        while((c=*fmt++)!='%'){
+            /*str terminate character */
+            if(c==0)
+                return;
+            putc(c);
+        }
+        switch ((c=*fmt++)){
+
+            /* Is decimal */
+            case 'd':
+            case 'i':
+            case 'u':
+                x=va_arg(args,int);
+                print(itoa(x,str,BASE_DEC));
+                break;
+            
+            /* is hexadecimal (lowercase)*/
+            case 'x':
+            /* is hexadecimal (uppercase)*/
+            case 'X':
+                x=va_arg(args,int);
+                print(itoa(x,str,BASE_HEX));
+                break;
+
+            case 'c':
+                putc(c);
+                break;
+
+            case 's':;
+                char *s = va_arg(args,char*);
+                print(s);
+                break;
+        
+            case 'n':
+            default:
+                /* Print nothing*/
+                break;
+        }
+    }
 }
 
 

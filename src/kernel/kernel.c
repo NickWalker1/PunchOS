@@ -1,9 +1,6 @@
 #include "kernel.h"
 
 
-#include "../lib/printf_nick.h"
-
-
 /* Entry point into the OS */
 void kernel_entry(uint32_t magic, uint32_t addr){
 	print("Entering Kernel Code.");
@@ -40,8 +37,8 @@ void main(){
 
 	draw_logo(false);
                       
-	va_test(3, 1,2,3);
 
+	printf("Hello world! With the number %x!\n",1024);
 
 	//scheduling_test();
 
