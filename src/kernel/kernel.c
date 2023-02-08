@@ -1,6 +1,9 @@
 #include "kernel.h"
 
 
+#include "../lib/printf_nick.h"
+
+
 /* Entry point into the OS */
 void kernel_entry(uint32_t magic, uint32_t addr){
 	print("Entering Kernel Code.");
@@ -34,23 +37,18 @@ void main(){
 	clear_screen();
 
 	print("Welcome to...");
-	println("");
-	println("  _____                  _      ____   _____");
-	println(" |  __ \\                | |    / __ \\ / ____|");
-	println(" | |__) |   _ _ __   ___| |__ | |  | | (___  ");
-	println(" |  ___/ | | | '_ \\ / __| '_ \\| |  | |\\___ \\ ");
-	println(" | |   | |_| | | | | (__| | | | |__| |____) |");
-	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
-	println("");
 
+	draw_logo(false);
                       
-	scheduling_test();
+	va_test(3, 1,2,3);
+
+
+	//scheduling_test();
 
 
 	spin(TOP_RIGHT);
 
 }
-
 
 
 void scheduling_test(){
@@ -138,3 +136,16 @@ bool validate_memory(uint32_t addr){
 
 
 
+void draw_logo(bool reset_screen){
+	if(reset_screen)
+		clear_screen();
+
+	println("");
+	println("  _____                  _      ____   _____");
+	println(" |  __ \\                | |    / __ \\ / ____|");
+	println(" | |__) |   _ _ __   ___| |__ | |  | | (___  ");
+	println(" |  ___/ | | | '_ \\ / __| '_ \\| |  | |\\___ \\ ");
+	println(" | |   | |_| | | | | (__| | | | |__| |____) |");
+	println(" |_|    \\__,_|_| |_|\\___|_| |_|\\____/ \\____/ ");
+	println("");
+}

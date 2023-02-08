@@ -18,6 +18,7 @@ INPUT
     src/lib/string.o
     src/lib/list.o
     src/lib/time.o
+    src/lib/printf_nick.o
     src/interrupt/cpu_state.o
     src/interrupt/handlers.o
     src/interrupt/idt.o

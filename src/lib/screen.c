@@ -74,6 +74,19 @@ int handle_scrolling(int offset){
     return offset;
 }
 
+inline void putc(char c){
+    print_char(c, WHITE_ON_BLACK);
+}
+
+int printf(char *fmt, ...){
+    va_list args;
+
+    va_start(args, fmt);
+
+    return 0;
+}
+
+
 /* Prints a singular char to current cursor position */
 void print_char(char character,char attribute_type){
     //Create a byte (char) pointer to the start of video memory

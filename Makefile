@@ -20,12 +20,6 @@ QEMU=qemu-system-i386
 GRUB=grub-mkrescue
 
 
-#DCS
-#QEMU=/local/java/qemu-i386-softmmu/bin/qemu-system-386
-#GRUB=/usr/bin/grub2-mkrescue
-
-
-
 run: all
 	$(QEMU) -cdrom os.iso -D ./log.txt -d cpu_reset
 
