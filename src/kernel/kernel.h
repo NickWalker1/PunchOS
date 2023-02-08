@@ -21,3 +21,4 @@ bool validate_memory(uint32_t addr);
 void test_func();
 void spin(int position);
 void scheduling_test();
+void draw_logo(bool reset_screen);
